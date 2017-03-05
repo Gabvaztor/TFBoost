@@ -16,6 +16,7 @@ class Humano:
     def mostrarNombre(self):
         print("El nombre del humano es: " + self.nombre + ", ojos = " +  str(self.ojos) + str(self.masaMuscular))
 
+
 maria = Humano("2", 2,58181817)
 maria.mostrarNombre()
 
