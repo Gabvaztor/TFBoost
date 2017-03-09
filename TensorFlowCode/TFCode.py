@@ -30,14 +30,25 @@ Notes:
 # --------------------------------------------------------------------------
 """
 # --------------------------------------------------------------------------
-'''LOCAL IMPORTS'''
+'''LOCAL IMPORTS
+* UtilsFunctions is a library that contains a lot of functions which will help us
+to code expressively, clearly and efficiently.
+* TensorFlowGUI's library contains all GUI's methods. Contains EasyGUI.
+Here you can download the library: https://pypi.python.org/pypi/easygui#downloads
+It had been used the version: 0.98.1
+'''
+
 import UsefulTools.UtilsFunctions as uf
-import TensorFlowCode.TensorFlowGUI as eg
+import TensorFlowCode.TFEasyGui as eg
 # --------------------------------------------------------------------------
 
 
 # --------------------------------------------------------------------------
-''' TensorFlow'''
+''' TensorFlow: https://www.tensorflow.org/
+To upgrade tensorflow to last version:
+*CPU: pip3 install --upgrade tensorflow
+*GPU: pip3 install --upgrade tensorflow-gpu
+'''
 import tensorflow as tf
 print("TensorFlow: " + tf.__version__)
 # --------------------------------------------------------------------------
@@ -47,17 +58,19 @@ print("TensorFlow: " + tf.__version__)
 ''' Numpy is an extension to the Python programming language, adding support for large,
 multi-dimensional arrays and matrices, along with a large library of high-level
 mathematical functions to operate on these arrays.
+It is mandatory to install 'Numpy+MKL' before scipy.
+Install 'Numpy+MKL' from here: http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
 http://www.numpy.org/
 https://en.wikipedia.org/wiki/NumPy '''
 import numpy as np
 # --------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
-'''# Se necesita instalar la versión de 64bits de Scipy, al menos en Windows.
-# Antes de instalar la librería de Scipy (o al menos para que no pueda dar
-# un error asociado) hay que instalar 'NUMKY_MKL' desde la siguiente URL:
+'''
+# You need to install the 64bit version of Scipy, at least on Windows.
+# It is mandatory to install 'Numpy+MKL' before scipy.
 # http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
-# We can find it in the url: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy'''
+# We can find scipi in the url: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy'''
 import scipy.io as sio
 # --------------------------------------------------------------------------
 
@@ -98,13 +111,6 @@ uf.pt("Typos GUI",properties.types)
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 """
-init  = tf.global_variables_initializer()
+init = tf.global_variables_initializer()
 sess = tf.InteractiveSession()
 sess.run(init)
-
-# --------------------------------------------------------------------------
-# UTILS FUNCTIONS
-# --------------------------------------------------------------------------
-def pt(title,text):
-    print(str(title) + ": \n" + str(text))
-
