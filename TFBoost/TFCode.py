@@ -39,7 +39,7 @@ It had been used the version: 0.98.1
 '''
 
 import UsefulTools.UtilsFunctions as uf
-import TensorFlowCode.TFEasyGui as eg
+import TFBoost.TFEasyGui as eg
 # --------------------------------------------------------------------------
 
 
