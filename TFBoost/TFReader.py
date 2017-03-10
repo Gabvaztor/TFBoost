@@ -16,7 +16,11 @@ With this class you can import a lot of labeled data like Kaggle problems.
 """
 
 # --------------------------------------------------------------------------
-''' '''
+'''
+
+To install pandas: pip3 install pandas
+'''
+import pandas as pd
 # --------------------------------------------------------------------------
 
 class Reader(object):

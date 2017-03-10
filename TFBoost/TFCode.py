@@ -12,6 +12,7 @@ This file contains the next information:
 
 The code's structure is:
     - Imports
+    - Global Variables
     - Interface
     - Reading data algorithms
     - Data Mining
@@ -75,9 +76,23 @@ import scipy.io as sio
 # --------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
-'''# Matlab URL: http://matplotlib.org/users/installing.html'''
+''' Matlab URL: http://matplotlib.org/users/installing.html'''
 import matplotlib.pyplot as plt
 # --------------------------------------------------------------------------
+
+
+"""
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# ---- GLOBAL VARIABLES ----
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+"""
+
+isAnUniqueCSV = False  # If this variable is true, then only one CSV file will be passed and it will be treated like trainSet, validationSet and testSet
+trainSetCSV = ''
+validationSetCSV = ''
+testSetCSV = ''
 
 """
 # --------------------------------------------------------------------------
