@@ -2,6 +2,8 @@
 Author: @gabvaztor
 StartDate: 04/03/2017
 
+With this class you can add a lot of information to your data. For example,
+you can add statistical information or order your data.
 """
 
 """

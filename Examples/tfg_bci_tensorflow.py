@@ -14,7 +14,7 @@ import numpy as np
 import datetime
 # Importamos Spicy, librería científica para manejar archivos mat.
 import scipy.io as sio
-import TensorFlowCode as tf
+import TFBoost as tf
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import plot, draw
 import random

@@ -22,7 +22,6 @@ The code's structure is:
 Notes:
     * This file use TensorFlow code version 1.0.
 """
-
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -39,8 +38,10 @@ Here you can download the library: https://pypi.python.org/pypi/easygui#download
 It had been used the version: 0.98.1
 '''
 
-import UsefulTools.UtilsFunctions as uf
+from UsefulTools.UtilsFunctions import pt
 import TFBoost.TFEasyGui as eg
+import TFBoost.TFReader as tfr
+from TFBoost.TFEncoder import dict
 # --------------------------------------------------------------------------
 
 
@@ -89,24 +90,7 @@ import matplotlib.pyplot as plt
 # --------------------------------------------------------------------------
 """
 
-isAnUniqueCSV = False  # If this variable is true, then only one CSV file will be passed and it will be treated like trainSet, validationSet and testSet
-setCSV = set()
-setCSV.add(Data.data)
-trainSetCSV = ''
-validationSetCSV = ''
-testSetCSV = ''
 
-"""
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# ---- USER INTERFACE ----
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-"""
-
-'''Creating user interface'''
-#properties = eg.EasyGui()
-#uf.pt("Typos GUI",properties.types)
 
 """
 # --------------------------------------------------------------------------
@@ -116,16 +100,15 @@ testSetCSV = ''
 # --------------------------------------------------------------------------
 """
 
+isAnUniqueCSV = True  # If this variable is true, then only one CSV file will be passed and it will be treated like trainSet, validationSet and testSet
+knownDataType = ''  # Contains the type of data if the data file contains an unique type of data. Examples: Number or Chars.
+
+csvList = []
+csvList.append(dict())
+
+tfReader = tfr.Reader(csvList,isAnUniqueCSV)
+trainSetCSV = ''
+validationSetCSV = ''
+testSetCSV = ''
 
 
-
-"""
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# ---- Inicio de Sesión de TensorFlow ----
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-"""
-init = tf.global_variables_initializer()
-sess = tf.InteractiveSession()
-sess.run(init)
