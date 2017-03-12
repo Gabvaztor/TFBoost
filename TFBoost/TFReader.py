@@ -103,6 +103,7 @@ class Reader(object):
         # Time to execute Breast_Cancer_Wisconsin Data.csv with pd.read_csv:  0.007000446319580078s
         pt("DataTest Shape",self.data.shape)
 
+        # TODO Create labelData Variable from a list of strings
         labelData = self.data.pop(self.rFeatures.labelsSet)  # Data's labels
         inputData = self.data  # Input data
 
