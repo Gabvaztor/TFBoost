@@ -50,23 +50,45 @@ import time
 import numpy as np
 # --------------------------------------------------------------------------
 
+# --------------------------------------------------------------------------
+'''
+ Sklearn(scikit-learn): Simple and efficient tools for data mining and data analysis
+'''
+from sklearn.model_selection import train_test_split
+# --------------------------------------------------------------------------
+
 class Reader(object):
     types = set()
     data = []
     trainSetCSV = ''
     validationSetCSV = ''
     testSetCSV = ''
-    def __init__(self,setDataFiles,isAnUniqueCSV,knownDataType=''):
+    trainValidationSet = []
+    trainSet = []
+    validationSet = []
+    testSet = []
+
+    x_train = []  # Train inputs without labels
+    y_train = []  # Train labels without inputs
+    x_validation = []  # Validation inputs without labels
+    y_validation = []  # Validation labels without inputs
+    x_test = []  # Test inputs without labels
+    y_test = []  # Test labels without inputs
+
+    rFeatures = None  # ReaderFeatures Object
+
+    def __init__(self,reader_features):
 
         # TODO: Check if knownDataType is empty, number or char.
 
-        if isAnUniqueCSV:
-            self.__uniqueDataFile(setDataFiles[0])
+        self.rFeatures = reader_features
+        if self.rFeatures.isUniqueCSV:
+            self.__uniqueDataFile()
         else:
-            self.__multipleDataFiles(setDataFiles)
+            self.__multipleDataFiles()
 
     @timed
-    def __uniqueDataFile(self,dataFile):
+    def __uniqueDataFile(self):
         """
         This method will be used only when one data file was passed.
         Return train, validation and test sets from an unique file.
@@ -75,15 +97,48 @@ class Reader(object):
 
         # TODO When the csv has only a type is much better use numpy
         # self.data = np.fromfile(dataFile,dtype = np.float64)
-        # Time to execute Breast_Cancer_Wisconsin Data.csv with np.fromfile:  0.0
+        # Time to execute Breast_Cancer_Wisconsin Data.csv with np.fromfile:  0.0s
 
-        self.data = pd.read_csv(dataFile)
-        # Time to execute Breast_Cancer_Wisconsin Data.csv with pd.read_csv:  0.007000446319580078
+        self.data = pd.read_csv(self.rFeatures.setDataFiles[0],delimiter = ',')
+        # Time to execute Breast_Cancer_Wisconsin Data.csv with pd.read_csv:  0.007000446319580078s
         pt("DataTest Shape",self.data.shape)
+
+        labelData = self.data.pop(self.rFeatures.labelsSet)  # Data's labels
+        inputData = self.data  # Input data
+
+        pt("type", type(labelData))
+        # TODO SPLIT well the columns and rows
+        x_train_validation, y_train_validation, x_test, y_test = train_test_split(inputData.index,labelData,test_size = 0.2)
+        #self.trainSet,self.testSet = train_test_split(self.data, test_size = 0.2)
+
+        pt("labelData", labelData.shape)
+        pt("inputData", inputData.shape)
+        pt("x_test", x_test.shape)
+        pt("y_test", y_test.shape)
+        pt("labelData", labelData.shape)
 
 
     def __multipleDataFiles(self,setDataFiles):
         pass
+
+class ReaderFeatures():
+    """
+    Reader features
+
+    To access Reader class you have to create this object with some parameters
+    """
+    setDataFiles = []
+    isUniqueCSV = False
+    knownDataType = ''
+    labelsSet = []
+
+    def __init__(self,set_data_files,labels_set = '',
+                 is_unique_csv = False,known_data_type = ''):
+
+        self.setDataFiles = set_data_files
+        self.isUniqueCSV =  is_unique_csv
+        self.knownDataType = known_data_type
+        self.labelsSet =  labels_set
 
 if __name__ == '__main__':
     print ("Creating Reader")

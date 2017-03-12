@@ -30,6 +30,12 @@ def dict(key):
 class Dictionary(object):
     """
     Dictionary:Encoder
+    Each attribute will be a dictionary's key
+    Attribute = Dictionary Key
+    Value's Attribute = Dictionary Value
+    Doing an abstract class like a Dictionary we have the references to all keys from another class.
     """
-    breast_Cancer_Wisconsin_Path = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
+
+    # Data.csv from Breast_Cancer_Wisconsin project
+    path_Breast_Cancer_Wisconsin = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
 

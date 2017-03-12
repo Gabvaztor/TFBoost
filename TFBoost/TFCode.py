@@ -41,12 +41,14 @@ It had been used the version: 0.98.1
 
 import UsefulTools.UtilsFunctions as uf
 import TFBoost.TFEasyGui as eg
+import TFBoost.TFReader as tfr
+from TFBoost.TFEncoder import Dictionary
 # --------------------------------------------------------------------------
 
 
 # --------------------------------------------------------------------------
 ''' TensorFlow: https://www.tensorflow.org/
-To upgrade tensorflow to last version:
+To upgrade TensorFlow to last version:
 *CPU: pip3 install --upgrade tensorflow
 *GPU: pip3 install --upgrade tensorflow-gpu
 '''
@@ -89,12 +91,28 @@ import matplotlib.pyplot as plt
 # --------------------------------------------------------------------------
 """
 
-isAnUniqueCSV = False  # If this variable is true, then only one CSV file will be passed and it will be treated like trainSet, validationSet and testSet
-setCSV = set()
-setCSV.add(Data.data)
+isAnUniqueCSV = True  # If this variable is true, then only one CSV file will be passed and it will be treated like trainSet, validationSet and testSet
+knownDataType = ''  # Contains the type of data if the data file contains an unique type of data. Examples: Number or Chars.
+
 trainSetCSV = ''
 validationSetCSV = ''
 testSetCSV = ''
+
+csvList = []
+csvList.append(Dictionary.path_Breast_Cancer_Wisconsin)  # Example
+# --------------------------------------------------------------------------
+'''
+Reader Features
+'''
+labelsSet = ['diagnosis']
+tfReaderFeatures = tfr.ReaderFeatures(set_data_files = csvList,labels_set = 'diagnosis',
+                                      is_unique_csv = isAnUniqueCSV,known_data_type = knownDataType )
+# --------------------------------------------------------------------------
+tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with all information
+
+trainSet = tfReader.trainSet  # Train Set
+validationSet = tfReader.validationSet  # Validation Set
+testSet = tfReader.testSet  # Test Set
 
 """
 # --------------------------------------------------------------------------
@@ -126,6 +144,7 @@ testSetCSV = ''
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 """
+
 init = tf.global_variables_initializer()
 sess = tf.InteractiveSession()
 sess.run(init)
