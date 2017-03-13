@@ -107,15 +107,25 @@ class Reader(object):
         labelData = self.data.pop(self.rFeatures.labelsSet)  # Data's labels
         inputData = self.data  # Input data
 
-        pt("type", type(labelData))
-        # TODO SPLIT well the columns and rows
-        x_train_validation, y_train_validation, x_test, y_test = train_test_split(inputData.index,labelData,test_size = 0.2)
+        trainSize = self.rFeatures.trainValidationTestPercentage[0]
+        testSize = self.rFeatures.trainValidationTestPercentage[-1]
+        validationSize = None
+        if len(self.rFeatures.trainValidationTestPercentage) is 3:
+            validationSize = self.rFeatures.trainValidationTestPercentage[1]
+
+        x_train_validation, x_test, y_train_validation, y_test  = train_test_split(inputData,labelData,test_size = testSize )
         #self.trainSet,self.testSet = train_test_split(self.data, test_size = 0.2)
+
+        # TODO Split x_train_validation and y_train_validation into train and validation if it is necessary
 
         pt("labelData", labelData.shape)
         pt("inputData", inputData.shape)
         pt("x_test", x_test.shape)
         pt("y_test", y_test.shape)
+        pt("x_train_validation", x_train_validation.shape)
+        pt("y_train_validation", y_train_validation.shape)
+        pt("y_train_validation", y_train_validation)
+        pt("y_test", y_test)
         pt("labelData", labelData.shape)
 
 
@@ -123,23 +133,43 @@ class Reader(object):
         pass
 
 class ReaderFeatures():
-    """
-    Reader features
+    """ ReaderFeatures Class
 
-    To access Reader class you have to create this object with some parameters
+    To access Reader class you have to create this object with some parameters.
+
+    Attributes:
+    setDataFiles (str): Description of `attr1`.
+    isUniqueCSV (:obj:`int`, optional): Description of `attr2`.
+    knownDataType
+    labelsSet (list: 'str'): Contains all labels values of data.
+    trainValidationTestPercentage (list:'float',optional): Must contains 2 or 3 percentages values:
+        If 3: First is train set, second is validation set and third is test set.
+        If 2: First is train set and second test set.
+        TODO If none must be randomized
+
     """
     setDataFiles = []
     isUniqueCSV = False
     knownDataType = ''
     labelsSet = []
-
+    trainValidationTestPercentage = []
+    #
     def __init__(self,set_data_files,labels_set = '',
-                 is_unique_csv = False,known_data_type = ''):
+                 is_unique_csv = False,known_data_type = '',
+                 percentages_sets = None):
 
         self.setDataFiles = set_data_files
         self.isUniqueCSV =  is_unique_csv
         self.knownDataType = known_data_type
         self.labelsSet =  labels_set
+
+        if percentages_sets :  # If it is not None
+            if type(percentages_sets) is type([]) and (len(percentages_sets) is 2 or len(percentages_sets) is 3)\
+                    and all(isinstance(x, float) for x in percentages_sets):  # Must be float list
+                self.trainValidationTestPercentage = percentages_sets
+            else:
+                raise RuntimeError("In ReaderFeatures, the variable 'percentages_sets'"
+                                   " needs to be a list with 2 or 3 float values. ")
 
 if __name__ == '__main__':
     print ("Creating Reader")

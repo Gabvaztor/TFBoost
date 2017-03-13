@@ -38,4 +38,5 @@ class Dictionary(object):
 
     # Data.csv from Breast_Cancer_Wisconsin project
     path_Breast_Cancer_Wisconsin = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
-
+    # Data.csv Label Column name
+    label_column_name_Breast_Cancer_Wisconsin = 'diagnosis'
