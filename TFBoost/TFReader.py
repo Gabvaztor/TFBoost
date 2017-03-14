@@ -115,27 +115,30 @@ class Reader(object):
         # self.trainSet,self.testSet = train_test_split(self.data, test_size = 0.2)
 
         # TODO Split x_train_validation and y_train_validation into train and validation if it is necessary
+
         if len(self.rFeatures.trainValidationTestPercentage) is 3:  # If it has validation percentage
+
             validationSize = self.rFeatures.trainValidationTestPercentage[1]  # Get validation percentage
             totalLen = self.data.shape[0]  # All data rows
             trainValidationLen = self.x_train.shape[0] # All train validation rows
-            validationDataPercent = totalLen * validationSize
-            validationSize =  validationSize / totalLen# Update validation percentage
-            #TODO Finish this
-            #TODO If the data is in columns, we have to take the shape[1] value.
+            valueValidationPercentage = validationSize * totalLen # Value of validation percentage in x_train (train and validation)
+            validationSize =  valueValidationPercentage / trainValidationLen# Update validation percentage
+
+            pt("validationSize: ",validationSize)
+
+        # TODO If the data is in columns, we have to take the shape[1] value.
 
 
-            self.x_train, self.x_validation, self.y_train, self.y_validation\
-                = train_test_split(self.x_train, self.y_train, test_size = validationSize)
+            self.x_train, self.x_validation, self.y_train, self.y_validation = train_test_split(self.x_train, self.y_train, test_size = validationSize)
 
         pt("labelData", labelData.shape)
         pt("inputData", inputData.shape)
         pt("x_test", self.x_test.shape)
         pt("y_test", self.y_test.shape)
-        pt("x_train_validation", self.x_train.shape)
-        pt("y_train_validation", self.y_train.shape)
-        pt("y_train_validation", self.y_train)
-        pt("y_test", self.y_test)
+        pt("x_train.shape", self.x_train.shape)
+        pt("y_train.shape", self.y_train.shape)
+        pt("x_train_validation", self.x_validation.shape)
+        pt("y_train_validation", self.y_validation.shape)
         pt("labelData", labelData.shape)
 
 
