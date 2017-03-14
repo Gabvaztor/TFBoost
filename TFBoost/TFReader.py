@@ -124,7 +124,7 @@ class Reader(object):
 
 
             self.x_train, self.x_validation, self.y_train, self.y_validation\
-                = train_test_split(self.x_train, self.y_train, test_size=validationSize)
+                = train_test_split(self.x_train, self.y_train, test_size = validationSize)
 
         pt("labelData", labelData.shape)
         pt("inputData", inputData.shape)

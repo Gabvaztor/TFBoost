@@ -1,7 +1,9 @@
 # TensorFlow Boost
-Tensorflow-Boost's Repository
+TensorFlow-Boost's Repository
 
-With this project we are creating a framework which you can read any kind of tag labeled data (like kaggle, csv, images), choose the best machine learning algorithm for your data, and besides, change the algorithm features.
+With this project we are creating a framework which you can read any kind of tag labeled data (like kaggle, csv, images), create train, validation and test set from them, choose the best machine learning algorithm for your data, and besides, change the algorithm features.
+
+You can do all this with a simple and beautiful user interface.
 
 TensorFlow Boost works as follows: 
 
