@@ -119,6 +119,8 @@ class Reader(object):
             validationSize = self.rFeatures.trainValidationTestPercentage[1]  # Get validation percentage
             totalLen = self.data.shape[0]  # All data rows
             trainValidationLen = self.x_train.shape[0] # All train validation rows
+            validationDataPercent = totalLen * validationSize
+            validationSize =  validationSize / totalLen# Update validation percentage
             #TODO Finish this
             #TODO If the data is in columns, we have to take the shape[1] value.
 

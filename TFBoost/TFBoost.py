@@ -20,7 +20,7 @@ The code's structure is:
     - Show final conclusions
 
 Notes:
-    * This file use TensorFlow code version 1.0.
+    * This file use TensorFlow version 1.0.
 """
 
 """
