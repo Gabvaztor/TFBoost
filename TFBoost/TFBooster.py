@@ -111,7 +111,6 @@ tfReaderFeatures = tfr.ReaderFeatures(set_data_files = csvList,labels_set = labe
                                       percentages_sets = percentagesSets)
 # --------------------------------------------------------------------------
 tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with all information
-
 trainSet = tfReader.trainSet  # Train Set
 validationSet = tfReader.validationSet  # Validation Set
 testSet = tfReader.testSet  # Test Set

@@ -84,12 +84,12 @@ class Reader(object):
 
         self.rFeatures = reader_features
         if self.rFeatures.isUniqueCSV:
-            self.__uniqueDataFile()
+            self.__uniqueDataFile__()
         else:
-            self.__multipleDataFiles()
+            self.__multipleDataFiles__()
 
     @timed
-    def __uniqueDataFile(self):
+    def __uniqueDataFile__(self):
         """
         This method will be used only when one data file was passed.
         Return train, validation and test sets from an unique file.
@@ -113,37 +113,22 @@ class Reader(object):
         validationSize = None
 
         self.x_train, self.x_test, self.y_train, self.y_test  = train_test_split(inputData,labelData,test_size = testSize )
-        # self.trainSet,self.testSet = train_test_split(self.data, test_size = 0.2)
-
-        # TODO Split x_train_validation and y_train_validation into train and validation if it is necessary
 
         if len(self.rFeatures.trainValidationTestPercentage) is 3:  # If it has validation percentage
 
             validationSize = self.rFeatures.trainValidationTestPercentage[1]  # Get validation percentage
             totalLen = self.data.shape[0]  # All data rows
-            trainValidationLen = self.x_train.shape[0] # All train validation rows
-            valueValidationPercentage = validationSize * totalLen # Value of validation percentage in x_train (train and validation)
-            validationSize =  valueValidationPercentage / trainValidationLen# Update validation percentage
+            # TODO If the data is in columns, we have to take the shape[1] value.
+            trainValidationLen = self.x_train.shape[0]  # All train validation rows
+            valueValidationPercentage = validationSize * totalLen  # Value of validation percentage in x_train (train and validation)
+            validationSize =  valueValidationPercentage / trainValidationLen  # Update validation percentage
 
             pt("validationSize: ",validationSize)
+            self.x_train, self.x_validation, self.y_train, self.y_validation = train_test_split(self.x_train,
+                                                                                                self.y_train,
+                                                                                                test_size=validationSize)
 
-        # TODO If the data is in columns, we have to take the shape[1] value.
-
-
-            self.x_train, self.x_validation, self.y_train, self.y_validation = train_test_split(self.x_train, self.y_train, test_size = validationSize)
-
-        pt("labelData", labelData.shape)
-        pt("inputData", inputData.shape)
-        pt("x_test", self.x_test.shape)
-        pt("y_test", self.y_test.shape)
-        pt("x_train.shape", self.x_train.shape)
-        pt("y_train.shape", self.y_train.shape)
-        pt("x_train_validation", self.x_validation.shape)
-        pt("y_train_validation", self.y_validation.shape)
-        pt("labelData", labelData.shape)
-
-
-    def __multipleDataFiles(self,setDataFiles):
+    def __multipleDataFiles__(self,setDataFiles):
         pass
 
 class ReaderFeatures():
