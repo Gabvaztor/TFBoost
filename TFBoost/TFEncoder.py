@@ -40,3 +40,17 @@ class Dictionary(object):
     path_Breast_Cancer_Wisconsin = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
     # Data.csv Label Column name
     label_column_name_Breast_Cancer_Wisconsin = 'diagnosis'
+
+class Errors(object):
+    """
+    Error Class
+    This class contains all possibles errors.
+    All Raises or exceptions will call this class.
+    """
+
+    # Validation error in percentages_set
+    validation_error = "'ReaderFeatures.percentages_sets.validation' Must be lower or equal than train percentage."
+
+    # Check the correct structure in ReaderFeatures.percentages_sets
+    percentages_sets = "ReaderFeatures.percentages_sets' needs to be a list with 2 or 3 positives float values " \
+                       "and must sum 1."

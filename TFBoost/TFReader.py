@@ -30,6 +30,7 @@ It had been used the version: 0.98.1
 '''
 
 from UsefulTools.UtilsFunctions import *
+from TFBoost.TFEncoder import *
 # --------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -166,7 +167,8 @@ class ReaderFeatures():
     knownDataType = ''
     labelsSet = []
     trainValidationTestPercentage = []
-    #
+    thereIsValidation = False
+
     def __init__(self,set_data_files,labels_set = '',
                  is_unique_csv = False,known_data_type = '',
                  percentages_sets = None):
@@ -178,12 +180,17 @@ class ReaderFeatures():
 
         if percentages_sets :  # If it is not None
             if type(percentages_sets) is type([]) and (len(percentages_sets) is 2 or len(percentages_sets) is 3)\
-                    and all(isinstance(x, float) for x in percentages_sets):  # Must be float list
-                # TODO All values must sum 100% and validation must not be higher than train
-                self.trainValidationTestPercentage = percentages_sets
+                    and all(isinstance(x, float) for x in percentages_sets)\
+                    and sum(percentages_sets) is 1 \
+                    and len([x for x in percentages_sets if x > 0]):  # Must be float list, all values must be float and all values must be positives
+                if len(percentages_sets) is 3:
+                    self.thereIsValidation = True
+                    if percentages_sets[1] <= percentages_sets[0]:
+                        self.trainValidationTestPercentage = percentages_sets
+                    else:
+                        raise RuntimeError (Errors.validation_error)
             else:
-                raise RuntimeError("In ReaderFeatures, the variable 'percentages_sets'"
-                                   " needs to be a list with 2 or 3 float values. ")
+                raise RuntimeError(Errors.percentages_sets)
 
 if __name__ == '__main__':
     print ("Creating Reader")
