@@ -42,6 +42,7 @@ It had been used the version: 0.98.1
 import UsefulTools.UtilsFunctions as uf
 import TFBoost.TFEasyGui as eg
 import TFBoost.TFReader as tfr
+import TFBoost.TFDataMining as tfd
 from TFBoost.TFEncoder import Dictionary
 # --------------------------------------------------------------------------
 
@@ -98,23 +99,38 @@ trainSetCSV = ''
 validationSetCSV = ''
 testSetCSV = ''
 
+
+# --------------------------------------------------------------------------
+"""
+Creating Reader Features
+"""
 csvList = []
 csvList.append(Dictionary.path_Breast_Cancer_Wisconsin)  # Example
 percentagesSets = [0.5,0.3,0.2]  # Example
-# --------------------------------------------------------------------------
-'''
-Reader Features
-'''
-labelsSet = Dictionary.label_column_name_Breast_Cancer_Wisconsin
+labelsSet = [Dictionary.label_column_name_Breast_Cancer_Wisconsin]
+
 tfReaderFeatures = tfr.ReaderFeatures(set_data_files = csvList,labels_set = labelsSet,
                                       is_unique_csv = isAnUniqueCSV,known_data_type = knownDataType,
                                       percentages_sets = percentagesSets)
 # --------------------------------------------------------------------------
+"""
+Creating Reader from ReaderFeatures
+"""
 tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with all information
+# --------------------------------------------------------------------------
+"""
+Manipulate Reader with DataMining and update it.
+"""
+# TODO Define this
+tfReader = tfd.DataMining(tfReader,None)  # None do nothing
+# --------------------------------------------------------------------------
+"""
+Getting train, validation (if necessary) and test set.
+"""
+
 trainSet = tfReader.trainSet  # Train Set
 validationSet = tfReader.validationSet  # Validation Set
 testSet = tfReader.testSet  # Test Set
-
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

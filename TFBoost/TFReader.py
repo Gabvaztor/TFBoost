@@ -59,6 +59,9 @@ from sklearn.model_selection import train_test_split
 # --------------------------------------------------------------------------
 
 class Reader(object):
+    """
+
+    """
     types = set()
     data = []
     trainSetCSV = ''
@@ -79,7 +82,10 @@ class Reader(object):
     rFeatures = None  # ReaderFeatures Object
 
     def __init__(self,reader_features):
+        """
 
+        :param reader_features:
+        """
         # TODO: Check if knownDataType is empty, number or char.
 
         self.rFeatures = reader_features
@@ -96,7 +102,7 @@ class Reader(object):
         :return: trainSet, validationSet, testSet
         """
 
-        # TODO When the csv has only a type is much better use numpy
+        # TODO When the csv has only a type is much better use numpy. Use known_data_type
         # self.data = np.fromfile(dataFile,dtype = np.float64)
         # Time to execute Breast_Cancer_Wisconsin Data.csv with np.fromfile:  0.0s
 
@@ -114,7 +120,7 @@ class Reader(object):
 
         self.x_train, self.x_test, self.y_train, self.y_test  = train_test_split(inputData,labelData,test_size = testSize )
 
-        if len(self.rFeatures.trainValidationTestPercentage) is 3:  # If it has validation percentage
+        if self.rFeatures.thereIsValidation:  # If it has validation percentage
 
             validationSize = self.rFeatures.trainValidationTestPercentage[1]  # Get validation percentage
             totalLen = self.data.shape[0]  # All data rows
@@ -123,12 +129,13 @@ class Reader(object):
             valueValidationPercentage = validationSize * totalLen  # Value of validation percentage in x_train (train and validation)
             validationSize =  valueValidationPercentage / trainValidationLen  # Update validation percentage
 
-            pt("validationSize: ",validationSize)
+            pt("ValidationSize: ",validationSize)
             self.x_train, self.x_validation, self.y_train, self.y_validation = train_test_split(self.x_train,
                                                                                                 self.y_train,
                                                                                                 test_size=validationSize)
+            # TODO If there is not train and test set with optional validation then Reader will do nothing
 
-    def __multipleDataFiles__(self,setDataFiles):
+    def __multipleDataFiles__(self):
         pass
 
 class ReaderFeatures():
