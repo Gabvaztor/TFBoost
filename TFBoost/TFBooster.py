@@ -30,7 +30,7 @@ Notes:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 """
-# --------------------------------------------------------------------------
+
 '''LOCAL IMPORTS
 * UtilsFunctions is a library that contains a lot of functions which will help us
 to code expressively, clearly and efficiently.
@@ -44,10 +44,8 @@ import TFBoost.TFEasyGui as eg
 import TFBoost.TFReader as tfr
 import TFBoost.TFDataMining as tfd
 from TFBoost.TFEncoder import Dictionary
-# --------------------------------------------------------------------------
 
 
-# --------------------------------------------------------------------------
 ''' TensorFlow: https://www.tensorflow.org/
 To upgrade TensorFlow to last version:
 *CPU: pip3 install --upgrade tensorflow
@@ -55,10 +53,8 @@ To upgrade TensorFlow to last version:
 '''
 import tensorflow as tf
 print("TensorFlow: " + tf.__version__)
-# --------------------------------------------------------------------------
 
 
-# --------------------------------------------------------------------------
 ''' Numpy is an extension to the Python programming language, adding support for large,
 multi-dimensional arrays and matrices, along with a large library of high-level
 mathematical functions to operate on these arrays.
@@ -67,21 +63,17 @@ Install 'Numpy+MKL' from here: http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
 http://www.numpy.org/
 https://en.wikipedia.org/wiki/NumPy '''
 import numpy as np
-# --------------------------------------------------------------------------
 
-# --------------------------------------------------------------------------
 '''
 # You need to install the 64bit version of Scipy, at least on Windows.
 # It is mandatory to install 'Numpy+MKL' before scipy.
 # http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
 # We can find scipi in the url: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy'''
 import scipy.io as sio
-# --------------------------------------------------------------------------
 
-# --------------------------------------------------------------------------
 ''' Matlab URL: http://matplotlib.org/users/installing.html'''
 import matplotlib.pyplot as plt
-# --------------------------------------------------------------------------
+
 
 
 """
@@ -99,38 +91,6 @@ trainSetCSV = ''
 validationSetCSV = ''
 testSetCSV = ''
 
-
-# --------------------------------------------------------------------------
-"""
-Creating Reader Features
-"""
-csvList = []
-csvList.append(Dictionary.path_Breast_Cancer_Wisconsin)  # Example
-percentagesSets = [0.5,0.3,0.2]  # Example
-labelsSet = [Dictionary.label_column_name_Breast_Cancer_Wisconsin]
-
-tfReaderFeatures = tfr.ReaderFeatures(set_data_files = csvList,labels_set = labelsSet,
-                                      is_unique_csv = isAnUniqueCSV,known_data_type = knownDataType,
-                                      percentages_sets = percentagesSets)
-# --------------------------------------------------------------------------
-"""
-Creating Reader from ReaderFeatures
-"""
-tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with all information
-# --------------------------------------------------------------------------
-"""
-Manipulate Reader with DataMining and update it.
-"""
-# TODO Define this
-tfReader = tfd.DataMining(tfReader,None)  # None do nothing
-# --------------------------------------------------------------------------
-"""
-Getting train, validation (if necessary) and test set.
-"""
-
-trainSet = tfReader.trainSet  # Train Set
-validationSet = tfReader.validationSet  # Validation Set
-testSet = tfReader.testSet  # Test Set
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -151,17 +111,63 @@ testSet = tfReader.testSet  # Test Set
 # --------------------------------------------------------------------------
 """
 
+"""
+Creating Reader Features
+"""
+csvList = []
+csvList.append(Dictionary.path_Breast_Cancer_Wisconsin)  # Example
+percentagesSets = [0.5,0.3,0.2]  # Example
+labelsSet = [Dictionary.label_column_name_Breast_Cancer_Wisconsin]
+
+tfReaderFeatures = tfr.ReaderFeatures(set_data_files = csvList,labels_set = labelsSet,
+                                      is_unique_csv = isAnUniqueCSV,known_data_type = knownDataType,
+                                      percentages_sets = percentagesSets)
+
+
+"""
+Creating Reader from ReaderFeatures
+"""
+tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with all information
+
+"""
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# ---- DATA MINING ----
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+"""
+
+"""
+Manipulate Reader with DataMining and update it.
+"""
+chooses = None  # This variable contains the data mining options. None do nothing
+# TODO Define this
+tfReader = tfd.DataMining(tfReader,chooses)
 
 
 
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# ---- Inicio de Sesión de TensorFlow ----
+# ---- TENSORFLOW SECTION ----
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 """
+
+"""
+Getting train, validation (if necessary) and test set.
+"""
+
+trainSet = tfReader.trainSet  # Train Set
+validationSet = tfReader.validationSet  # Validation Set
+testSet = tfReader.testSet  # Test Set
+
 
 init = tf.global_variables_initializer()
 sess = tf.InteractiveSession()
 sess.run(init)
+
+# ---- Placeholders del sistema --------
+# TODO Define this
+x = tf.placeholder(tf.float32, [None, 200])
+y_ = tf.placeholder(tf.float32, [None, 2])
