@@ -123,7 +123,6 @@ tfReaderFeatures = tfr.ReaderFeatures(set_data_files = csvList,labels_set = labe
                                       is_unique_csv = isAnUniqueCSV,known_data_type = knownDataType,
                                       percentages_sets = percentagesSets)
 
-
 """
 Creating Reader from ReaderFeatures
 """
@@ -144,8 +143,6 @@ chooses = None  # This variable contains the data mining options. None do nothin
 # TODO Define this
 tfReader = tfd.DataMining(tfReader,chooses)
 
-
-
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -161,7 +158,6 @@ Getting train, validation (if necessary) and test set.
 trainSet = tfReader.trainSet  # Train Set
 validationSet = tfReader.validationSet  # Validation Set
 testSet = tfReader.testSet  # Test Set
-
 
 init = tf.global_variables_initializer()
 sess = tf.InteractiveSession()
