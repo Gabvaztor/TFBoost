@@ -162,8 +162,3 @@ testSet = tfReader.testSet  # Test Set
 init = tf.global_variables_initializer()
 sess = tf.InteractiveSession()
 sess.run(init)
-
-# ---- Placeholders del sistema --------
-# TODO Define this
-x = tf.placeholder(tf.float32, [None, 200])
-y_ = tf.placeholder(tf.float32, [None, 2])

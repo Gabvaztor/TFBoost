@@ -60,8 +60,9 @@ from sklearn.model_selection import train_test_split
 
 class Reader(object):
     """
-
+    Docs
     """
+    # TODO
     types = set()
     data = []
     trainSetCSV = ''
@@ -71,6 +72,7 @@ class Reader(object):
     trainSet = []
     validationSet = []
     testSet = []
+
 
     x_train = []  # Train inputs without labels
     y_train = []  # Train labels without inputs
@@ -90,16 +92,16 @@ class Reader(object):
 
         self.rFeatures = reader_features
         if self.rFeatures.isUniqueCSV:
-            self.__uniqueDataFile__()
+            self.uniqueDataFile()
         else:
-            self.__multipleDataFiles__()
+            self.multipleDataFiles()
 
     @timed
-    def __uniqueDataFile__(self):
+    def uniqueDataFile(self):
         """
         This method will be used only when one data file was passed.
         Return train, validation and test sets from an unique file.
-        :return: trainSet, validationSet, testSet
+
         """
 
         # TODO When the csv has only a type is much better use numpy. Use known_data_type
@@ -111,14 +113,15 @@ class Reader(object):
         pt("DataTest Shape",self.data.shape)
 
         # TODO Create labelData Variable from a list of strings
-        labelData = self.data.pop(self.rFeatures.labelsSet)  # Data's labels
+        # TODO For each pop we have a class
+        label_data = self.data.pop(self.rFeatures.labelsSet)  # Data's labels
         inputData = self.data  # Input data
 
         trainSize = self.rFeatures.trainValidationTestPercentage[0]
         testSize = self.rFeatures.trainValidationTestPercentage[-1]
         validationSize = None
 
-        self.x_train, self.x_test, self.y_train, self.y_test  = train_test_split(inputData,labelData,test_size = testSize )
+        self.x_train, self.x_test, self.y_train, self.y_test  = train_test_split(inputData,label_data,test_size = testSize )
 
         if self.rFeatures.thereIsValidation:  # If it has validation percentage
 
@@ -135,7 +138,7 @@ class Reader(object):
                                                                                                 test_size=validationSize)
             # TODO If there is not train and test set with optional validation then Reader will do nothing
 
-    def __multipleDataFiles__(self):
+    def multipleDataFiles(self):
         pass
 
 class ReaderFeatures():
@@ -160,12 +163,14 @@ class ReaderFeatures():
     labelsSet = []
     trainValidationTestPercentage = []
     thereIsValidation = False
+    number_of_classes = None # Number of labels of the input
 
-    def __init__(self,set_data_files,labels_set = '',
+    def __init__(self,set_data_files,number_of_classes,labels_set = '',
                  is_unique_csv = False,known_data_type = '',
-                 percentages_sets = None):
+                 percentages_sets = None,):
 
         self.setDataFiles = set_data_files
+        self.number_of_classes = number_of_classes
         self.isUniqueCSV =  is_unique_csv
         self.knownDataType = known_data_type
         self.labelsSet =  labels_set

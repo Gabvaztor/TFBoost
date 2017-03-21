@@ -63,13 +63,20 @@ class Models():
     This class
     """
 
-    def lineal_model(self, input, validation,test):
+    def lineal_model(self, input, test, input_labels, test_labels, number_of_classes,
+                     dtype = None ,validation = None, validation_labels = None ):
         """
 
         :param input:
         :param validation:
         :param test:
+        :param dtype:
         :return:
         """
         # TODO
-        pass
+
+        x = tf.placeholder(shape=[None,number_of_classes])
+
+        W = tf.Variable(tf.zeros([784, 10]))
+        b = tf.Variable(tf.zeros([10]))
+
