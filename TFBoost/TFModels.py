@@ -63,20 +63,29 @@ class Models():
     This class
     """
 
-    def lineal_model(self, input, test, input_labels, test_labels, number_of_classes,
-                     dtype = None ,validation = None, validation_labels = None ):
+    def lineal_model_basic_with_gradient_descent(self, input, test, input_labels, test_labels,number_of_inputs,number_of_classes,
+                                      learning_rate = 0.001, type = None ,validation = None,
+                                      validation_labels = None, deviation = None):
         """
-
-        :param input:
-        :param validation:
-        :param test:
-        :param dtype:
+        This method doesn't do softmax.
+        :param input: Input data
+        :param validation: Validation data
+        :param test: Test data
+        :param type: Type of data (float32, float16, ...)
+        :param number_of_inputs: Represents the number of records in input data
+        :param number_of_classes: Represents the number of labels in data
+        :param deviation: Number of the deviation for the weights and bias
         :return:
         """
-        # TODO
 
         x = tf.placeholder(shape=[None,number_of_classes])
+        y_ = tf.placeholder([None, number_of_classes])
 
-        W = tf.Variable(tf.zeros([784, 10]))
-        b = tf.Variable(tf.zeros([10]))
+        W = tf.Variable(tf.zeros([number_of_inputs, number_of_classes]))
+        b = tf.Variable(tf.zeros([number_of_classes]))
+        y = tf.matmul(x, W) + b
 
+        cross_entropy_lineal = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y,y_))
+        train_step_Lineal = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy_lineal)
+
+        # TODO Error
