@@ -77,7 +77,7 @@ class Models():
         :param deviation: Number of the deviation for the weights and bias
         :return:
         """
-
+        # TODO Do general
         x = tf.placeholder(shape=[None,number_of_classes])
         y_ = tf.placeholder([None, number_of_classes])
 
@@ -86,6 +86,11 @@ class Models():
         y = tf.matmul(x, W) + b
 
         cross_entropy_lineal = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y,y_))
-        train_step_Lineal = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy_lineal)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+        train = cross_entropy_lineal.minimize(cross_entropy_lineal)
 
         # TODO Error
+        correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+        # TODO Train for epoch and training number
