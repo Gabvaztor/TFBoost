@@ -162,3 +162,5 @@ testSet = tfReader.testSet  # Test Set
 init = tf.global_variables_initializer()
 sess = tf.InteractiveSession()
 sess.run(init)
+
+# TODO Make TFModels heritable and with capability to return section of tensorflow code
