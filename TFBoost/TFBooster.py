@@ -74,7 +74,10 @@ import scipy.io as sio
 ''' Matlab URL: http://matplotlib.org/users/installing.html'''
 import matplotlib.pyplot as plt
 
-
+''' TFLearn library. License MIT.
+Git Clone : https://github.com/tflearn/tflearn.git
+To install: pip install tflearn'''
+import tflearn
 
 """
 # --------------------------------------------------------------------------

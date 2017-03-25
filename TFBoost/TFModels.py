@@ -47,7 +47,10 @@ import scipy.io as sio
 ''' Matlab URL: http://matplotlib.org/users/installing.html'''
 import matplotlib.pyplot as plt
 
-
+''' TFLearn library. License MIT.
+Git Clone : https://github.com/tflearn/tflearn.git
+To install: pip install tflearn'''
+import tflearn
 
 """
 # --------------------------------------------------------------------------
@@ -62,6 +65,8 @@ class Models():
     """
     This class
     """
+
+    # TODO  Use tflearn to use basics algorithms
 
     def lineal_model_basic_with_gradient_descent(self, input, test, input_labels, test_labels,number_of_inputs,number_of_classes,
                                       learning_rate = 0.001, type = None ,validation = None,
