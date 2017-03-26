@@ -61,7 +61,7 @@ import tflearn
 """
 
 class Models():
-    # TODO
+    # TODO Docs
     """
     This class
     """
@@ -69,7 +69,7 @@ class Models():
     # TODO  Use tflearn to use basics algorithms
 
     def lineal_model_basic_with_gradient_descent(self, input, test, input_labels, test_labels,number_of_inputs,number_of_classes,
-                                      learning_rate = 0.001, type = None ,validation = None,
+                                      learning_rate = 0.001,trains = 100, type = None ,validation = None,
                                       validation_labels = None, deviation = None):
         """
         This method doesn't do softmax.
@@ -77,6 +77,7 @@ class Models():
         :param validation: Validation data
         :param test: Test data
         :param type: Type of data (float32, float16, ...)
+        :param trains: Number of trains for epoch
         :param number_of_inputs: Represents the number of records in input data
         :param number_of_classes: Represents the number of labels in data
         :param deviation: Number of the deviation for the weights and bias
@@ -99,3 +100,6 @@ class Models():
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         # TODO Train for epoch and training number
+
+        for i in range(trains):
+            pass
