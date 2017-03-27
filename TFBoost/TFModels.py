@@ -65,7 +65,7 @@ class Models():
     """
     This class
     """
-
+    # TODO Implement deep learning algorithms
     # TODO  Use tflearn to use basics algorithms
 
     def lineal_model_basic_with_gradient_descent(self, input, test, input_labels, test_labels,number_of_inputs,number_of_classes,
