@@ -103,3 +103,10 @@ class Models():
 
         for i in range(trains):
             pass
+
+    def convolution_model(self):
+        """
+
+        :return:
+        """
+        # TODO Create an simple but generic convolutional model to analyce sets.
