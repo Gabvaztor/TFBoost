@@ -104,9 +104,26 @@ class Models():
         for i in range(trains):
             pass
 
-    def convolution_model(self):
+    def convolution_model(self, input, test, input_labels, test_labels,number_of_inputs,number_of_classes,
+                                      learning_rate = 0.001,trains = 100, type = None ,validation = None,
+                                      validation_labels = None, deviation = None):
         """
 
         :return:
         """
+
+        x = tf.placeholder(shape=[None,number_of_classes])
+        y_ = tf.placeholder([None, number_of_classes])
+
+
+
         # TODO Create an simple but generic convolutional model to analyce sets.
+
+    def weight_variable(self,shape):
+        initial = tf.truncated_normal(shape, stddev=0.1)
+        return tf.Variable(initial)
+
+    def bias_variable(shape):
+      initial = tf.constant(0.1, shape=shape)
+      return tf.Variable(initial)
+
