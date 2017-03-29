@@ -81,7 +81,6 @@ class Models():
         :param number_of_inputs: Represents the number of records in input data
         :param number_of_classes: Represents the number of labels in data
         :param deviation: Number of the deviation for the weights and bias
-        :return:
         """
         # TODO Do general
         x = tf.placeholder(shape=[None,number_of_classes])
@@ -100,7 +99,6 @@ class Models():
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         # TODO Train for epoch and training number
-
         for i in range(trains):
             pass
 
@@ -108,34 +106,36 @@ class Models():
                                       learning_rate = 0.001,trains = 100, type = None ,validation = None,
                                       validation_labels = None, deviation = None):
         """
-
-        :return:
+        Generic convolutional model
         """
         # TODO Create an simple but generic convolutional model to analyce sets.
         # TODO Define firstLabelNeurons
         firstLabelNeurons = 8 # First label neurons
+        # TODO Try python EVAL method to do multiple variable neurons
+        #  secondLabelNeurons
 
         x = tf.placeholder(shape=[None,number_of_classes])
         y_ = tf.placeholder([None, number_of_classes])
 
-        # TODO Define shape
-        W_layer_1 = self.weight_variable([5, 5, 1, firstLabelNeurons])
-        b_layer_1 = self.bias_variable([32])
+        # TODO Define shape and stddev in methods
+        W_layer_1 = weight_variable([5, 5, 1, firstLabelNeurons])
+        b_layer_1 = bias_variable([firstLabelNeurons])
+
+        # TODO
 
 
+def weight_variable(shape):
+    initial = tf.truncated_normal(shape, stddev=0.1)
+    return tf.Variable(initial)
 
-    def weight_variable(self,shape):
-        initial = tf.truncated_normal(shape, stddev=0.1)
-        return tf.Variable(initial)
+def bias_variable(shape):
+    initial = tf.constant(0.1, shape=shape)
+    return tf.Variable(initial)
 
-    def bias_variable(self,shape):
-      initial = tf.constant(0.1, shape=shape)
-      return tf.Variable(initial)
+def conv2d(x, W):
+    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
-    def conv2d(x, W):
-        return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
-
-    def max_pool_2x2(x):
-        return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
-                              strides=[1, 2, 2, 1], padding='SAME')
+def max_pool_2x2(x):
+    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
+                          strides=[1, 2, 2, 1], padding='SAME')
 
