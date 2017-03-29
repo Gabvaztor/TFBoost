@@ -111,19 +111,24 @@ class Models():
 
         :return:
         """
+        # TODO Create an simple but generic convolutional model to analyce sets.
+        # TODO Define firstLabelNeurons
+        firstLabelNeurons = 8 # First label neurons
 
         x = tf.placeholder(shape=[None,number_of_classes])
         y_ = tf.placeholder([None, number_of_classes])
 
+        # TODO Define shape
+        W_layer_1 = self.weight_variable([5, 5, 1, firstLabelNeurons])
+        b_layer_1 = self.bias_variable([32])
 
 
-        # TODO Create an simple but generic convolutional model to analyce sets.
 
     def weight_variable(self,shape):
         initial = tf.truncated_normal(shape, stddev=0.1)
         return tf.Variable(initial)
 
-    def bias_variable(shape):
+    def bias_variable(self,shape):
       initial = tf.constant(0.1, shape=shape)
       return tf.Variable(initial)
 
