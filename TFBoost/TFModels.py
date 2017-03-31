@@ -121,7 +121,7 @@ class Models():
         W_layer_1 = weight_variable([5, 5, 1, firstLabelNeurons])
         b_layer_1 = bias_variable([firstLabelNeurons])
 
-        # TODO
+        # TODO Define multiple layers
 
 
 def weight_variable(shape):
