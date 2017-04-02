@@ -50,6 +50,9 @@ import time
 # --------------------------------------------------------------------------
 import numpy as np
 # --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+import tensorflow as tf
+# --------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
 '''
@@ -134,9 +137,9 @@ class Reader(object):
 
             pt("ValidationSize: ",validationSize)
             # TODO Convert sets into Tensors
-            self.x_train, self.x_validation, self.y_train, self.y_validation = train_test_split(self.x_train,
+            self.x_train, self.x_validation, self.y_train, self.y_validation = tf.convert_to_tensor(train_test_split(self.x_train,
                                                                                                 self.y_train,
-                                                                                                test_size=validationSize)  # Divide train and validation sets into two separate sets.
+                                                                                                test_size=validationSize))  # Divide train and validation sets into two separate sets.
             # TODO If there is not train and test set with optional validation then Reader will do nothing
 
     def multipleDataFiles(self):
@@ -168,7 +171,7 @@ class ReaderFeatures():
 
     def __init__(self,set_data_files,number_of_classes,labels_set = '',
                  is_unique_csv = False,known_data_type = '',
-                 percentages_sets = None,):
+                 percentages_sets = None):
 
         self.setDataFiles = set_data_files
         self.number_of_classes = number_of_classes
@@ -176,6 +179,7 @@ class ReaderFeatures():
         self.knownDataType = known_data_type
         self.labelsSet =  labels_set
 
+        # TODO Fix this
         if percentages_sets :  # If it is not None
             if type(percentages_sets) is type([]) and (len(percentages_sets) is 2 or len(percentages_sets) is 3)\
                     and all(isinstance(x, float) for x in percentages_sets)\

@@ -67,7 +67,7 @@ class Constant(object):
     w_second_patch = 5
     # Weight number of inputs
     w_number_inputs = 1
-    # Validation error in percentages_set
+    # Weight first label neurons
     first_label_neurons = 32
 
 

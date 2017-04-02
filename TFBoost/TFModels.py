@@ -112,12 +112,11 @@ class Models():
         """
         # TODO Create an simple but generic convolutional model to analyse sets.
         # TODO Define firstLabelNeurons
-        first_label_neurons = const.first_label_neurons # First label neurons
-        first_patch = const.w_first_patch
-        second_patch = const.w_second_patch
-        number_inputs = const.w_number_inputs
+        first_label_neurons = const.first_label_neurons  # Weight first label neurons
+        first_patch = const.w_first_patch  # Weight first patch
+        second_patch = const.w_second_patch  # Weight second patch
+        number_inputs = const.w_number_inputs  # Weight number of inputs
         # TODO Try python EVAL method to do multiple variable neurons
-        #  secondLabelNeurons
 
         # Placeholders
         x = tf.placeholder(shape=[None,number_of_classes])
