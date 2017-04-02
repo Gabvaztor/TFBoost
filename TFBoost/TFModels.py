@@ -18,7 +18,7 @@ This file contains samples and overrides deep learning algorithms.
 
 import UsefulTools.UtilsFunctions as uf
 from TFBoost.TFEncoder import Dictionary as dict
-from TFBoost.TFEncoder import Constant as cont
+from TFBoost.TFEncoder import Constant as const
 ''' TensorFlow: https://www.tensorflow.org/
 To upgrade TensorFlow to last version:
 *CPU: pip3 install --upgrade tensorflow
@@ -110,9 +110,12 @@ class Models():
         """
         Generic convolutional model
         """
-        # TODO Create an simple but generic convolutional model to analyce sets.
+        # TODO Create an simple but generic convolutional model to analyse sets.
         # TODO Define firstLabelNeurons
-        first_label_neurons = cont.first_label_neurons # First label neurons
+        first_label_neurons = const.first_label_neurons # First label neurons
+        first_patch = const.w_first_patch
+        second_patch = const.w_second_patch
+        number_inputs = const.w_number_inputs
         # TODO Try python EVAL method to do multiple variable neurons
         #  secondLabelNeurons
 
@@ -122,7 +125,7 @@ class Models():
 
         # TODO Define shape and stddev in methods
         # Weights and bias
-        W_layer_1 = weight_variable([5, 5, 1, first_label_neurons])
+        W_layer_1 = weight_variable([first_patch, second_patch, number_inputs, first_label_neurons])
         b_layer_1 = bias_variable([first_label_neurons])
 
         # TODO Define multiple layers

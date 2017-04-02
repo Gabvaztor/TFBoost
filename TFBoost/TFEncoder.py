@@ -61,6 +61,13 @@ class Constant(object):
     This class contains all variable constants.
     All variables with a variable value will call this class.
     """
-
+    # Weight first patch
+    w_first_patch = 5
+    # Weight second patch
+    w_second_patch = 5
+    # Weight number of inputs
+    w_number_inputs = 1
     # Validation error in percentages_set
-    first_label_neurons = "'ReaderFeatures.percentages_sets.validation' Must be lower or equal than train percentage."
+    first_label_neurons = 32
+
+
