@@ -76,7 +76,6 @@ class Reader(object):
     validationSet = []
     testSet = []
 
-
     x_train = []  # Train inputs without labels
     y_train = []  # Train labels without inputs
     x_validation = []  # Validation inputs without labels
@@ -111,20 +110,23 @@ class Reader(object):
         # self.data = np.fromfile(dataFile,dtype = np.float64)
         # Time to execute Breast_Cancer_Wisconsin Data.csv with np.fromfile:  0.0s
 
-        self.data = pd.read_csv(self.rFeatures.setDataFiles[0],delimiter = ',')
+        # TODO Parametrizable delimiter
+        self.data = pd.read_csv(self.rFeatures.setDataFiles[0], delimiter=',')
         # Time to execute Breast_Cancer_Wisconsin Data.csv with pd.read_csv:  0.007000446319580078s
         pt("DataTest Shape",self.data.shape)
 
         # TODO Create labelData Variable from a list of strings
         # TODO For each pop we have a class
-        label_data = self.data.pop(self.rFeatures.labelsSet)  # Data's labels
-        inputData = self.data  # Input data
+        # TODO Fix this with advanced for <--
+        label_data = [self.data.pop(self.rFeatures.labelsSet[index]) for index in self.rFeatures.labelsSet]  # Data's labels
+        pt('label_data', label_data)
+        input_data = self.data  # Input data
 
-        trainSize = self.rFeatures.trainValidationTestPercentage[0]  # 0 contains trainSize
-        testSize = self.rFeatures.trainValidationTestPercentage[-1]  # last contains testSize
+        trainSize = self.rFeatures.trainValidationTestPercentage[0]  # first value contains trainSize
+        test_size = self.rFeatures.trainValidationTestPercentage[-1]  # last value contains testSize
         validationSize = None
 
-        self.x_train, self.x_test, self.y_train, self.y_test  = train_test_split(inputData,label_data,test_size = testSize )  # Divide set into train and test sets (if it has validation set, into train and validation set for the first part and test set for the second part)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(input_data,label_data,test_size = test_size )  # Divide set into train and test sets (if it has validation set, into train and validation set for the first part and test set for the second part)
 
         if self.rFeatures.thereIsValidation:  # If it has validation percentage
 
