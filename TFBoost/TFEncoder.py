@@ -52,7 +52,7 @@ class Errors(object):
     validation_error = "'ReaderFeatures.percentages_sets.validation' Must be lower or equal than train percentage."
 
     # Check the correct structure in ReaderFeatures.percentages_sets
-    percentages_sets = "ReaderFeatures.percentages_sets' needs to be a list with 2 or 3 positives float values " \
+    percentages_sets = "ReaderFeatures.percentages_sets needs to be a list with 2 or 3 positives float values " \
                        "and must sum 1."
 
 class Constant(object):

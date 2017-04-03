@@ -181,9 +181,10 @@ class ReaderFeatures():
 
         # TODO Fix this
         if percentages_sets :  # If it is not None
-            if type(percentages_sets) is type([]) and (len(percentages_sets) is 2 or len(percentages_sets) is 3)\
+            if type(percentages_sets) is type([]) \
+                    and (len(percentages_sets) is 2 or len(percentages_sets) is 3)\
                     and all(isinstance(x, float) for x in percentages_sets)\
-                    and sum(percentages_sets) is 1 \
+                    and sum(percentages_sets) == 1. \
                     and len([x for x in percentages_sets if x > 0]):  # Must be float list, all values must be float and all values must be positives
                 if len(percentages_sets) is 3:
                     self.thereIsValidation = True
