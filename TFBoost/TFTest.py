@@ -142,12 +142,10 @@ pt('trainSet:',trainSet[1][0])
 
 
 import PIL.Image
-imageDecode = tf.image.decode_png(trainSet[0][0], channels=1, dtype=None, name=None)
-imageEncode = tf.image.encode_png(imageDecode, compression=None, name=None)
 
-img = PIL.Image.open(trainSet[0][0])
+#img = PIL.Image.open(trainSet[0][0])
 
-models.convolution_model(input=trainSet[0],test=testSet[0],
+models.convolution_model(input=trainSet,test=testSet[0],
                          input_labels=trainSet[1],test_labels=testSet[1],
                          number_of_classes=number_of_classes)
 

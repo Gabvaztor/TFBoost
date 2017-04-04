@@ -16,7 +16,7 @@ This file contains samples and overrides deep learning algorithms.
 '''LOCAL IMPORTS
 '''
 
-import UsefulTools.UtilsFunctions as uf
+from UsefulTools.UtilsFunctions import *
 from TFBoost.TFEncoder import Dictionary as dict
 from TFBoost.TFEncoder import Constant as const
 ''' TensorFlow: https://www.tensorflow.org/
@@ -46,12 +46,13 @@ import scipy.io as sio
 
 ''' Matlab URL: http://matplotlib.org/users/installing.html'''
 import matplotlib.pyplot as plt
-
+from pylab import *
 ''' TFLearn library. License MIT.
 Git Clone : https://github.com/tflearn/tflearn.git
 To install: pip install tflearn'''
 import tflearn
-
+'''PILOU for show images'''
+from PIL import Image
 
 
 """
@@ -123,6 +124,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     x1_rows_number = 24
     x1_column_number = 24
     x_columns = x1_rows_number*x1_column_number
+    x_rows_column = [24,24]
     kernel_size = [2, 2]  # Kernel patch size
     # TODO Try python EVAL method to do multiple variable neurons
 
@@ -180,12 +182,29 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
 
     # TRAIN
 
-    imageEncode = tf.image.encode_png(input[0][0], compression = None, name = None)
-    imageDecode = tf.image.decode_png(imageEncode, channels=1, dtype=None, name=None)
-    t = tf.Print(imageEncode, [imageDecode])
-    sess.run(t)
-    imageEncode.eval(feed_dict={x: input[0][0], y_: input[1][0], keep_probably: 1.0})
+    filename_queue = tf.train.string_input_producer([input[0][12]])  # List of files to read with extension '.png'
+    reader = tf.WholeFileReader()  # Reader with queue
+    key, value = reader.read(filename_queue)
+    pt('value', value)
+    pt('key', key)
+    my_img = tf.image.decode_png(value)  # Use png decode
+    resized_image = tf.image.resize_images(my_img, x_rows_column)
+    image_transform = tf.image.rgb_to_grayscale(resized_image)
+    pt('image_transform',resized_image)
+    coord = tf.train.Coordinator()
+    threads = tf.train.start_queue_runners(coord=coord)
+    image = resized_image.eval()
+    pt('resized_image', resized_image.shape)
+    image_array = image[:,:,-1] # Get gray scale dimension without channels
+    pt('image_array', image_array.shape)
+    Image.fromarray(np.asarray(image_array)).show()
+    imshow(np.asarray(image_array))
 
+    # TODO TRAIN
+
+    # When finish coord
+    coord.request_stop()
+    coord.join(threads)
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial)
