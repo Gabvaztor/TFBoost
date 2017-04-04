@@ -39,12 +39,11 @@ Here you can download the library: https://pypi.python.org/pypi/easygui#download
 It had been used the version: 0.98.1
 '''
 
-import UsefulTools.UtilsFunctions as uf
 import TFBoost.TFEasyGui as eg
 import TFBoost.TFReader as tfr
 import TFBoost.TFDataMining as tfd
 from TFBoost.TFEncoder import Dictionary
-
+from UsefulTools.UtilsFunctions import *
 
 ''' TensorFlow: https://www.tensorflow.org/
 To upgrade TensorFlow to last version:
@@ -131,20 +130,7 @@ Creating Reader from ReaderFeatures
 """
 tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with all information
 
-"""
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# ---- DATA MINING ----
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-"""
 
-"""
-Manipulate Reader with DataMining and update it.
-"""
-chooses = None  # This variable contains the data mining options. None do nothing
-# TODO Define this
-tfReader = tfd.DataMining(tfReader,chooses)
 
 """
 # --------------------------------------------------------------------------
@@ -159,9 +145,10 @@ Getting train, validation (if necessary) and test set.
 """
 
 trainSet = tfReader.trainSet  # Train Set
-validationSet = tfReader.validationSet  # Validation Set
 testSet = tfReader.testSet  # Test Set
 
+pt('trainSet:',trainSet[0][0])
+pt('testSet:',trainSet[1][0])
 init = tf.global_variables_initializer()
 sess = tf.InteractiveSession()
 sess.run(init)

@@ -46,6 +46,12 @@ class Dictionary(object):
     path_signals_university_test = 'D:\\UniversityResearching\\DITS-classification\\classification_test\\'
     # Hierarchy option
     labels_type_option_hierarchy = 'hierarchy'
+    # Format png
+    extension_png = '.png'
+    # Train String
+    string_train = 'train'
+    # Test String
+    string_test = 'test'
 
 class Errors(object):
     """
