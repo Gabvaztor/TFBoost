@@ -44,7 +44,7 @@ import TFBoost.TFReader as tfr
 import TFBoost.TFDataMining as tfd
 from TFBoost.TFEncoder import Dictionary
 from UsefulTools.UtilsFunctions import *
-
+from TFBoost.TFModels import *
 ''' TensorFlow: https://www.tensorflow.org/
 To upgrade TensorFlow to last version:
 *CPU: pip3 install --upgrade tensorflow
@@ -130,7 +130,17 @@ Creating Reader from ReaderFeatures
 """
 tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with all information
 
+"""
+Getting train, validation (if necessary) and test set.
+"""
 
+trainSet = tfReader.trainSet  # Train Set
+testSet = tfReader.testSet  # Test Set
+
+pt('testSet',testSet[1][0])
+Models.convolution_model(input=trainSet[0],test=testSet[0],
+                         input_labels=trainSet[1],test_labels=testSet[1],
+                         number_of_classes=number_of_classes)
 
 """
 # --------------------------------------------------------------------------
@@ -140,15 +150,11 @@ tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with 
 # --------------------------------------------------------------------------
 """
 
-"""
-Getting train, validation (if necessary) and test set.
-"""
-
-trainSet = tfReader.trainSet  # Train Set
-testSet = tfReader.testSet  # Test Set
 
 pt('trainSet:',trainSet[0][0])
 pt('testSet:',trainSet[1][0])
+
+
 init = tf.global_variables_initializer()
 sess = tf.InteractiveSession()
 sess.run(init)

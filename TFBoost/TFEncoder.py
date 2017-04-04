@@ -79,7 +79,11 @@ class Constant(object):
     w_second_patch = 5
     # Weight number of inputs
     w_number_inputs = 1
-    # Weight first label neurons
+    # First label neurons
     first_label_neurons = 32
+    # Second label neurons
+    second_label_neurons = 32
+    # Third label neurons
+    third_label_neurons = 32
 
 
