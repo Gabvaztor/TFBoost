@@ -46,7 +46,11 @@ Time
 '''
 import time
 # --------------------------------------------------------------------------
-
+'''
+Traceback and Os to search
+'''
+import traceback
+import os
 # --------------------------------------------------------------------------
 import numpy as np
 # --------------------------------------------------------------------------
@@ -145,6 +149,14 @@ class Reader(object):
             # TODO If there is not train and test set with optional validation then Reader will do nothing
 
     def multipleDataFiles(self):
+        """
+        Start: 04/04/17 19:30
+        :return: train and test sets
+        """
+        #TODO check nulls
+        features = self.rFeatures
+        tfSearch = Searcher(pathToRead = features.set_data_files)
+
         pass
 
 class ReaderFeatures():
@@ -197,5 +209,86 @@ class ReaderFeatures():
             else:
                 raise RuntimeError(Errors.percentages_sets)
 
-if __name__ == '__main__':
-    print ("Creating Reader")
+
+class Searcher(object):
+    listOfWords = []
+    pathToRead = ''
+    fileName = 'SearcherFile_FileName'
+    fileNameFullpaths = 'SearcherFile_Fullpaths'
+    pathToWrite = ''
+    setOfFilesNamesToWrite = set({})
+    setOfFullPathToWrite = set({})
+    dataObject = None
+
+
+    def __init__(self, listOfWordsToSearch=None, pathToRead=None, pathToWrite=None, typeOfData=None):
+        self.listOfWords = listOfWordsToSearch
+        self.pathToRead = pathToRead
+        self.pathToWrite = pathToWrite
+
+    def __findFilesAndWriteNames(self, tables, typeOfData):
+        global setOfFilesNamesToWrite
+        global setOfFullPathToWrite
+        for root, dirs, files in os.walk(self.pathToRead):
+            for file_name in files:
+                if (file_name.endswith(".png")):
+                    fullpath = os.path.join(root, file_name)
+                    for line in open(fullpath, "r"):
+                        # if table in line:
+                        if any(table in line for table in tables):
+                            self.setOfFullPathToWrite.add(fullpath)
+                            self.setOfFilesNamesToWrite.add(file_name)
+        self.__writeNameFiles(table, typeOfData)
+
+    # Se muestra el path y el archivo
+    # print(fullpath)
+
+    def __writeNameFiles(self, table, typeOfData):
+        fullPathFile = self.pathToWrite + '\\' + self.fileName + '_' + typeOfData + '.txt'
+        fullPathFileWithFullpaths = self.pathToWrite + '\\' + self.fileNameFullpaths + '_' + typeOfData + '.txt'
+        if (len(self.setOfFilesNamesToWrite) > 0):
+            print(str(self.setOfFilesNamesToWrite))
+            print('Escribiendo desde el conjunto')
+            try:
+                if not os.path.isdir(self.pathToWrite):
+                    os.mkdir(self.pathToWrite)
+                with open(fullPathFile, "w") as f:
+                    print("File Path: " + str(fullPathFile))
+                    for element in self.setOfFilesNamesToWrite:
+                        f.write("'" + element + "',\n")
+                with open(fullPathFileWithFullpaths, "w") as f:
+                    print("File Path: " + str(fullPathFileWithFullpaths))
+                    for element in self.setOfFullPathToWrite:
+                        print(element)
+                        f.write("'" + element + "',\n")
+            except:
+                traceback.print_stack()
+        else:
+            raise ValueError('No se ha encontrado ningún archivo que coincida con las tablas')
+
+    def findFilesAndWriteNamesByTypeOfData(self, typeOfData):
+        if ((typeOfData is not None) and (typeOfData is not '')):
+            self.dataObject = data.Data(typeOfData)
+            tables = self.dataObject.getTables()
+            self.__findFilesAndWriteNames(tables, typeOfData)
+
+    def replaceTextInFiles(self, replacerFile):
+        print(replacerFile)
+        replacingFileObject = ReplacingFileObject(replacerFile)
+
+        # raise ('STOP')
+        i = 0
+        filesFullPath = self.dataObject.getFilesToBrowse()
+        # print (str(len(filesFullPath)))
+
+        totalLen = len(filesFullPath)
+        while i < totalLen:
+
+            file = filesFullPath[i]
+            if file not in self.dataObject.exceptionFiles:
+                os.system('cls')
+                input("Siguiente Fichero:-->" + str(file[65:]))
+                selectSqlObjectsList = SelectSqlObject(self, replacingFileObject, file).getAllSelectSqlObjectInFile()
+                input()
+            i += 1
+            print("{0:.0f}%".format(i / totalLen * 100))

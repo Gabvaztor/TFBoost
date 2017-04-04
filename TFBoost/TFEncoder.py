@@ -40,6 +40,12 @@ class Dictionary(object):
     path_Breast_Cancer_Wisconsin = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
     # Data.csv Label Column name
     label_column_name_Breast_Cancer_Wisconsin = 'diagnosis'
+    # Signal University path train
+    path_signals_university_train = 'D:\\UniversityResearching\\DITS-classification\\classification_train\\'
+    # Signal University path test
+    path_signals_university_test = 'D:\\UniversityResearching\\DITS-classification\\classification_test\\'
+    # Hierarchy option
+    labels_type_option_hierarchy = 'hierarchy'
 
 class Errors(object):
     """
