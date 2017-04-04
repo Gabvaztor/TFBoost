@@ -103,12 +103,13 @@ def lineal_model_basic_with_gradient_descent(self, input, test, input_labels, te
 
 # TODO Do class object with all attributes of neuronal network (x,y,y_,accuracy,...) to, after that, create a generic
 # TODO train class or method.
-def convolution_model(self, input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
+def convolution_model(input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
                       learning_rate=1e-4, trains=100, type=None, validation=None,
                       validation_labels=None, deviation=None):
     """
     Generic convolutional model
     """
+
     # TODO Create an simple but generic convolutional model to analyse sets.
     # TODO Define firstLabelNeurons
     first_label_neurons = const.first_label_neurons  # Weight first label neurons
@@ -122,13 +123,13 @@ def convolution_model(self, input, test, input_labels, test_labels, number_of_cl
     x1_rows_number = 24
     x1_column_number = 24
     x_columns = x1_rows_number*x1_column_number
-    keep_probably = 0.5  # Value of dropout
     kernel_size = [2, 2]  # Kernel patch size
     # TODO Try python EVAL method to do multiple variable neurons
 
     # Placeholders
-    x = tf.placeholder(shape=[None, x_columns]) #  All images will be 25*25 = 625
-    y_ = tf.placeholder([None, number_of_classes])  # Number of labels
+    x = tf.placeholder(tf.float32,shape=[None, x_columns]) #  All images will be 25*25 = 625
+    y_ = tf.placeholder(tf.float32,shape=[None, number_of_classes])  # Number of labels
+    keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
 
     x_reshape = tf.reshape(x, [-1, x1_rows_number, x1_column_number, 1])  # Reshape x placeholder into a specific tensor
     # TODO Define shape and stddev in methods
@@ -175,10 +176,15 @@ def convolution_model(self, input, test, input_labels, test_labels, number_of_cl
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
 
     sess = tf.InteractiveSession()
-    sess.run(tf.global_variables_initializer())
+    #sess.run(tf.global_variables_initializer())
 
     # TRAIN
 
+    imageEncode = tf.image.encode_png(input[0][0], compression = None, name = None)
+    imageDecode = tf.image.decode_png(imageEncode, channels=1, dtype=None, name=None)
+    t = tf.Print(imageEncode, [imageDecode])
+    sess.run(t)
+    imageEncode.eval(feed_dict={x: input[0][0], y_: input[1][0], keep_probably: 1.0})
 
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)

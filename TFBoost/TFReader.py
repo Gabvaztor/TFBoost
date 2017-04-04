@@ -252,12 +252,14 @@ class Searcher(Reader):
         If path contains 'train', y_label is two dir up. Else if path contains 'test', y_label is one dir up.
         :param path: the full path
         """
+
         if Dictionary.string_train in path: # If 'train' in path
             y_label_dir = os.path.dirname(os.path.dirname(path))  # Directory of directory of file
             y_label = os.path.basename(y_label_dir)
             self.y_train.append(y_label)
+            self.x_train.append(path)
         elif Dictionary.string_test in path: # If 'test' in path
             y_label_dir = os.path.dirname(path)  # Directory of file
             y_label = os.path.basename(y_label_dir)
             self.y_test.append(y_label)
-        self.x_test.append(path)
+            self.x_test.append(path)

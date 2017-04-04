@@ -44,7 +44,7 @@ import TFBoost.TFReader as tfr
 import TFBoost.TFDataMining as tfd
 from TFBoost.TFEncoder import Dictionary
 from UsefulTools.UtilsFunctions import *
-from TFBoost.TFModels import *
+import TFBoost.TFModels as models
 ''' TensorFlow: https://www.tensorflow.org/
 To upgrade TensorFlow to last version:
 *CPU: pip3 install --upgrade tensorflow
@@ -137,8 +137,17 @@ Getting train, validation (if necessary) and test set.
 trainSet = tfReader.trainSet  # Train Set
 testSet = tfReader.testSet  # Test Set
 
-pt('testSet',testSet[1][0])
-Models.convolution_model(input=trainSet[0],test=testSet[0],
+pt('testSet',trainSet[0][0])
+pt('trainSet:',trainSet[1][0])
+
+
+import PIL.Image
+imageDecode = tf.image.decode_png(trainSet[0][0], channels=1, dtype=None, name=None)
+imageEncode = tf.image.encode_png(imageDecode, compression=None, name=None)
+
+img = PIL.Image.open(trainSet[0][0])
+
+models.convolution_model(input=trainSet[0],test=testSet[0],
                          input_labels=trainSet[1],test_labels=testSet[1],
                          number_of_classes=number_of_classes)
 
@@ -151,8 +160,6 @@ Models.convolution_model(input=trainSet[0],test=testSet[0],
 """
 
 
-pt('trainSet:',trainSet[0][0])
-pt('testSet:',trainSet[1][0])
 
 
 init = tf.global_variables_initializer()
