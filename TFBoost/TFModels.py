@@ -124,8 +124,19 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     x1_rows_number = 24
     x1_column_number = 24
     x_columns = x1_rows_number*x1_column_number
-    x_rows_column = [24,24]
+    x_rows_column = [50,50]
     kernel_size = [2, 2]  # Kernel patch size
+    num_epoch = 30  # Epochs number
+    # min_after_dequeue defines how big a buffer we will randomly sample
+    #   from -- bigger means better shuffling but slower start up and more
+    #   memory used.
+    min_after_dequeue = 1000
+    # capacity must be larger than min_after_dequeue and the amount larger
+    #   determines the maximum we will prefetch.
+    capacity = min_after_dequeue + 3 * num_epoch
+    batch_size = 30
+    input_size = len(input[0])
+    pt('input_size',input_size)
     # TODO Try python EVAL method to do multiple variable neurons
 
     # Placeholders
@@ -176,35 +187,67 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy) # Adam Optimizer (gradient descent)
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))  # Get Number of right values in tensor
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
-
-    sess = tf.InteractiveSession()
-    #sess.run(tf.global_variables_initializer())
-
-    # TRAIN
-
-    filename_queue = tf.train.string_input_producer([input[0][12]])  # List of files to read with extension '.png'
+    filename_queue = tf.train.string_input_producer(input[0],
+                                                    shuffle=False)  # List of files to read with extension '.png'
+    #input_processed, label_processed = read_from_reader_signal_competition(filename_queue,x_rows_column)
     reader = tf.WholeFileReader()  # Reader with queue
     key, value = reader.read(filename_queue)
-    pt('value', value)
-    pt('key', key)
-    my_img = tf.image.decode_png(value)  # Use png decode
-    resized_image = tf.image.resize_images(my_img, x_rows_column)
-    image_transform = tf.image.rgb_to_grayscale(resized_image)
-    pt('image_transform',resized_image)
-    coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(coord=coord)
-    image = resized_image.eval()
-    pt('resized_image', resized_image.shape)
-    image_array = image[:,:,-1] # Get gray scale dimension without channels
-    pt('image_array', image_array.shape)
-    Image.fromarray(np.asarray(image_array)).show()
-    imshow(np.asarray(image_array))
+    my_img = tf.image.decode_png(value,channels=1)  # Use png decode and output gray scale
+    resized_image = tf.image.resize_images(my_img, x_rows_column) # Resize image to dimension
+    # Session
+    sess = tf.InteractiveSession()
+    sess.run(tf.global_variables_initializer())
 
+    path = key.eval()
+    label = getSetsFromFullPathSignals(path)  # Must obtain path from file
+    asd
+    input_processed = resized_image
+    label_processed = label
+
+    x_batch, label_batch = tf.train.shuffle_batch(
+        [input_processed, label_processed], batch_size=batch_size, capacity=capacity,
+        min_after_dequeue=min_after_dequeue)
+
+    coord = tf.train.Coordinator()
+    threads = tf.train.start_queue_runners(sess=sess,coord=coord)
+
+
+
+    # TRAIN
     # TODO TRAIN
+
+    for i in range(3):
+        ''' Show image '''
+
+        image = x_batch.eval()
+        image_array = image[:,:,-1] # Get gray scale dimension without channels (to show it)
+        Image.fromarray(np.asarray(image_array)).show()
+        imshow(np.asarray(image_array))
+
+        train_accuracy = accuracy.eval(feed_dict={x: x_batch, y_: label_batch, keep_probably: 1.0}) * 100
+        train_step.run(feed_dict={x: x_batch, y_: label_batch, keep_probably: 0.5})
+        #validation_accuracy = accuracy.eval(feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0}) * 100
+
+        crossEntropyTrain = cross_entropy.eval(feed_dict={x: x_batch, y_: label_batch, keep_probably: 1.0})
+       # crossEntropyValidation = cross_entropy.eval( feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0})
+
+        pt('train_accuracy',train_accuracy)
+        pt('crossEntropyTrain',crossEntropyTrain)
 
     # When finish coord
     coord.request_stop()
     coord.join(threads)
+
+def read_from_reader_signal_competition(filename_queue,x_rows_column):
+    reader = tf.WholeFileReader()  # Reader with queue
+    key, value = reader.read(filename_queue)
+    my_img = tf.image.decode_png(value,channels=1)  # Use png decode and output gray scale
+    resized_image = tf.image.resize_images(my_img, x_rows_column) # Resize image to dimension
+    #image_transform = tf.image.rgb_to_grayscale(resized_image)  # Gray Scale because mathematically data has the same info
+    path = key.eval()
+    sda
+    label = getSetsFromFullPathSignals(path)  # Must obtain path from file
+    return resized_image, label
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial)

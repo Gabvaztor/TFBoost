@@ -66,7 +66,8 @@ class Errors(object):
     # Check the correct structure in ReaderFeatures.percentages_sets
     percentages_sets = "ReaderFeatures.percentages_sets needs to be a list with 2 or 3 positives float values " \
                        "and must sum 1."
-
+    # Not find a label for input
+    not_label_from_input = "There is not label for input"
 class Constant(object):
     """
     Constant Class
