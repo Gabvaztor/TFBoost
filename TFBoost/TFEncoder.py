@@ -41,9 +41,9 @@ class Dictionary(object):
     # Data.csv Label Column name
     label_column_name_Breast_Cancer_Wisconsin = 'diagnosis'
     # Signal University path train
-    path_signals_university_train = 'D:\\UniversityResearching\\DITS-classification\\classification_train\\'
+    path_signals_university_signal_train = 'D:\\UniversityResearching\\DITS-classification\\classification_train\\'
     # Signal University path test
-    path_signals_university_test = 'D:\\UniversityResearching\\DITS-classification\\classification_test\\'
+    path_signals_university_signal_test = 'D:\\UniversityResearching\\DITS-classification\\classification_test\\'
     # Hierarchy option
     labels_type_option_hierarchy = 'hierarchy'
     # Format png

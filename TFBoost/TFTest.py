@@ -113,7 +113,7 @@ testSetCSV = ''
 """
 Creating Reader Features
 """
-pathTrainAndTestImages = [Dictionary.path_signals_university_train,Dictionary.path_signals_university_test]
+pathTrainAndTestImages = [Dictionary.path_signals_university_signal_train,Dictionary.path_signals_university_signal_test]
 number_of_classes = 59 # Start in 0
 percentagesSets = None  # Example
 labelsSet = [Dictionary.labels_type_option_hierarchy]
@@ -135,9 +135,6 @@ Getting train, validation (if necessary) and test set.
 """
 testSet = tfReader.testSet  # Test Set
 trainSet = tfReader.trainSet  # Train Set
-
-pt('trainSet',trainSet[0][5000])
-pt('trainSetLabels',len(trainSet[1]))
 
 # Signal training
 models.convolution_model(input=trainSet[0],test=testSet[0],

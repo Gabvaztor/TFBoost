@@ -163,7 +163,6 @@ class Reader(object):
         self.trainSet.append(self.y_train)
         self.testSet.append(self.x_test)
         self.testSet.append(self.y_test)
-        pass
 
 class ReaderFeatures():
     """ ReaderFeatures Class
