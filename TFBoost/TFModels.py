@@ -105,7 +105,7 @@ def lineal_model_basic_with_gradient_descent(self, input, test, input_labels, te
 # TODO Do class object with all attributes of neuronal network (x,y,y_,accuracy,...) to, after that, create a generic
 # TODO train class or method.
 def convolution_model(input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
-                      learning_rate=1e-4, trains=100, type=None, validation=None,
+                      learning_rate=1e-3, trains=100, type=None, validation=None,
                       validation_labels=None, deviation=None):
     """
     Generic convolutional model
@@ -176,24 +176,25 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     dense = tf.layers.dense(inputs=pool2_flat, units=third_label_neurons, activation=tf.nn.relu)
     dropout = tf.nn.dropout(dense, keep_probably)
     # Readout Layer
-    W_fc2 = weight_variable([third_label_neurons, number_of_classes])
+    w_fc2 = weight_variable([third_label_neurons, number_of_classes])
     b_fc2 = bias_variable([number_of_classes])
-    y_conv = (tf.matmul(dropout, W_fc2) + b_fc2)
+    y_conv = (tf.matmul(dropout, w_fc2) + b_fc2)
 
     # Evaluate model
     cross_entropy = tf.reduce_mean(
-        tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)) # Cross entropy between y_ and y_conv
+        tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv))  # Cross entropy between y_ and y_conv
 
-    train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy) # Adam Optimizer (gradient descent)
+    #train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer (gradient descent)
+    train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))  # Get Number of right values in tensor
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
 
     # Creating BATCH
     inputs_array = np.array(input)
     labels_array = np.array(input_labels)
-    inputs_tensor = tf.convert_to_tensor(inputs_array,dtype=tf.string)
-    labels_tensor = tf.convert_to_tensor(labels_array,dtype=tf.int16)
-    inputs_and_labels = [inputs_tensor,labels_tensor]
+    inputs_tensor = tf.convert_to_tensor(inputs_array, dtype=tf.string)
+    labels_tensor = tf.convert_to_tensor(labels_array, dtype=tf.int16)
+    inputs_and_labels = [inputs_tensor, labels_tensor]
 
 
     # TODO BUG when try to put labels with shape (x,)
@@ -207,7 +208,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     # Batching values and labels from input_processed (with batch size)
     x_batch, label_batch = tf.train.batch(
         [input_processed, label_processed],
-        batch_size=batch_size, capacity=capacity,enqueue_many=False)
+        batch_size=int(input_size/2), capacity=capacity,enqueue_many=False)
     # Session
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
@@ -217,10 +218,12 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     threads = tf.train.start_queue_runners(coord=coord)
     # TRAIN
     # TODO TRAIN
-
-    for i in range(10):
+    trains1 = int(input_size/batch_size)+1
+    for i in range(trains1):
         '''
         Test
+        '''
+
         '''
         #No change the positions
         pt('inputs_tensor', inputs_tensor.eval()[0])
@@ -229,42 +232,44 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
         pt('train_input_queue[1]', train_input_queue[1].eval())
         pt('input_processed', input_processed.eval().shape)
         pt('label_processed', label_processed.eval())
+        '''
 
         ''' Show image '''
         x_train_feed = x_batch.eval()
         label_train_feed = label_batch.eval()
-        pt('the image', x_train_feed.shape)
-        resized_imag = tf.reshape(x_train_feed[0], [-1,24])
-        pt('the resized_imag', resized_imag.eval().shape)
-        #image_array = resized_imag[:,:,-1] # Get gray scale dimension without channels (to show it)
-        #pt('the image', image_array)
-        Image.fromarray(resized_imag.eval()).show()
-        pt('label_train_feed',label_train_feed.shape)
-        pt('label_train_feed',label_train_feed)
+        # pt('the image', x_train_feed.shape)
+        #resized_imag = tf.reshape(x_train_feed[0], [-1,24])
+        # pt('the resized_imag', resized_imag.eval().shape)
+        # image_array = resized_imag[:,:,-1] # Get gray scale dimension without channels (to show it)
+        # pt('the image', image_array)
+        # Image.fromarray(resized_imag.eval()).show()
+        # pt('label_train_feed',label_train_feed.shape)
 
-        train_accuracy = accuracy.eval(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 1.0}) * 100
         train_step.run(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 0.5})
-        #validation_accuracy = accuracy.eval(feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0}) * 100
+        train_accuracy = accuracy.eval(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 1.0}) * 100
+        # validation_accuracy = accuracy.eval(feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0}) * 100
 
         crossEntropyTrain = cross_entropy.eval(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 1.0})
-       # crossEntropyValidation = cross_entropy.eval( feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0})
+        # crossEntropyValidation = cross_entropy.eval( feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0})
 
         pt('train_accuracy',train_accuracy)
         pt('crossEntropyTrain',crossEntropyTrain)
-
+        # pt('correct_prediction',correct_prediction.eval())
+        pt('y_conv',y_conv.eval(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 1.0}) * 100)
+        pt('Status', [eval('i*100/trains1'), "%"])
     # When finish coord
     coord.request_stop()
     coord.join(threads)
 
 def read_from_reader_signal_competition(filename_queue,x_rows_column):
-    #reader = tf.WholeFileReader()  # Reader with queue
-    #key, value = reader.read(filename_queue[0])
+    # reader = tf.WholeFileReader()  # Reader with queue
+    # key, value = reader.read(filename_queue[0])
     unique_input =  tf.read_file(filename_queue[0])
     input_label = filename_queue[1]
     my_img = tf.image.decode_png(unique_input,channels=1)  # Use png decode and output gray scale
     resized_image = tf.image.resize_images(my_img, x_rows_column) # Resize image to dimension
     flatten_image = tf.reshape(resized_image, [-1])
-    #image_transform = tf.image.rgb_to_grayscale(resized_image)  # Gray Scale because mathematically data has the same info
+    # image_transform = tf.image.rgb_to_grayscale(resized_image)  # Gray Scale because mathematically data has the same info
     pt('resized_image',resized_image)
     pt('flatten_image',flatten_image)
     return flatten_image, input_label

@@ -83,8 +83,8 @@ class Constant(object):
     # First label neurons
     first_label_neurons = 32
     # Second label neurons
-    second_label_neurons = 32
+    second_label_neurons = 16
     # Third label neurons
-    third_label_neurons = 32
+    third_label_neurons = 8
 
 
