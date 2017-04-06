@@ -136,29 +136,12 @@ Getting train, validation (if necessary) and test set.
 testSet = tfReader.testSet  # Test Set
 trainSet = tfReader.trainSet  # Train Set
 
-
-
-
 pt('trainSet',trainSet[0][5000])
 pt('trainSetLabels',len(trainSet[1]))
 
+# Signal training
 models.convolution_model(input=trainSet[0],test=testSet[0],
                          input_labels=trainSet[1],test_labels=testSet[1],
                          number_of_classes=number_of_classes)
-
-"""
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# ---- TENSORFLOW SECTION ----
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-"""
-
-
-
-
-init = tf.global_variables_initializer()
-sess = tf.InteractiveSession()
-sess.run(init)
 
 # TODO Make TFModels heritable and with capability to return section of tensorflow code
