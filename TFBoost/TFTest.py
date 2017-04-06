@@ -133,17 +133,14 @@ tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with 
 """
 Getting train, validation (if necessary) and test set.
 """
-
-trainSet = tfReader.trainSet  # Train Set
 testSet = tfReader.testSet  # Test Set
-
-pt('testSet',trainSet[0][0])
-pt('trainSet:',trainSet[1][0])
+trainSet = tfReader.trainSet  # Train Set
 
 
-import PIL.Image
 
-#img = PIL.Image.open(trainSet[0][0])
+
+pt('trainSet',trainSet[0][5000])
+pt('trainSet',trainSet[1][5000])
 
 models.convolution_model(input=trainSet,test=testSet[0],
                          input_labels=trainSet[1],test_labels=testSet[1],

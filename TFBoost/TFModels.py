@@ -187,44 +187,59 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy) # Adam Optimizer (gradient descent)
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))  # Get Number of right values in tensor
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
-    filename_queue = tf.train.string_input_producer(input[0],
+
+    # Creating BATCH
+    inputs_array = np.array(input[0])
+    labels_array = np.array(input[1])
+    inputs_tensor = tf.convert_to_tensor(inputs_array,dtype=tf.string)
+    labels_tensor = tf.convert_to_tensor(labels_array,dtype=tf.int16)
+    inputs_and_labels = [inputs_tensor,labels_tensor]
+
+
+    # TODO BUG when try to put labels with shape (x,)
+    # Slice inputs and labels into one example
+    train_input_queue = tf.train.slice_input_producer(inputs_and_labels,
                                                     shuffle=False)  # List of files to read with extension '.png'
-    #input_processed, label_processed = read_from_reader_signal_competition(filename_queue,x_rows_column)
-    reader = tf.WholeFileReader()  # Reader with queue
-    key, value = reader.read(filename_queue)
-    my_img = tf.image.decode_png(value,channels=1)  # Use png decode and output gray scale
-    resized_image = tf.image.resize_images(my_img, x_rows_column) # Resize image to dimension
+    # Obtain real value and real label in tensor
+    input_processed, label_processed =\
+        read_from_reader_signal_competition(train_input_queue,x_rows_column)
+    pt('train_input_queue', input_processed)
+    # Batching values and labels from input_processed (with batch size)
+    x_batch, label_batch = tf.train.batch(
+        [train_input_queue[0], label_processed],
+        batch_size=batch_size, capacity=capacity,enqueue_many=True)
     # Session
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
 
-    path = key.eval()
-    label = getSetsFromFullPathSignals(path)  # Must obtain path from file
-    asd
-    input_processed = resized_image
-    label_processed = label
-
-    x_batch, label_batch = tf.train.shuffle_batch(
-        [input_processed, label_processed], batch_size=batch_size, capacity=capacity,
-        min_after_dequeue=min_after_dequeue)
-
+    # initialize the queue threads to start to shovel data
     coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(sess=sess,coord=coord)
-
-
-
+    threads = tf.train.start_queue_runners(coord=coord)
     # TRAIN
     # TODO TRAIN
 
     for i in range(3):
+        '''
+        Test
+        '''
+        #No change the positions
+        pt('inputs_tensor', inputs_tensor.eval()[0])
+        pt('labels_tensor', labels_tensor.eval()[0])
+        pt('train_input_queue[0]', train_input_queue[0].eval())
+        pt('train_input_queue[1]', train_input_queue[1].eval())
+        pt('input_processed', input_processed.eval())
+        pt('label_processed', label_processed.eval())
+
         ''' Show image '''
-
         image = x_batch.eval()
-        image_array = image[:,:,-1] # Get gray scale dimension without channels (to show it)
-        Image.fromarray(np.asarray(image_array)).show()
-        imshow(np.asarray(image_array))
-
-        train_accuracy = accuracy.eval(feed_dict={x: x_batch, y_: label_batch, keep_probably: 1.0}) * 100
+        pt('the image', image)
+        image_array = image[0][:,:,-1] # Get gray scale dimension without channels (to show it)
+        #pt('the image', image_array)
+        Image.fromarray(image_array).show()
+        l = label_batch.eval()
+        pt('l',l.shape)
+        pt('l',l)
+        train_accuracy = accuracy.eval(feed_dict={x: x_batch.eval(), y_: label_batch.eval(), keep_probably: 1.0}) * 100
         train_step.run(feed_dict={x: x_batch, y_: label_batch, keep_probably: 0.5})
         #validation_accuracy = accuracy.eval(feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0}) * 100
 
@@ -239,15 +254,15 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     coord.join(threads)
 
 def read_from_reader_signal_competition(filename_queue,x_rows_column):
-    reader = tf.WholeFileReader()  # Reader with queue
-    key, value = reader.read(filename_queue)
-    my_img = tf.image.decode_png(value,channels=1)  # Use png decode and output gray scale
+    #reader = tf.WholeFileReader()  # Reader with queue
+    #key, value = reader.read(filename_queue[0])
+    unique_input =  tf.read_file(filename_queue[0])
+    input_label = filename_queue[1]
+    my_img = tf.image.decode_png(unique_input,channels=1)  # Use png decode and output gray scale
     resized_image = tf.image.resize_images(my_img, x_rows_column) # Resize image to dimension
     #image_transform = tf.image.rgb_to_grayscale(resized_image)  # Gray Scale because mathematically data has the same info
-    path = key.eval()
-    sda
-    label = getSetsFromFullPathSignals(path)  # Must obtain path from file
-    return resized_image, label
+    pt('resized_image',resized_image)
+    return [unique_input], input_label
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial)

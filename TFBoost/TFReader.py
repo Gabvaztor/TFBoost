@@ -256,10 +256,10 @@ class Searcher(Reader):
         if Dictionary.string_train in path: # If 'train' in path
             y_label_dir = os.path.dirname(os.path.dirname(path))  # Directory of directory of file
             y_label = os.path.basename(y_label_dir)
-            self.y_train.append(y_label)
+            self.y_train.append(int(y_label))
             self.x_train.append(path)
         elif Dictionary.string_test in path: # If 'test' in path
             y_label_dir = os.path.dirname(path)  # Directory of file
             y_label = os.path.basename(y_label_dir)
-            self.y_test.append(y_label)
+            self.y_test.append(int(y_label))
             self.x_test.append(path)
