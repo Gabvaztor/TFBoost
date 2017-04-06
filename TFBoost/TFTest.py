@@ -114,7 +114,7 @@ testSetCSV = ''
 Creating Reader Features
 """
 pathTrainAndTestImages = [Dictionary.path_signals_university_train,Dictionary.path_signals_university_test]
-number_of_classes = 58 # Start in 0
+number_of_classes = 59 # Start in 0
 percentagesSets = None  # Example
 labelsSet = [Dictionary.labels_type_option_hierarchy]
 isAnUniqueCSV = False  # If this variable is true, then only one CSV file will be passed and it will be treated like trainSet, validationSet and testSet
@@ -140,9 +140,9 @@ trainSet = tfReader.trainSet  # Train Set
 
 
 pt('trainSet',trainSet[0][5000])
-pt('trainSet',trainSet[1][5000])
+pt('trainSetLabels',len(trainSet[1]))
 
-models.convolution_model(input=trainSet,test=testSet[0],
+models.convolution_model(input=trainSet[0],test=testSet[0],
                          input_labels=trainSet[1],test_labels=testSet[1],
                          number_of_classes=number_of_classes)
 

@@ -156,7 +156,7 @@ class Reader(object):
         #TODO check nulls
         #TODO lowletters in methods
         features = self.rFeatures
-        tfSearch = Searcher(pathToRead = features.setDataFiles)
+        tfSearch = Searcher(features=features)
         tfSearch.findTrainAndTestSetFromPathSignals()
 
         self.trainSet.append(self.x_train)
@@ -217,21 +217,12 @@ class ReaderFeatures():
 
 
 class Searcher(Reader):
-    listOfWords = []
     pathToRead = ''
-    fileName = 'SearcherFile_FileName'
-    fileNameFullpaths = 'SearcherFile_Fullpaths'
-    pathToWrite = ''
-    setOfFilesNamesToWrite = set({})
-    setOfFullPathToWrite = set({})
-    dataObject = None
 
-
-    def __init__(self, listOfWordsToSearch=None, pathToRead=None, pathToWrite=None, typeOfData=None):
+    def __init__(self,features):
         super(Reader, self).__init__()
-        self.listOfWords = listOfWordsToSearch
-        self.pathToRead = pathToRead
-        self.pathToWrite = pathToWrite
+        self.pathToRead = features.setDataFiles
+        self.features = features
     def findTrainAndTestSetFromPathSignals(self):
         """
 
@@ -252,14 +243,19 @@ class Searcher(Reader):
         If path contains 'train', y_label is two dir up. Else if path contains 'test', y_label is one dir up.
         :param path: the full path
         """
-
+        labels = np.zeros(self.features.number_of_classes, dtype=np.int)
         if Dictionary.string_train in path: # If 'train' in path
             y_label_dir = os.path.dirname(os.path.dirname(path))  # Directory of directory of file
             y_label = os.path.basename(y_label_dir)
-            self.y_train.append(int(y_label))
+            labels[int(y_label)] = 1
+            #self.y_train.append(int(y_label))
+            self.y_train.append(list(labels))
+            #pt('y_train',self.y_train)
             self.x_train.append(path)
         elif Dictionary.string_test in path: # If 'test' in path
             y_label_dir = os.path.dirname(path)  # Directory of file
             y_label = os.path.basename(y_label_dir)
-            self.y_test.append(int(y_label))
+            labels[int(y_label)] = 1
+            self.y_test.append(list(labels))
+            #pt('y_test',self.y_test)
             self.x_test.append(path)

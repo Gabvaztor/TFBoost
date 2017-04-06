@@ -124,7 +124,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     x1_rows_number = 24
     x1_column_number = 24
     x_columns = x1_rows_number*x1_column_number
-    x_rows_column = [50,50]
+    x_rows_column = [24,24]
     kernel_size = [2, 2]  # Kernel patch size
     num_epoch = 30  # Epochs number
     # min_after_dequeue defines how big a buffer we will randomly sample
@@ -134,13 +134,13 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     # capacity must be larger than min_after_dequeue and the amount larger
     #   determines the maximum we will prefetch.
     capacity = min_after_dequeue + 3 * num_epoch
-    batch_size = 30
-    input_size = len(input[0])
+    batch_size = 30  # Batch size
+    input_size = len(input)
     pt('input_size',input_size)
     # TODO Try python EVAL method to do multiple variable neurons
 
     # Placeholders
-    x = tf.placeholder(tf.float32,shape=[None, x_columns]) #  All images will be 25*25 = 625
+    x = tf.placeholder(tf.float32,shape=[None, x_columns]) #  All images will be 24*24 = 574
     y_ = tf.placeholder(tf.float32,shape=[None, number_of_classes])  # Number of labels
     keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
 
@@ -189,8 +189,8 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
 
     # Creating BATCH
-    inputs_array = np.array(input[0])
-    labels_array = np.array(input[1])
+    inputs_array = np.array(input)
+    labels_array = np.array(input_labels)
     inputs_tensor = tf.convert_to_tensor(inputs_array,dtype=tf.string)
     labels_tensor = tf.convert_to_tensor(labels_array,dtype=tf.int16)
     inputs_and_labels = [inputs_tensor,labels_tensor]
@@ -203,11 +203,11 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     # Obtain real value and real label in tensor
     input_processed, label_processed =\
         read_from_reader_signal_competition(train_input_queue,x_rows_column)
-    pt('train_input_queue', input_processed)
+    pt('input_processed', input_processed)
     # Batching values and labels from input_processed (with batch size)
     x_batch, label_batch = tf.train.batch(
-        [train_input_queue[0], label_processed],
-        batch_size=batch_size, capacity=capacity,enqueue_many=True)
+        [input_processed, label_processed],
+        batch_size=batch_size, capacity=capacity,enqueue_many=False)
     # Session
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
@@ -218,7 +218,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     # TRAIN
     # TODO TRAIN
 
-    for i in range(3):
+    for i in range(10):
         '''
         Test
         '''
@@ -227,23 +227,26 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
         pt('labels_tensor', labels_tensor.eval()[0])
         pt('train_input_queue[0]', train_input_queue[0].eval())
         pt('train_input_queue[1]', train_input_queue[1].eval())
-        pt('input_processed', input_processed.eval())
+        pt('input_processed', input_processed.eval().shape)
         pt('label_processed', label_processed.eval())
 
         ''' Show image '''
-        image = x_batch.eval()
-        pt('the image', image)
-        image_array = image[0][:,:,-1] # Get gray scale dimension without channels (to show it)
+        x_train_feed = x_batch.eval()
+        label_train_feed = label_batch.eval()
+        pt('the image', x_train_feed.shape)
+        resized_imag = tf.reshape(x_train_feed[0], [-1,24])
+        pt('the resized_imag', resized_imag.eval().shape)
+        #image_array = resized_imag[:,:,-1] # Get gray scale dimension without channels (to show it)
         #pt('the image', image_array)
-        Image.fromarray(image_array).show()
-        l = label_batch.eval()
-        pt('l',l.shape)
-        pt('l',l)
-        train_accuracy = accuracy.eval(feed_dict={x: x_batch.eval(), y_: label_batch.eval(), keep_probably: 1.0}) * 100
-        train_step.run(feed_dict={x: x_batch, y_: label_batch, keep_probably: 0.5})
+        Image.fromarray(resized_imag.eval()).show()
+        pt('label_train_feed',label_train_feed.shape)
+        pt('label_train_feed',label_train_feed)
+
+        train_accuracy = accuracy.eval(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 1.0}) * 100
+        train_step.run(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 0.5})
         #validation_accuracy = accuracy.eval(feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0}) * 100
 
-        crossEntropyTrain = cross_entropy.eval(feed_dict={x: x_batch, y_: label_batch, keep_probably: 1.0})
+        crossEntropyTrain = cross_entropy.eval(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 1.0})
        # crossEntropyValidation = cross_entropy.eval( feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0})
 
         pt('train_accuracy',train_accuracy)
@@ -260,9 +263,12 @@ def read_from_reader_signal_competition(filename_queue,x_rows_column):
     input_label = filename_queue[1]
     my_img = tf.image.decode_png(unique_input,channels=1)  # Use png decode and output gray scale
     resized_image = tf.image.resize_images(my_img, x_rows_column) # Resize image to dimension
+    flatten_image = tf.reshape(resized_image, [-1])
     #image_transform = tf.image.rgb_to_grayscale(resized_image)  # Gray Scale because mathematically data has the same info
     pt('resized_image',resized_image)
-    return [unique_input], input_label
+    pt('flatten_image',flatten_image)
+    return flatten_image, input_label
+
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial)
