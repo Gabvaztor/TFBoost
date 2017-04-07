@@ -52,7 +52,8 @@ class Dictionary(object):
     string_train = 'train'
     # Test String
     string_test = 'test'
-
+    # Separator
+    separator = '-------------------------------------'
 class Errors(object):
     """
     Error Class

@@ -4,6 +4,7 @@ StartDate: 04/03/2017
 
 This file contains samples and overrides deep learning algorithms.
 """
+from matplotlib import axes
 
 """
 # --------------------------------------------------------------------------
@@ -112,19 +113,17 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     """
 
     # TODO Create an simple but generic convolutional model to analyse sets.
-    show_info = True # Show images, labels and logits info.
+    show_info = 1 # Labels and logits info.
+    show_images = 0 # if True show images when show_info is True
     x1_rows_number = 24
     x1_column_number = 24
     x_columns = x1_rows_number*x1_column_number
     x_rows_column = [24,24]
-    kernel_size = [2, 2]  # Kernel patch size
-    num_epoch = 5  # Epochs number
-    batch_size = 5  # Batch size
+    kernel_size = [5, 5]  # Kernel patch size
     input_size = len(input)
-    # min_after_dequeue defines how big a buffer we will randomly sample
-    #   from -- bigger means better shuffling but slower start up and more
-    #   memory used.
-    min_after_dequeue = 1000
+    num_epoch = 10  # Epochs number
+    #batch_size = int(input_size/10)+1  # Batch size
+    batch_size = 16  # Batch size
     # capacity must be larger than min_after_dequeue and the amount larger
     # determines the maximum we will prefetch.
     capacity = int(input_size / 4)
@@ -150,7 +149,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     # First Convolutional Layer
     convolution_1 = tf.layers.conv2d(
         inputs=x_reshape,
-        filters=first_label_neurons,
+        filters=30,
         kernel_size=kernel_size,
         padding="same",
         activation=tf.nn.relu)
@@ -178,22 +177,25 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_convolution))  # Cross entropy between y_ and y_conv
 
-    #train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer (gradient descent)
-    train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
-    correct_prediction = tf.equal(tf.argmax(y_convolution, axis=0), tf.argmax(y_, axis=0))  # Get Number of right values in tensor
+    train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer (gradient descent)
+    #train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
+    # Sure is axis = 1
+    correct_prediction = tf.equal(tf.argmax(y_convolution, axis=1), tf.argmax(y_, axis=1))  # Get Number of right values in tensor
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
-
     # Creating BATCH
     inputs_array = np.array(input)
     labels_array = np.array(input_labels)
+    # pt([np.argmax(f,axis=0) for f in input_labels[40:60]])
     inputs_tensor = tf.convert_to_tensor(inputs_array, dtype=tf.string)
     labels_tensor = tf.convert_to_tensor(labels_array, dtype=tf.float32)
     inputs_and_labels = [inputs_tensor, labels_tensor]
 
     # TODO BUG when try to put labels with shape (x,)
+    # TODO BUG: With Signal Data: When you put a batch of 15 or higher, the output from
+    # TODO tf.train.batch randomize input with label so create a big problem for supervised model
     # Slice inputs and labels into one example
     train_input_queue = tf.train.slice_input_producer(inputs_and_labels,
-                                                    shuffle=True)  # List of files to read with extension '.png'
+                                                    shuffle=False,num_epochs=num_epoch)  # List of files to read with extension '.png'
     # Obtain real value and real label in tensor
     input_processed, label_processed =\
         read_from_reader_signal_competition(train_input_queue,x_rows_column)
@@ -201,14 +203,16 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     # Batching values and labels from input_processed (with batch size)
     x_batch, label_batch = tf.train.batch(
         [input_processed, label_processed],
-        batch_size=batch_size, capacity=capacity)
+        batch_size=batch_size, capacity=32, allow_smaller_final_batch=True)
     # Session
     sess = tf.InteractiveSession()
+    sess.run(tf.local_variables_initializer())
     sess.run(tf.global_variables_initializer())
 
     # initialize the queue threads to start to shovel data
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
+    num_trains = 0
     # TRAIN
     for epoch in range (num_epoch):
         for i in range(trains):
@@ -216,32 +220,26 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
             Test
             '''
 
-            '''
-            #No change the positions
-            pt('inputs_tensor', inputs_tensor.eval()[0])
-            pt('labels_tensor', labels_tensor.eval()[0])
-            pt('train_input_queue[0]', train_input_queue[0].eval())
-            pt('train_input_queue[1]', train_input_queue[1].eval())
-            pt('input_processed', input_processed.eval().shape)
-            pt('label_processed', label_processed.eval())
-            '''
-
-            ''' Show image '''
+            # Setting values
             x_train_feed = x_batch.eval()
             label_train_feed = label_batch.eval()
             feed_dict_train_50 = {x: x_train_feed, y_: label_train_feed, keep_probably: 0.5}
             feed_dict_train_100 = {x: x_train_feed, y_: label_train_feed, keep_probably: 1}
-            #pt('the resized_imag', resize_image.eval().shape)
-            # image_array = resized_imag[:,:,-1] # Get gray scale dimension without channels (to show it)
-            # pt('the image', image_array)
 
-            train_step.run(feed_dict_train_50)
             train_accuracy = accuracy.eval(feed_dict_train_100) * 100
+            train_step.run(feed_dict_train_50)
+
             # validation_accuracy = accuracy.eval(feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0}) * 100
 
             crossEntropyTrain = cross_entropy.eval(feed_dict_train_100)
             # crossEntropyValidation = cross_entropy.eval( feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0})
-
+            #pt('conv1',tf.argmax(y_convolution, axis=1).eval(feed_dict_train_100))
+            y_pt = tf.argmax(y_, axis=1).eval(feed_dict_train_100)
+            if 0 in y_pt:
+                pt('y_',y_pt)
+            #first_image = convolution_1.eval(feed_dict_train_100)[0]
+            # pt('convolution_1[shape]',first_image.shape)
+            #if show_info:
             if show_info and epoch == 0 and i == 0:
                 pt('the image', x_train_feed.shape)
 
@@ -253,20 +251,34 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
                 argmax_labels_y_ = [np.argmax(m) for m in y__]
                 pt('y__', argmax_labels_y_)
                 pt('y__shape', y__.shape)
+                pt('argmax_labels_y__', argmax_labels_y_)
+                pt('y__[-1]', y__[-1])
+
 
                 y__conv = y_convolution.eval(feed_dict_train_100)
                 argmax_labels_y_convolutional = [np.argmax(m) for m in y__conv]
-                pt('y_conv', argmax_labels_y_convolutional)
+                pt('argmax_y_conv', argmax_labels_y_convolutional)
                 pt('y_conv_shape', y__conv.shape)
+                #pt('y__conv', y__conv)
 
-                show_image_from_tensor(x_train_feed, 24) # shows images
+                # No change the positions
+                pt('inputs_tensor', inputs_tensor.eval()[0])
+                pt('labels_tensor', labels_tensor.eval()[0])
+                pt('train_input_queue[0]', train_input_queue[0].eval())
+                pt('train_input_queue[1]', train_input_queue[1].eval())
 
+                pt('input_processed', input_processed.eval().shape)
+                pt('label_processed', label_processed.eval())
+                if show_images:
+                    show_image_from_tensor(x_train_feed, 24) # shows images
+            percent_avance = str(i*100/trains)
+            pt('TRAIN NUMBER: '+str(num_trains) + ' | Percent Epoch ' + str(epoch+1) + ": " + percent_avance + '%')
+            num_trains+=1
             pt('train_accuracy',train_accuracy)
             pt('crossEntropyTrain',crossEntropyTrain)
             # pt('correct_prediction',correct_prediction.eval())
             #pt('y_conv',y_convolution.eval(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 1.0}) * 100)
-            percent_avance = str(i*100/trains)
-            pt('Percent Epoch ' + str(epoch+1), percent_avance + '%')
+
     # When finish coord
     coord.request_stop()
     coord.join(threads)
@@ -301,7 +313,7 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                           strides=[1, 2, 2, 1], padding='SAME')
 
-def number_neurons(total_input_size,input_sample_size,output_size,alpha=2):
+def number_neurons(total_input_size,input_sample_size,output_size,alpha=1):
     """
     :param total_input_size:
     :param input_sample_size:
@@ -313,6 +325,6 @@ def number_neurons(total_input_size,input_sample_size,output_size,alpha=2):
 
 def show_image_from_tensor(tensors,image_dimension):
     """Shows images from tensors"""
-    for img_index in range(5):
+    for img_index in range(tensors.shape[0]):
         resize_image = np.reshape(tensors[img_index], [-1, image_dimension])
         Image.fromarray(resize_image).show()

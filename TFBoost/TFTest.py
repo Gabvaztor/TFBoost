@@ -136,6 +136,7 @@ Getting train, validation (if necessary) and test set.
 testSet = tfReader.testSet  # Test Set
 trainSet = tfReader.trainSet  # Train Set
 
+
 # Signal training
 models.convolution_model(input=trainSet[0],test=testSet[0],
                          input_labels=trainSet[1],test_labels=testSet[1],

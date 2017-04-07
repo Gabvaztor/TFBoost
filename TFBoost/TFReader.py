@@ -242,13 +242,19 @@ class Searcher(Reader):
         If path contains 'train', y_label is two dir up. Else if path contains 'test', y_label is one dir up.
         :param path: the full path
         """
-        labels = np.zeros(self.features.number_of_classes, dtype=np.int)
+        labels = np.zeros(self.features.number_of_classes, dtype=np.float32)
         if Dictionary.string_train in path: # If 'train' in path
             y_label_dir = os.path.dirname(os.path.dirname(path))  # Directory of directory of file
             y_label = os.path.basename(y_label_dir)
             labels[int(y_label)] = 1
             self.y_train.append(list(labels))
             self.x_train.append(path)
+            if 588 == int(y_label): # Never is 588
+                pt('y_label',int(y_label))
+                pt('argmax_labels',np.argmax(labels))
+                pt('self.y_train',self.y_train)
+                pt([np.argmax(f, axis=0) for f in self.y_train])
+
         elif Dictionary.string_test in path: # If 'test' in path
             y_label_dir = os.path.dirname(path)  # Directory of file
             y_label = os.path.basename(y_label_dir)

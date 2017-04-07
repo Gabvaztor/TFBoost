@@ -23,8 +23,12 @@ def pt(title=None,text=None):
     :param title:
     :param text:
     """
-
-    print(str(title) + ": \n " + str(text))
+    if text is None:
+        text = title
+        title = Dictionary.separator
+    else:
+        title+=':'
+    print(str(title) + " \n " + str(text))
 
 def timed(method):
     """
