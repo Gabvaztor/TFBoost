@@ -112,9 +112,6 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     """
 
     # TODO Create an simple but generic convolutional model to analyse sets.
-    first_patch = const.w_first_patch  # Weight first patch
-    second_patch = const.w_second_patch  # Weight second patch
-    number_inputs = const.w_number_inputs  # Weight number of inputs
 
     x1_rows_number = 24
     x1_column_number = 24
@@ -122,7 +119,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     x_rows_column = [24,24]
     kernel_size = [2, 2]  # Kernel patch size
     num_epoch = 5  # Epochs number
-    batch_size = 1  # Batch size
+    batch_size = 20  # Batch size
     input_size = len(input)
     # min_after_dequeue defines how big a buffer we will randomly sample
     #   from -- bigger means better shuffling but slower start up and more
@@ -130,7 +127,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     min_after_dequeue = 1000
     # capacity must be larger than min_after_dequeue and the amount larger
     # determines the maximum we will prefetch.
-    capacity = min_after_dequeue + 3 * num_epoch
+    capacity = int(input_size / 4)
     first_label_neurons = number_neurons(input_size, batch_size, number_of_classes)  # Weight first label neurons
     second_label_neurons = number_neurons(input_size, first_label_neurons, number_of_classes)  # Weight second label neurons
     third_label_neurons = number_neurons(input_size, second_label_neurons, number_of_classes)  # Weight third label neurons
@@ -190,7 +187,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     inputs_array = np.array(input)
     labels_array = np.array(input_labels)
     inputs_tensor = tf.convert_to_tensor(inputs_array, dtype=tf.string)
-    labels_tensor = tf.convert_to_tensor(labels_array, dtype=tf.int32)
+    labels_tensor = tf.convert_to_tensor(labels_array, dtype=tf.float32)
     inputs_and_labels = [inputs_tensor, labels_tensor]
 
     # TODO BUG when try to put labels with shape (x,)
@@ -213,7 +210,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
     # TRAIN
-    for x in range (num_epoch):
+    for epoch in range (num_epoch):
         for i in range(trains):
             '''
             Test
@@ -232,29 +229,34 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
             ''' Show image '''
             x_train_feed = x_batch.eval()
             label_train_feed = label_batch.eval()
+            feed_dict_train_50 = {x: x_train_feed, y_: label_train_feed, keep_probably: 0.5}
+            feed_dict_train_100 = {x: x_train_feed, y_: label_train_feed, keep_probably: 1}
+
             pt('the image', x_train_feed.shape)
-            pt('label_train_feed', argmax(label_train_feed[0]))
+            pt('label_train_feed', label_train_feed)
             #resize_image = tf.reshape(x_train_feed[0], [-1,24])
             #Image.fromarray(resize_image.eval()).show()
             #pt('the resized_imag', resize_image.eval().shape)
             # image_array = resized_imag[:,:,-1] # Get gray scale dimension without channels (to show it)
             # pt('the image', image_array)
 
-            train_step.run(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 0.5})
-            train_accuracy = accuracy.eval(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 1.0}) * 100
+            train_step.run(feed_dict_train_50)
+            train_accuracy = accuracy.eval(feed_dict_train_100) * 100
             # validation_accuracy = accuracy.eval(feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0}) * 100
 
-            crossEntropyTrain = cross_entropy.eval(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 1.0})
+            crossEntropyTrain = cross_entropy.eval(feed_dict_train_100)
             # crossEntropyValidation = cross_entropy.eval( feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0})
 
-            y__ = y_.eval()
+            y__ = y_.eval(feed_dict_train_100)
+            pt('y__', y__)
             pt('y__', y__)
 
             pt('train_accuracy',train_accuracy)
             pt('crossEntropyTrain',crossEntropyTrain)
             # pt('correct_prediction',correct_prediction.eval())
             #pt('y_conv',y_convolution.eval(feed_dict={x: x_train_feed, y_: label_train_feed, keep_probably: 1.0}) * 100)
-            pt('Status', [eval('i*100/trains'), "%"])
+            percent_avance = str(i*100/trains)
+            pt('Percent Epoch ' + str(epoch+1), percent_avance + '%')
     # When finish coord
     coord.request_stop()
     coord.join(threads)
