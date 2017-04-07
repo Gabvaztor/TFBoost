@@ -17,7 +17,7 @@ import time
 # --------------------------------------------------------------------------
 from TFBoost.TFEncoder import *
 import os
-def pt(title,text):
+def pt(title=None,text=None):
     """
     Use the print function to print a title and and an object covert to string
     :param title:

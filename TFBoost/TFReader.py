@@ -247,9 +247,7 @@ class Searcher(Reader):
             y_label_dir = os.path.dirname(os.path.dirname(path))  # Directory of directory of file
             y_label = os.path.basename(y_label_dir)
             labels[int(y_label)] = 1
-            #self.y_train.append(int(y_label))
             self.y_train.append(list(labels))
-            #pt('y_train',self.y_train)
             self.x_train.append(path)
         elif Dictionary.string_test in path: # If 'test' in path
             y_label_dir = os.path.dirname(path)  # Directory of file
