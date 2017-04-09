@@ -204,6 +204,8 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     x_batch, label_batch = tf.train.batch(
         [input_processed, label_processed],
         batch_size=batch_size, capacity=32, allow_smaller_final_batch=True)
+    # Batching values and labels from input and labels (with batch size)
+    x_batch, label_batch = get_data_buffer(input,input_labels,batch_size,shuffle)
     # Session
     sess = tf.InteractiveSession()
     sess.run(tf.local_variables_initializer())
@@ -328,3 +330,19 @@ def show_image_from_tensor(tensors,image_dimension):
     for img_index in range(tensors.shape[0]):
         resize_image = np.reshape(tensors[img_index], [-1, image_dimension])
         Image.fromarray(resize_image).show()
+
+def get_data_buffer(input,input_labels,batch_size=50,shuffle=False):
+    """
+    Return a x_input and y_labels with a batch_size and the same order
+    :param input:
+    :param input_labels:
+    :param batch_size:
+    :param shuffle:
+    :return:
+    """
+    # TODO DOCS
+
+    x_input = []
+    y_labels = []
+    # TODO method
+    return x_input, y_labels
