@@ -115,6 +115,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
     # TODO Create an simple but generic convolutional model to analyse sets.
     show_info = 1 # Labels and logits info.
     show_images = 0 # if True show images when show_info is True
+    suffle_data = True
     x1_rows_number = 24
     x1_column_number = 24
     x_columns = x1_rows_number*x1_column_number
@@ -205,7 +206,7 @@ def convolution_model(input, test, input_labels, test_labels, number_of_classes,
         [input_processed, label_processed],
         batch_size=batch_size, capacity=32, allow_smaller_final_batch=True)
     # Batching values and labels from input and labels (with batch size)
-    x_batch, label_batch = get_data_buffer(input,input_labels,batch_size,shuffle)
+    x_batch, label_batch = get_data_buffer(input,input_labels,batch_size,suffle=suffle_data)
     # Session
     sess = tf.InteractiveSession()
     sess.run(tf.local_variables_initializer())
