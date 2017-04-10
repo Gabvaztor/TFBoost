@@ -54,6 +54,8 @@ class Dictionary(object):
     string_test = 'test'
     # Separator
     separator = '-------------------------------------'
+    # Gray scale
+    gray_scale = 'gray_scale'
 class Errors(object):
     """
     Error Class
