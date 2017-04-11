@@ -431,5 +431,7 @@ def preprocess_image(image, image_type):
     # TODO Normalize image
     image = image
     return image
+    # TODO Intensity and contrast
+    # TODO Scale image to center into figure
 # Load an color image in grayscale (0 is gray scale)
 img = cv2.imread(inputs_processed[index_buffer_data], image_type)
