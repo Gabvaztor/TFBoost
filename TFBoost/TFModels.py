@@ -429,9 +429,13 @@ def preprocess_image(image, image_type):
     :return:
     """
     # TODO Normalize image
+    # 1- Get image in RGB
+    # 2- Modify intensity and contrast
+    # 3- Transform to gray scale
+    # 4- Return image
     image = image
     return image
-    # TODO Intensity and contrast
+    # TODO
     # TODO Scale image to center into figure
 # Load an color image in grayscale (0 is gray scale)
 img = cv2.imread(inputs_processed[index_buffer_data], image_type)
