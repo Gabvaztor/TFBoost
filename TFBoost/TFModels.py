@@ -424,8 +424,8 @@ def augment_brightness_camera_images(image):
 def preprocess_image(image, image_type):
     """
 
-    :param image:
-    :param image_type:
+    :param image: The image to change
+    :param image_type: Gray Scale, RGB,
     :return:
     """
     # TODO Normalize image
@@ -433,9 +433,8 @@ def preprocess_image(image, image_type):
     # 2- Modify intensity and contrast
     # 3- Transform to gray scale
     # 4- Return image
-    image = image
+    image = cv2.imread(inputs_processed[index_buffer_data], image_type)  # Get color in image_type
     return image
     # TODO
     # TODO Scale image to center into figure
 # Load an color image in grayscale (0 is gray scale)
-img = cv2.imread(inputs_processed[index_buffer_data], image_type)
