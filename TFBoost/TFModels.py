@@ -113,7 +113,7 @@ def lineal_model_basic_with_gradient_descent(self, input, test, input_labels, te
 # TODO Do class object with all attributes of neuronal network (x,y,y_,accuracy,...) to, after that, create a generic
 # TODO train class or method.
 @timed
-def convolution_model(input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
+def convolution_model_image(input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
                       learning_rate=1e-3, trains=None, type=None, validation=None,
                       validation_labels=None, deviation=None):
     """
