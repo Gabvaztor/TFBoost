@@ -352,7 +352,7 @@ def show_image_from_tensor(images,x_rows_column):
         cv2.waitKey(0)  # Wait until press key to destroy image
         #cv2.destroyAllWindows()  # Destroy all windows
 
-
+# Redoit when this file be a class
 def get_data_buffer_images(inputs, inputs_labels, batch_size, shuffle=False,to_type=None,x_rows_column=None,
                            to_array=False,is_test=False):
     """
