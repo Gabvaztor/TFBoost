@@ -263,6 +263,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
             #first_image = convolution_1.eval(feed_dict_train_100)[0]
             # pt('convolution_1[shape]',first_image.shape)
 
+            # TODO Use validation set
             # if show_info and epoch == 0 and i == 0:
             if show_info:
                 #pt('the image', x_batch_feed.shape)
