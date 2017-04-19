@@ -90,7 +90,7 @@ def lineal_model_basic_with_gradient_descent(self, input, test, input_labels, te
     :param number_of_classes: Represents the number of labels in data
     :param deviation: Number of the deviation for the weights and bias
     """
-    # TODO Do general
+    # TODO Create placeholders with variable shapes
     x = tf.placeholder(shape=[None, number_of_classes])
     y_ = tf.placeholder([None, number_of_classes])
 
