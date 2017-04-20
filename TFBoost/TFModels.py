@@ -4,8 +4,9 @@ StartDate: 04/03/2017
 
 This file contains samples and overrides deep learning algorithms.
 """
-from matplotlib import axes
-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -14,9 +15,7 @@ from matplotlib import axes
 # --------------------------------------------------------------------------
 """
 
-'''LOCAL IMPORTS
-'''
-
+'''LOCAL IMPORTS'''
 from UsefulTools.UtilsFunctions import *
 from TFBoost.TFEncoder import Dictionary as dict
 from TFBoost.TFEncoder import Constant as const
@@ -52,8 +51,6 @@ from pylab import *
 Git Clone : https://github.com/tflearn/tflearn.git
 To install: pip install tflearn'''
 import tflearn
-'''PILOU for show images'''
-from PIL import Image
 '''"Best image library"
 pip install opencv-python'''
 import cv2 as cv2
