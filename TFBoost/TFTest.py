@@ -70,7 +70,8 @@ import numpy as np
 # We can find scipi in the url: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy'''
 import scipy.io as sio
 
-''' Matlab URL: http://matplotlib.org/users/installing.html'''
+''' Matlab URL: http://matplotlib.org/users/installing.html
+To install python -m pip install matplotlib'''
 import matplotlib.pyplot as plt
 
 ''' TFLearn library. License MIT.

@@ -71,15 +71,23 @@ import numpy as np
 # We can find scipi in the url: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy'''
 import scipy.io as sio
 
-''' Matlab URL: http://matplotlib.org/users/installing.html'''
+''' Matlab URL: http://matplotlib.org/users/installing.html
+python -m pip install matplotlib'''
 import matplotlib.pyplot as plt
 
 ''' TFLearn library. License MIT.
 Git Clone : https://github.com/tflearn/tflearn.git
-To install: pip install tflearn'''
+    To install: pip install tflearn'''
 import tflearn
-
+'''
+ Sklearn(scikit-learn): Simple and efficient tools for data mining and data analysis
+ To install: pip install -U scikit-learn
+'''
+from sklearn.model_selection import train_test_split
 """
+To install pandas: pip3 install pandas
+"""
+import pandas as pd
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # ---- GLOBAL VARIABLES ----
@@ -100,9 +108,7 @@ testSetCSV = ''
 # ---- USER INTERFACE ----
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-"""
-
-'''Creating user interface'''
+"""Creating user interface
 #properties = eg.EasyGui()
 #uf.pt("Typos GUI",properties.types)
 
@@ -112,7 +118,7 @@ testSetCSV = ''
 # ---- READING DATA ----
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-"""
+
 
 """
 Creating Reader Features
