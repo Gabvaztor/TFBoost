@@ -7,6 +7,9 @@ This file contains samples and overrides deep learning algorithms.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
+from pandas.core.indexing import _iAtIndexer
+
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -280,14 +283,14 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
                 pt('index_buffer_data', index_buffer_data)
                 if show_images and i == 0:
                     show_image_from_tensor(x_batch_feed,x_rows_column) # shows images
-            percent_avance = str(i*100/trains)
-            pt('Seconds', (time.time() - start_time))
-            pt('TRAIN NUMBER: '+str(num_trains+1) + ' | Percent Epoch ' + str(epoch+1) + ": " + percent_avance + '%')
-            num_trains+=1
-            pt('train_accuracy',train_accuracy)
-            pt('crossEntropyTrain',crossEntropyTrain)
-            pt('test_accuracy',test_accuracy)
-
+            if i == 0 or i % 10 == 0:
+                percent_avance = str(i*100/trains)
+                pt('Seconds', (time.time() - start_time))
+                pt('TRAIN NUMBER: '+str(num_trains+1) + ' | Percent Epoch ' + str(epoch+1) + ": " + percent_avance + '%')
+                pt('train_accuracy',train_accuracy)
+                pt('crossEntropyTrain',crossEntropyTrain)
+                pt('test_accuracy',test_accuracy)
+            num_trains += 1
             # pt('correct_prediction',correct_prediction.eval())
             #pt('y_conv',y_convolution.eval(feed_dict={x: x_batch_feed, y_: label_batch_feed, keep_probably: 1.0}) * 100)
             # TODO Change to get without arguments (DO CLASS)
