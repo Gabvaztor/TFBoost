@@ -72,13 +72,13 @@ class Reader(object):
     # TODO
     types = set()
     data = []
-    trainSetCSV = ''
-    validationSetCSV = ''
-    testSetCSV = ''
-    trainValidationSet = []
-    trainSet = []
-    validationSet = []
-    testSet = []
+    train_set_csv = ''
+    validation_set_csv = ''
+    test_set_csv = ''
+    train_validation_set = []
+    train_set = []
+    validation_set = []
+    test_set = []
 
     x_train = []  # Train inputs without labels
     y_train = []  # Train labels without inputs
@@ -87,7 +87,7 @@ class Reader(object):
     x_test = []  # Test inputs without labels
     y_test = []  # Test labels without inputs
 
-    rFeatures = None  # ReaderFeatures Object
+    reader_features = None  # ReaderFeatures Object
 
     def __init__(self,reader_features):
         """
@@ -96,8 +96,8 @@ class Reader(object):
         """
         # TODO: Check if knownDataType is empty, number or char.
 
-        self.rFeatures = reader_features
-        if self.rFeatures.isUniqueCSV:
+        self.reader_features = reader_features
+        if self.reader_features.is_unique_csv:
             self.uniqueDataFile()
         else:
             self.multipleDataFiles()
@@ -115,26 +115,26 @@ class Reader(object):
         # Time to execute Breast_Cancer_Wisconsin Data.csv with np.fromfile:  0.0s
 
         # TODO Parametrizable delimiter
-        self.data = pd.read_csv(self.rFeatures.setDataFiles[0], delimiter=',')
+        self.data = pd.read_csv(self.reader_features.set_data_files[0], delimiter=',')
         # Time to execute Breast_Cancer_Wisconsin Data.csv with pd.read_csv:  0.007000446319580078s
         pt("DataTest Shape",self.data.shape)
 
         # TODO Create labelData Variable from a list of strings
         # TODO For each pop we have a class
         # TODO Fix this with advanced for <--
-        label_data = [self.data.pop(self.rFeatures.labelsSet[index]) for index in self.rFeatures.labelsSet]  # Data's labels
+        label_data = [self.data.pop(self.reader_features.labels_sets[index]) for index in self.reader_features.labels_sets]  # Data's labels
         pt('label_data', label_data)
         input_data = self.data  # Input data
 
-        trainSize = self.rFeatures.trainValidationTestPercentage[0]  # first value contains trainSize
-        test_size = self.rFeatures.trainValidationTestPercentage[-1]  # last value contains testSize
+        trainSize = self.reader_features.train_validation_test_percentages[0]  # first value contains trainSize
+        test_size = self.reader_features.train_validation_test_percentages[-1]  # last value contains testSize
         validationSize = None
 
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(input_data,label_data,test_size = test_size )  # Divide set into train and test sets (if it has validation set, into train and validation set for the first part and test set for the second part)
 
-        if self.rFeatures.thereIsValidation:  # If it has validation percentage
+        if self.reader_features.there_is_validation:  # If it has validation percentage
 
-            validationSize = self.rFeatures.trainValidationTestPercentage[1]  # Get validation percentage
+            validationSize = self.reader_features.train_validation_test_percentages[1]  # Get validation percentage
             totalLen = self.data.shape[0]  # All data rows
             # TODO If the data is in columns, we have to take the shape[1] value.
             trainValidationLen = self.x_train.shape[0]  # All train validation rows
@@ -155,14 +155,14 @@ class Reader(object):
         """
         #TODO check nulls
         #TODO lowletters in methods
-        features = self.rFeatures
+        features = self.reader_features
         tfSearch = Searcher(features=features)
         tfSearch.findTrainAndTestSetFromPathSignals()
 
-        self.trainSet.append(self.x_train)
-        self.trainSet.append(self.y_train)
-        self.testSet.append(self.x_test)
-        self.testSet.append(self.y_test)
+        self.train_set.append(self.x_train)
+        self.train_set.append(self.y_train)
+        self.test_set.append(self.x_test)
+        self.test_set.append(self.y_test)
 
 class ReaderFeatures():
     """ ReaderFeatures Class
@@ -173,30 +173,30 @@ class ReaderFeatures():
     setDataFiles (str): Description of `attr1`.
     isUniqueCSV (:obj:`int`, optional): Description of `attr2`.
     knownDataType
-    labelsSet (list: 'str'): Contains all labels values of data.
-    trainValidationTestPercentage (list:'float',optional): Must contains 2 or 3 percentages values:
+    labels_sets (list: 'str'): Contains all labels values of data.
+    train_validation_test_percentages (list:'float',optional): Must contains 2 or 3 percentages values:
         If 3: First is train set, second is validation set and third is test set.
         If 2: First is train set and second test set.
         TODO If none must be randomized
 
     """
-    setDataFiles = []
-    isUniqueCSV = False
-    knownDataType = ''
-    labelsSet = []
-    trainValidationTestPercentage = []
-    thereIsValidation = False
+    set_data_files = []
+    is_unique_csv = False
+    known_data_type = ''
+    labels_sets = []
+    train_validation_test_percentages = []
+    there_is_validation = False
     number_of_classes = None # Number of labels of the input
 
-    def __init__(self,set_data_files,number_of_classes,labels_set = '',
+    def __init__(self, set_data_files,number_of_classes,labels_set = '',
                  is_unique_csv = False,known_data_type = '',
                  percentages_sets = None):
 
-        self.setDataFiles = set_data_files
+        self.set_data_files = set_data_files
         self.number_of_classes = number_of_classes
-        self.isUniqueCSV =  is_unique_csv
-        self.knownDataType = known_data_type
-        self.labelsSet =  labels_set
+        self.is_unique_csv =  is_unique_csv
+        self.known_data_type = known_data_type
+        self.labels_sets =  labels_set
 
         # TODO Fix this
         if percentages_sets :  # If it is not None
@@ -206,9 +206,9 @@ class ReaderFeatures():
                     and sum(percentages_sets) == 1. \
                     and len([x for x in percentages_sets if x > 0]):  # Must be float list, all values must be float and all values must be positives
                 if len(percentages_sets) is 3:
-                    self.thereIsValidation = True
+                    self.there_is_validation = True
                     if percentages_sets[1] <= percentages_sets[0]:
-                        self.trainValidationTestPercentage = percentages_sets
+                        self.train_validation_test_percentages = percentages_sets
                     else:
                         raise RuntimeError (Errors.validation_error)
             else:
@@ -216,11 +216,11 @@ class ReaderFeatures():
 
 
 class Searcher(Reader):
-    pathToRead = ''
+    path_to_read = ''
 
     def __init__(self,features):
         super(Reader, self).__init__()
-        self.pathToRead = features.setDataFiles
+        self.path_to_read = features.set_data_files
         self.features = features
     def findTrainAndTestSetFromPathSignals(self):
         """
@@ -228,12 +228,12 @@ class Searcher(Reader):
         :return: Path list from train and test path
         """
         # TODO check nulls
-        for path in self.pathToRead:
+        for path in self.path_to_read:
             for root, dirs, files in os.walk(path):
                 for file_name in files:
                     if (file_name.endswith(Dictionary.extension_png)):
-                        fullpath = os.path.join(root, file_name)
-                        self.__getSetsFromFullPathSignals(fullpath)
+                        full_path = os.path.join(root, file_name)
+                        self.__getSetsFromFullPathSignals(full_path)
 
 
 
@@ -249,16 +249,9 @@ class Searcher(Reader):
             labels[int(y_label)] = 1
             self.y_train.append(list(labels))
             self.x_train.append(path)
-            if 588 == int(y_label): # Never is 588
-                pt('y_label',int(y_label))
-                pt('argmax_labels',np.argmax(labels))
-                pt('self.y_train',self.y_train)
-                pt([np.argmax(f, axis=0) for f in self.y_train])
-
         elif Dictionary.string_test in path: # If 'test' in path
             y_label_dir = os.path.dirname(path)  # Directory of file
             y_label = os.path.basename(y_label_dir)
             labels[int(y_label)] = 1
             self.y_test.append(list(labels))
-            #pt('y_test',self.y_test)
             self.x_test.append(path)

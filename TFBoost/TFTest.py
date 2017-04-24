@@ -134,8 +134,8 @@ tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with 
 """
 Getting train, validation (if necessary) and test set.
 """
-testSet = tfReader.testSet  # Test Set
-trainSet = tfReader.trainSet  # Train Set
+testSet = tfReader.test_set  # Test Set
+trainSet = tfReader.train_set  # Train Set
 
 
 # Signal training
