@@ -123,10 +123,10 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # TODO Create an simple but generic convolutional model to analyse sets.
     show_info = 0 # Labels and logits info.
     show_images = 0 # if True show images when show_info is True
-    suffle_data = True
+    shuffle_data = True
     to_array = True  # If the images must be reshaped into an array
-    x1_rows_number = 30
-    x1_column_number = 30
+    x1_rows_number = 35
+    x1_column_number = 35
     x_columns = x1_rows_number*x1_column_number
     x_rows_column = [x1_rows_number,x1_column_number]
     kernel_size = [5, 5]  # Kernel patch size
@@ -142,9 +142,9 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     second_label_neurons = number_neurons(input_size, first_label_neurons, number_of_classes)  # Weight second label neurons
     third_label_neurons = number_neurons(input_size, second_label_neurons, number_of_classes)  # Weight third label neurons
     '''
-    first_label_neurons = 32
-    second_label_neurons = 24
-    third_label_neurons = 60
+    first_label_neurons = 30
+    second_label_neurons = 30
+    third_label_neurons = 30
     if not trains:
         trains = int(input_size/batch_size)+1
 
@@ -172,11 +172,16 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # Pool Layer 1 and reshape images into 12x12 with pool 2x2 and strides 2x2
     #pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
     # Second Convolutional Layer
-    #convolution_2 = tf.layers.conv2d(inputs=convolution_1, filters=third_label_neurons,  kernel_size=kernel_size, padding="same")
+    convolution_2 = tf.layers.conv2d(
+        inputs=convolution_1,
+        filters=third_label_neurons,
+        kernel_size=kernel_size,
+        padding="same",
+        activation = tf.nn.relu)
     # Pool Layer 2 and reshape images into 6x6 with pool 2x2 and strides 2x2
     #pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
     # Dense Layer
-    pool2_flat = tf.reshape(convolution_1, [-1, x1_rows_number * x1_column_number * third_label_neurons])
+    pool2_flat = tf.reshape(convolution_2, [-1, x1_rows_number * x1_column_number * third_label_neurons])
     dense = tf.layers.dense(inputs=pool2_flat, units=third_label_neurons, activation=tf.nn.relu)
     dropout = tf.nn.dropout(dense, keep_probably)
     # Readout Layer
@@ -223,7 +228,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # Batching values and labels from input and labels (with batch size)
     x_batch_feed, label_batch_feed = get_data_buffer_images(input, input_labels,
                                                   batch_size=batch_size,
-                                                  shuffle=suffle_data, to_type=Dictionary.gray_scale,
+                                                  shuffle=shuffle_data, to_type=Dictionary.gray_scale,
                                                   x_rows_column=x_rows_column, to_array=to_array,is_test=False)
     x_test_feed, y_test_feed = get_data_buffer_images(test, test_labels,
                                                   batch_size=len(test),
@@ -297,7 +302,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
             # Update batchs values
             x_batch_feed, label_batch_feed = get_data_buffer_images(input, input_labels,
                                                                 batch_size=batch_size,
-                                                                shuffle=suffle_data, to_type=Dictionary.gray_scale,
+                                                                shuffle=shuffle_data, to_type=Dictionary.gray_scale,
                                                                 x_rows_column=x_rows_column, to_array=to_array)
 
     # When finish coord
