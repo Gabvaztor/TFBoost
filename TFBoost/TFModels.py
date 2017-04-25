@@ -123,10 +123,10 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # TODO Create an simple but generic convolutional model to analyse sets.
     show_info = 0 # Labels and logits info.
     show_images = 0 # if True show images when show_info is True
-    shuffle_data = False
+    shuffle_data = True
     to_array = True  # If the images must be reshaped into an array
-    x1_rows_number = 35
-    x1_column_number = 35
+    x1_rows_number = 40
+    x1_column_number = 40
     x_columns = x1_rows_number*x1_column_number
     x_rows_column = [x1_rows_number,x1_column_number]
     kernel_size = [2, 2]  # Kernel patch size
@@ -454,10 +454,13 @@ def preprocess_image(image, image_type, height, width):
     image = np.array(image, dtype = np.uint8)
     image = cv2.normalize(image,image, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    pt("image",image.shape)
-    cv2.imshow('image', image)
-    cv2.waitKey(0)  # Wait until press key to destroy image
-    asdf
+    image = cv2.copyMakeBorder(image, top = to_crop_height,
+                               bottom = to_crop_height,
+                               left = to_crop_width,
+                               right = to_crop_width,
+                               borderType = cv2.BORDER_CONSTANT)
+    #cv2.imshow('image', image)
+    #cv2.waitKey(0)  # Wait until press key to destroy image
     return image
     # TODO Scale image to center into figure
 # Load an color image in grayscale (0 is gray scale)
