@@ -56,7 +56,7 @@ To install: pip install tflearn'''
 import tflearn
 '''"Best image library"
 pip install opencv-python'''
-import cv2 as cv2
+import cv2
 
 """ Random to suffle lists """
 import random
@@ -123,7 +123,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # TODO Create an simple but generic convolutional model to analyse sets.
     show_info = 0 # Labels and logits info.
     show_images = 0 # if True show images when show_info is True
-    shuffle_data = True
+    shuffle_data = False
     to_array = True  # If the images must be reshaped into an array
     x1_rows_number = 35
     x1_column_number = 35
@@ -405,8 +405,7 @@ def get_data_buffer_images(inputs, inputs_labels, batch_size, shuffle=False,to_t
     for _ in range(batch_size):
         # Reshape
         if x_rows_column is not None:
-            img = preprocess_image(inputs_processed[index_buffer_data],image_type)
-            img = cv2.resize(img,(x_rows_column[0],x_rows_column[1]))
+            img = preprocess_image(inputs_processed[index_buffer_data],image_type,x_rows_column)
         if to_array:
             img = img.reshape(-1)
         x_inputs.append(img)
@@ -429,11 +428,11 @@ def augment_brightness_camera_images(image):
     image1 = cv2.cvtColor(image1,cv2.COLOR_HSV2RGB)
     return image1
 
-def preprocess_image(image, image_type):
+def preprocess_image(image, image_type,rows_colums):
     """
 
     :param image: The image to change
-    :param image_type: Gray Scale, RGB,
+    :param image_type: Gray Scale, RGB, HSV
     :return:
     """
     # TODO Realize this with ALL inputs and use the returned sets to train
@@ -442,9 +441,20 @@ def preprocess_image(image, image_type):
     # 2- Modify intensity and contrast
     # 3- Transform to gray scale
     # 4- Return image
+    image = cv2.imread(image)
+    image = cv2.resize(image, (rows_colums[0], rows_colums[1]))
+    image = cv2.copyMakeBorder(image, 10, 10, 10, 10, cv2.BORDER_CONSTANT,value=[0,0,0])
     image = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
+    image = np.array(image, dtype = np.float64)
+    random_bright = .5+np.random.uniform()
+    image[:,:,2] = image[:,:,2]*random_bright
+    image[:,:,2][image[:,:,2]>255]  = 255
+    image = np.array(image, dtype = np.uint8)
+    image = cv2.cvtColor(image,cv2.COLOR_HSV2RGB)
+    image = cv2.normalize(image,image, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
     cv2.imshow('image', image)
     cv2.waitKey(0)  # Wait until press key to destroy image
+    asd
     image = cv2.imread(inputs_processed[index_buffer_data], image_type)  # Get color in image_type
 
     return image
