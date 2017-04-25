@@ -405,7 +405,7 @@ def get_data_buffer_images(inputs, inputs_labels, batch_size, shuffle=False,to_t
     for _ in range(batch_size):
         # Reshape
         if x_rows_column is not None:
-            img = preprocess_image(inputs_processed[index_buffer_data],image_type,x_rows_column)
+            img = preprocess_image(inputs_processed[index_buffer_data],image_type,x_rows_column[0],x_rows_column[1])
         if to_array:
             img = img.reshape(-1)
         x_inputs.append(img)
@@ -428,7 +428,7 @@ def augment_brightness_camera_images(image):
     image1 = cv2.cvtColor(image1,cv2.COLOR_HSV2RGB)
     return image1
 
-def preprocess_image(image, image_type,rows_colums):
+def preprocess_image(image, image_type, height, width):
     """
 
     :param image: The image to change
@@ -442,21 +442,22 @@ def preprocess_image(image, image_type,rows_colums):
     # 3- Transform to gray scale
     # 4- Return image
     image = cv2.imread(image)
-    image = cv2.resize(image, (rows_colums[0], rows_colums[1]))
-    image = cv2.copyMakeBorder(image, 10, 10, 10, 10, cv2.BORDER_CONSTANT,value=[0,0,0])
-    image = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
+    image = cv2.resize(image, (height, width))
+    random_percentage = random.randint(3,20)
+    to_crop_height = int((random_percentage*height)/100)
+    to_crop_width = int((random_percentage*width)/100)
+    image = image[to_crop_height:height-to_crop_height, to_crop_width:width-to_crop_width]
     image = np.array(image, dtype = np.float64)
     random_bright = .5+np.random.uniform()
     image[:,:,2] = image[:,:,2]*random_bright
     image[:,:,2][image[:,:,2]>255]  = 255
     image = np.array(image, dtype = np.uint8)
-    image = cv2.cvtColor(image,cv2.COLOR_HSV2RGB)
     image = cv2.normalize(image,image, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    pt("image",image.shape)
     cv2.imshow('image', image)
     cv2.waitKey(0)  # Wait until press key to destroy image
-    asd
-    image = cv2.imread(inputs_processed[index_buffer_data], image_type)  # Get color in image_type
-
+    asdf
     return image
     # TODO Scale image to center into figure
 # Load an color image in grayscale (0 is gray scale)
