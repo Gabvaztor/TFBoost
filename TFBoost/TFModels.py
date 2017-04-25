@@ -129,7 +129,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     x1_column_number = 35
     x_columns = x1_rows_number*x1_column_number
     x_rows_column = [x1_rows_number,x1_column_number]
-    kernel_size = [5, 5]  # Kernel patch size
+    kernel_size = [2, 2]  # Kernel patch size
     input_size = len(input)
     num_epoch = 100  # Epochs number
     #batch_size = int(input_size/10)+1  # Batch size
@@ -172,16 +172,18 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # Pool Layer 1 and reshape images into 12x12 with pool 2x2 and strides 2x2
     #pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
     # Second Convolutional Layer
+    '''
     convolution_2 = tf.layers.conv2d(
         inputs=convolution_1,
         filters=third_label_neurons,
         kernel_size=kernel_size,
         padding="same",
         activation = tf.nn.relu)
+    '''
     # Pool Layer 2 and reshape images into 6x6 with pool 2x2 and strides 2x2
     #pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
     # Dense Layer
-    pool2_flat = tf.reshape(convolution_2, [-1, x1_rows_number * x1_column_number * third_label_neurons])
+    pool2_flat = tf.reshape(convolution_1, [-1, x1_rows_number * x1_column_number * third_label_neurons])
     dense = tf.layers.dense(inputs=pool2_flat, units=third_label_neurons, activation=tf.nn.relu)
     dropout = tf.nn.dropout(dense, keep_probably)
     # Readout Layer
@@ -434,12 +436,15 @@ def preprocess_image(image, image_type):
     :param image_type: Gray Scale, RGB,
     :return:
     """
+    # TODO Realize this with ALL inputs and use the returned sets to train
     # TODO Normalize image
     # 1- Get image in RGB
     # 2- Modify intensity and contrast
     # 3- Transform to gray scale
     # 4- Return image
-
+    image = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
+    cv2.imshow('image', image)
+    cv2.waitKey(0)  # Wait until press key to destroy image
     image = cv2.imread(inputs_processed[index_buffer_data], image_type)  # Get color in image_type
 
     return image
