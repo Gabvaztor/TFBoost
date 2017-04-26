@@ -129,7 +129,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     x1_column_number = 40
     x_columns = x1_rows_number*x1_column_number
     x_rows_column = [x1_rows_number,x1_column_number]
-    kernel_size = [2, 2]  # Kernel patch size
+    kernel_size = [5, 5]  # Kernel patch size
     input_size = len(input)
     num_epoch = 100  # Epochs number
     #batch_size = int(input_size/10)+1  # Batch size
@@ -142,8 +142,8 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     second_label_neurons = number_neurons(input_size, first_label_neurons, number_of_classes)  # Weight second label neurons
     third_label_neurons = number_neurons(input_size, second_label_neurons, number_of_classes)  # Weight third label neurons
     '''
-    first_label_neurons = 30
-    second_label_neurons = 30
+    first_label_neurons = 50
+    second_label_neurons = 55
     third_label_neurons = 30
     if not trains:
         trains = int(input_size/batch_size)+1
@@ -172,18 +172,18 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # Pool Layer 1 and reshape images into 12x12 with pool 2x2 and strides 2x2
     #pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
     # Second Convolutional Layer
-    '''
+
     convolution_2 = tf.layers.conv2d(
         inputs=convolution_1,
         filters=third_label_neurons,
         kernel_size=kernel_size,
         padding="same",
         activation = tf.nn.relu)
-    '''
+
     # Pool Layer 2 and reshape images into 6x6 with pool 2x2 and strides 2x2
     #pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
     # Dense Layer
-    pool2_flat = tf.reshape(convolution_1, [-1, x1_rows_number * x1_column_number * third_label_neurons])
+    pool2_flat = tf.reshape(convolution_2, [-1, x1_rows_number * x1_column_number * third_label_neurons])
     dense = tf.layers.dense(inputs=pool2_flat, units=third_label_neurons, activation=tf.nn.relu)
     dropout = tf.nn.dropout(dense, keep_probably)
     # Readout Layer
@@ -195,9 +195,9 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_convolution))  # Cross entropy between y_ and y_conv
 
-    train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer (gradient descent)
+    #train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer (gradient descent)
     #train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
-    #train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
+    train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
     # Sure is axis = 1
     correct_prediction = tf.equal(tf.argmax(y_convolution, axis=1), tf.argmax(y_, axis=1))  # Get Number of right values in tensor
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
@@ -328,6 +328,7 @@ def read_from_reader_signal_competition(filename_queue,x_rows_column):
 
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.01)
+    #initial = tf.zeros(shape, dtype=tf.float32)
     return tf.Variable(initial)
 
 def bias_variable(shape):
@@ -437,23 +438,23 @@ def preprocess_image(image, image_type, height, width):
     """
     # TODO Realize this with ALL inputs and use the returned sets to train
     # TODO Normalize image
-    # 1- Get image in RGB
+    # 1- Get image in GrayScale
     # 2- Modify intensity and contrast
     # 3- Transform to gray scale
     # 4- Return image
-    image = cv2.imread(image)
+    image = cv2.imread(image,0)
     image = cv2.resize(image, (height, width))
+    image = cv2.equalizeHist(image)
     random_percentage = random.randint(3,20)
     to_crop_height = int((random_percentage*height)/100)
     to_crop_width = int((random_percentage*width)/100)
     image = image[to_crop_height:height-to_crop_height, to_crop_width:width-to_crop_width]
-    image = np.array(image, dtype = np.float64)
-    random_bright = .5+np.random.uniform()
-    image[:,:,2] = image[:,:,2]*random_bright
-    image[:,:,2][image[:,:,2]>255]  = 255
-    image = np.array(image, dtype = np.uint8)
-    image = cv2.normalize(image,image, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    #image = np.array(image, dtype = np.float64)
+    #random_bright = .5+np.random.uniform()
+    #image[:,:,2] = image[:,:,2]*random_bright
+    #image[:,:,2][image[:,:,2]>255]  = 255
+    #image = cv2.normalize(image,image, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    #image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     image = cv2.copyMakeBorder(image, top = to_crop_height,
                                bottom = to_crop_height,
                                left = to_crop_width,
