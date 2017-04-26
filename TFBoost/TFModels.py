@@ -60,7 +60,8 @@ import cv2
 
 """ Random to suffle lists """
 import random
-
+""" Time """
+import time
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -144,7 +145,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     '''
     first_label_neurons = 50
     second_label_neurons = 55
-    third_label_neurons = 30
+    third_label_neurons = 50
     if not trains:
         trains = int(input_size/batch_size)+1
 
@@ -170,20 +171,20 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
         padding="same",
         activation=tf.nn.relu)
     # Pool Layer 1 and reshape images into 12x12 with pool 2x2 and strides 2x2
-    #pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
+    pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
     # Second Convolutional Layer
 
     convolution_2 = tf.layers.conv2d(
-        inputs=convolution_1,
+        inputs=pool1,
         filters=third_label_neurons,
         kernel_size=kernel_size,
         padding="same",
         activation = tf.nn.relu)
 
     # Pool Layer 2 and reshape images into 6x6 with pool 2x2 and strides 2x2
-    #pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
+    pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
     # Dense Layer
-    pool2_flat = tf.reshape(convolution_2, [-1, x1_rows_number * x1_column_number * third_label_neurons])
+    pool2_flat = tf.reshape(pool2, [-1, int(x1_rows_number/4) * int(x1_column_number/4) * third_label_neurons])
     dense = tf.layers.dense(inputs=pool2_flat, units=third_label_neurons, activation=tf.nn.relu)
     dropout = tf.nn.dropout(dense, keep_probably)
     # Readout Layer
@@ -196,8 +197,8 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_convolution))  # Cross entropy between y_ and y_conv
 
     #train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer (gradient descent)
-    #train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
-    train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
+    train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
+    #train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
     # Sure is axis = 1
     correct_prediction = tf.equal(tf.argmax(y_convolution, axis=1), tf.argmax(y_, axis=1))  # Get Number of right values in tensor
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
@@ -292,7 +293,8 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
                     show_image_from_tensor(x_batch_feed,x_rows_column) # shows images
             if i == 0 or i % 10 == 0:
                 percent_avance = str(i*100/trains)
-                pt('Seconds', (time.time() - start_time))
+                pt('Time', (time.time() - start_time))
+                pt('Seconds', str(time.strftime("%Hh:%Mm:%Ss", time.gmtime((time.time() - start_time)))))
                 pt('TRAIN NUMBER: '+str(num_trains+1) + ' | Percent Epoch ' + str(epoch+1) + ": " + percent_avance + '%')
                 pt('train_accuracy',train_accuracy)
                 pt('crossEntropyTrain',crossEntropyTrain)
