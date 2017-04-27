@@ -126,15 +126,15 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     show_images = 0 # if True show images when show_info is True
     shuffle_data = True
     to_array = True  # If the images must be reshaped into an array
-    x1_rows_number = 48
-    x1_column_number = 48
+    x1_rows_number = 60
+    x1_column_number = 60
     x_columns = x1_rows_number*x1_column_number
     x_rows_column = [x1_rows_number,x1_column_number]
     kernel_size = [5, 5]  # Kernel patch size
     input_size = len(input)
     num_epoch = 100  # Epochs number
     #batch_size = int(input_size/10)+1  # Batch size
-    batch_size = 100# Batch size
+    batch_size = 100  # Batch size
     # capacity must be larger than min_after_dequeue and the amount larger
     # determines the maximum we will prefetch.
     # capacity = int(input_size / 4)
@@ -170,8 +170,13 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
         kernel_size=kernel_size,
         padding="same",
         activation=tf.nn.relu)
+    convolution_3 = tf.layers.conv2d(
+        inputs=convolution_1,
+        filters=third_label_neurons,
+        kernel_size=kernel_size,
+        padding="same")
     # Pool Layer 1 and reshape images into 12x12 with pool 2x2 and strides 2x2
-    pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
+    pool1 = tf.layers.max_pooling2d(inputs=convolution_3, pool_size=[2, 2], strides=2)
     # Second Convolutional Layer
 
     convolution_2 = tf.layers.conv2d(
