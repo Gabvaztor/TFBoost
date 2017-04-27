@@ -78,7 +78,7 @@ inputs_processed, labels_processed = [],[]  # New inputs and labels processed fo
 
 def lineal_model_basic_with_gradient_descent(self, input, test, input_labels, test_labels, number_of_inputs,
                                              number_of_classes,
-                                             learning_rate=0.001, trains=100, type=None, validation=None,
+                                             learning_rate=0.015, trains=100, type=None, validation=None,
                                              validation_labels=None, deviation=None):
     """
     This method doesn't do softmax.
@@ -126,8 +126,8 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     show_images = 0 # if True show images when show_info is True
     shuffle_data = True
     to_array = True  # If the images must be reshaped into an array
-    x1_rows_number = 40
-    x1_column_number = 40
+    x1_rows_number = 48
+    x1_column_number = 48
     x_columns = x1_rows_number*x1_column_number
     x_rows_column = [x1_rows_number,x1_column_number]
     kernel_size = [5, 5]  # Kernel patch size
@@ -179,7 +179,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
         filters=third_label_neurons,
         kernel_size=kernel_size,
         padding="same",
-        activation = tf.nn.relu)
+        activation=tf.nn.relu)
 
     # Pool Layer 2 and reshape images into 6x6 with pool 2x2 and strides 2x2
     pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
@@ -197,7 +197,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_convolution))  # Cross entropy between y_ and y_conv
 
     #train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer (gradient descent)
-    train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
+    train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)  # 97-98 test
     #train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
     # Sure is axis = 1
     correct_prediction = tf.equal(tf.argmax(y_convolution, axis=1), tf.argmax(y_, axis=1))  # Get Number of right values in tensor
@@ -243,8 +243,8 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     sess.run(tf.global_variables_initializer())
 
     # initialize the queue threads to start to shovel data
-    coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(coord=coord)
+    #coord = tf.train.Coordinator()
+    #threads = tf.train.start_queue_runners(coord=coord)
     num_trains = 0
     start_time = time.time()
     # TRAIN
@@ -293,8 +293,8 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
                     show_image_from_tensor(x_batch_feed,x_rows_column) # shows images
             if i == 0 or i % 10 == 0:
                 percent_avance = str(i*100/trains)
-                pt('Time', (time.time() - start_time))
-                pt('Seconds', str(time.strftime("%Hh:%Mm:%Ss", time.gmtime((time.time() - start_time)))))
+                pt('Seconds', (time.time() - start_time))
+                pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
                 pt('TRAIN NUMBER: '+str(num_trains+1) + ' | Percent Epoch ' + str(epoch+1) + ": " + percent_avance + '%')
                 pt('train_accuracy',train_accuracy)
                 pt('crossEntropyTrain',crossEntropyTrain)
@@ -310,8 +310,8 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
                                                                 x_rows_column=x_rows_column, to_array=to_array)
 
     # When finish coord
-    coord.request_stop()
-    coord.join(threads)
+    #coord.request_stop()
+    #coord.join(threads)
     pt('END TRAINING ')
 
 
@@ -446,6 +446,7 @@ def preprocess_image(image, image_type, height, width):
     # 4- Return image
     image = cv2.imread(image,0)
     image = cv2.resize(image, (height, width))
+    image = cv2.equalizeHist(image)
     image = cv2.equalizeHist(image)
     random_percentage = random.randint(3,20)
     to_crop_height = int((random_percentage*height)/100)
