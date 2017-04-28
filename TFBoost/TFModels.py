@@ -170,13 +170,8 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
         kernel_size=kernel_size,
         padding="same",
         activation=tf.nn.relu)
-    convolution_3 = tf.layers.conv2d(
-        inputs=convolution_1,
-        filters=third_label_neurons,
-        kernel_size=kernel_size,
-        padding="same")
-    # Pool Layer 1 and reshape images into 12x12 with pool 2x2 and strides 2x2
-    pool1 = tf.layers.max_pooling2d(inputs=convolution_3, pool_size=[2, 2], strides=2)
+    # Pool Layer 1 and reshape images by 2
+    pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
     # Second Convolutional Layer
 
     convolution_2 = tf.layers.conv2d(
@@ -186,7 +181,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
         padding="same",
         activation=tf.nn.relu)
 
-    # Pool Layer 2 and reshape images into 6x6 with pool 2x2 and strides 2x2
+    # # Pool Layer 2 nd reshape images by 2
     pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
     # Dense Layer
     pool2_flat = tf.reshape(pool2, [-1, int(x1_rows_number/4) * int(x1_column_number/4) * third_label_neurons])
@@ -250,7 +245,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # initialize the queue threads to start to shovel data
     #coord = tf.train.Coordinator()
     #threads = tf.train.start_queue_runners(coord=coord)
-    num_trains = 0
+    num_trains_acum = 0
     start_time = time.time()
     # TRAIN
     for epoch in range (num_epoch):
@@ -300,11 +295,11 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
                 percent_avance = str(i*100/trains)
                 pt('Seconds', (time.time() - start_time))
                 pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
-                pt('TRAIN NUMBER: '+str(num_trains+1) + ' | Percent Epoch ' + str(epoch+1) + ": " + percent_avance + '%')
+                pt('TRAIN NUMBER: '+str(num_trains_acum+1) + ' | Percent Epoch ' + str(epoch+1) + ": " + percent_avance + '%')
                 pt('train_accuracy',train_accuracy)
                 pt('crossEntropyTrain',crossEntropyTrain)
                 pt('test_accuracy',test_accuracy)
-            num_trains += 1
+            num_trains_acum += 1
             # pt('correct_prediction',correct_prediction.eval())
             #pt('y_conv',y_convolution.eval(feed_dict={x: x_batch_feed, y_: label_batch_feed, keep_probably: 1.0}) * 100)
             # TODO Change to get without arguments (DO CLASS)
