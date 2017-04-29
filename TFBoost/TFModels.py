@@ -184,6 +184,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # # Pool Layer 2 nd reshape images by 2
     pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
     # Dense Layer
+    # TODO Checks max pools numbers
     pool2_flat = tf.reshape(pool2, [-1, int(x1_rows_number/4) * int(x1_column_number/4) * third_label_neurons])
     dense = tf.layers.dense(inputs=pool2_flat, units=third_label_neurons, activation=tf.nn.relu)
     dropout = tf.nn.dropout(dense, keep_probably)
