@@ -473,3 +473,15 @@ def preprocess_image(image, image_type, height, width):
     return image
     # TODO Scale image to center into figure
 # Load an color image in grayscale (0 is gray scale)
+
+
+class TFModels():
+    """
+    Long Docs ...
+    """
+    # TODO Docs
+    def __init__(self,input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
+                      learning_rate=1e-3, trains=None, type=None, validation=None,
+                      validation_labels=None, deviation=None):
+        pass
+
