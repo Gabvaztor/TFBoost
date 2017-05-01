@@ -19,6 +19,9 @@ The code's structure is:
     - Training and test
     - Show final conclusions
 
+Style: "Google Python Style Guide" 
+https://google.github.io/styleguide/pyguide.html
+
 Notes:
     * This file use TensorFlow version 1.0.
 """

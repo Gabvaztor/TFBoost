@@ -3,6 +3,9 @@ Author: @gabvaztor
 StartDate: 11/03/2017
 
 This class contains a dictionary with keys-values
+
+Style: "Google Python Style Guide" 
+https://google.github.io/styleguide/pyguide.html
 """
 
 """

@@ -3,6 +3,10 @@ Author: @gabvaztor
 StartDate: 04/03/2017
 
 This file contains samples and overrides deep learning algorithms.
+
+Style: "Google Python Style Guide" 
+https://google.github.io/styleguide/pyguide.html
+
 """
 from __future__ import absolute_import
 from __future__ import division

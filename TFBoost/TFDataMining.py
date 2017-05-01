@@ -4,6 +4,9 @@ StartDate: 04/03/2017
 
 With this class you can pre-process your data. For example,
 you can add statistical information or order your data.
+
+Style: "Google Python Style Guide" 
+https://google.github.io/styleguide/pyguide.html
 """
 
 """

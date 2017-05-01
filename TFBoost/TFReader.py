@@ -10,6 +10,9 @@ To select the csv reader we have followed the following benchmark:
 http://softwarerecs.stackexchange.com/questions/7463/fastest-python-library-to-read-a-csv-file
 
 For read data in clusters, we will use "ParaText": http://www.wise.io/tech/paratext
+
+Style: "Google Python Style Guide" 
+https://google.github.io/styleguide/pyguide.html
 """
 
 """
