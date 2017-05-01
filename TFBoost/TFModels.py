@@ -142,6 +142,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # capacity must be larger than min_after_dequeue and the amount larger
     # determines the maximum we will prefetch.
     # capacity = int(input_size / 4)
+    train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
     '''
     first_label_neurons = number_neurons(input_size, batch_size, number_of_classes)  # Weight first label neurons
     second_label_neurons = number_neurons(input_size, first_label_neurons, number_of_classes)  # Weight second label neurons
@@ -260,7 +261,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
             '''
             
             # Setting values
-            feed_dict_train_50 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: 0.5}
+            feed_dict_train_50 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: train_dropout}
             feed_dict_train_100 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: 1}
             feed_dict_test_100 = {x: x_test_feed, y_: y_test_feed, keep_probably: 1}
             train_accuracy = accuracy.eval(feed_dict_train_100) * 100
