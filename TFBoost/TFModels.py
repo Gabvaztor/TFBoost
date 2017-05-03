@@ -251,7 +251,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     # initialize the queue threads to start to shovel data
     #coord = tf.train.Coordinator()
     #threads = tf.train.start_queue_runners(coord=coord)
-    num_trains_acum = 0
+
     start_time = time.time()
     # TRAIN
     for epoch in range (num_epoch):
@@ -481,34 +481,35 @@ class TFModels():
     Long Docs ...
     """
     # TODO Docs
-    show_info = 0 # Labels and logits info.
-    show_images = 0 # if True show images when show_info is True
-    shuffle_data = True
-    to_array = True  # If the images must be reshaped into an array
-    x1_rows_number = 60
-    x1_column_number = 60
-    x_columns = x1_rows_number*x1_column_number
-    x_rows_column = [x1_rows_number,x1_column_number]
-    kernel_size = [5, 5]  # Kernel patch size
-    input_size = len(input)
-    num_epoch = 100  # Epochs number
-    #batch_size = int(input_size/10)+1  # Batch size
-    batch_size = 100  # Batch size
-    # capacity must be larger than min_after_dequeue and the amount larger
-    # determines the maximum we will prefetch.
-    # capacity = int(input_size / 4)
-    train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
-    '''
-    first_label_neurons = number_neurons(input_size, batch_size, number_of_classes)  # Weight first label neurons
-    second_label_neurons = number_neurons(input_size, first_label_neurons, number_of_classes)  # Weight second label neurons
-    third_label_neurons = number_neurons(input_size, second_label_neurons, number_of_classes)  # Weight third label neurons
-    '''
-    first_label_neurons = 50
-    second_label_neurons = 55
-    third_label_neurons = 50
-
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
                       learning_rate=1e-3, trains=None, type=None, validation=None,
                       validation_labels=None, deviation=None):
-        pass
-
+        self.show_info = 0  # Labels and logits info.
+        self.show_images = 0  # if True show images when show_info is True
+        self.shuffle_data = True
+        self.to_array = True  # If the images must be reshaped into an array
+        self.x1_rows_number = 60
+        self.x1_column_number = 60
+        self.x_columns = self.x1_rows_number * self.x1_column_number
+        self.x_rows_column = [self.x1_rows_number, self.x1_column_number]
+        self.kernel_size = [5, 5]  # Kernel patch size
+        self.input_size = len(input)
+        self.num_epoch = 100  # Epochs number
+        # self.batch_size = int(self.input_size/10)+1  # Batch size
+        self.batch_size = 100  # Batch size
+        # capacity must be larger than min_after_dequeue and the amount larger
+        # determines the maximum we will prefetch.
+        # self.capacity = int(self.input_size / 4)
+        self.train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
+        # TODO Must be in class attribute
+        self.index_buffer_data = 0  # The index for batches during training
+        self.inputs_processed, self.labels_processed = [], []  # New inputs and labels processed for training. (Change during shuffle)
+        '''
+        self.first_label_neurons = number_neurons(input_size, batch_size, number_of_classes)  # Weight first label neurons
+        self.second_label_neurons = number_neurons(input_size, first_label_neurons, number_of_classes)  # Weight second label neurons
+        self.third_label_neurons = number_neurons(input_size, second_label_neurons, number_of_classes)  # Weight third label neurons
+        '''
+        self.first_label_neurons = 50
+        self.second_label_neurons = 55
+        self.third_label_neurons = 50
+        self.num_trains_acum = 0
