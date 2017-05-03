@@ -485,6 +485,7 @@ class TFModels():
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
                       learning_rate=1e-3, trains=None, type=None, validation=None,
                       validation_labels=None, deviation=None):
+        self.learning_rate = learning_rate  # Learning rate
         self.show_info = 0  # Labels and logits info.
         self.show_images = 0  # if True show images when show_info is True
         self.shuffle_data = True
@@ -514,6 +515,11 @@ class TFModels():
         self.third_label_neurons = 50
         self.num_trains_acum = 0
 
+    def actual_configuration(self):
+        """
+        Return a string with actual features
+        """
+        return self.__dict__
     def update_inputs_and_labels_shuffling(self,inputs,inputs_labels):
         """
         Update inputs_processed and labels_processed variables with an inputs and inputs_labels shuffled
