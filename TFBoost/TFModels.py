@@ -253,6 +253,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     #threads = tf.train.start_queue_runners(coord=coord)
 
     start_time = time.time()
+    num_trains_acum = 0
     # TRAIN
     for epoch in range (num_epoch):
         for i in range(trains):
