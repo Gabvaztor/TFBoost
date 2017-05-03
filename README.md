@@ -13,3 +13,5 @@ TensorFlow Boost works as follows:
 ![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/CSV%20Diagram.png)
 
 In future, this project contains a graph visualization BEFORE TensorFlow generates his graphs.
+
+"TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc."
