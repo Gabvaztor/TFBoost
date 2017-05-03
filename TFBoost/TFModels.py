@@ -497,7 +497,6 @@ class TFModels():
         self.kernel_size = [5, 5]  # Kernel patch size
         self.input_size = len(input)
         self.num_epoch = 100  # Epochs number
-        # self.batch_size = int(self.input_size/10)+1  # Batch size
         self.batch_size = 100  # Batch size
         # capacity must be larger than min_after_dequeue and the amount larger
         # determines the maximum we will prefetch.
