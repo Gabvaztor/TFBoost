@@ -247,7 +247,7 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
     sess = tf.InteractiveSession()
     sess.run(tf.local_variables_initializer())
     sess.run(tf.global_variables_initializer())
-
+    saver = tf.train.Saver()
     # initialize the queue threads to start to shovel data
     #coord = tf.train.Coordinator()
     #threads = tf.train.start_queue_runners(coord=coord)
@@ -277,6 +277,12 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
             y_pt = tf.argmax(y_, axis=1).eval(feed_dict_train_100)
             #first_image = convolution_1.eval(feed_dict_train_100)[0]
             # pt('convolution_1[shape]',first_image.shape)
+            if test_accuracy > 99:
+                # TODO return best previous model to check when save new model
+                # Save the variables to disk.
+                save_path = saver.save(sess, "/tmp/model.ckpt")
+                # TODO Write in text file new models with features
+
 
             # TODO Use validation set
             # if show_info and epoch == 0 and i == 0:
