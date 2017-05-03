@@ -502,7 +502,6 @@ class TFModels():
         # determines the maximum we will prefetch.
         # self.capacity = int(self.input_size / 4)
         self.train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
-        # TODO Must be in class attribute
         self.index_buffer_data = 0  # The index for batches during training
         self.inputs_processed, self.labels_processed = [], []  # New inputs and labels processed for training. (Change during shuffle)
         '''
@@ -514,3 +513,14 @@ class TFModels():
         self.second_label_neurons = 55
         self.third_label_neurons = 50
         self.num_trains_acum = 0
+
+    def update_inputs_and_labels_shuffling(self,inputs,inputs_labels):
+        """
+        Update inputs_processed and labels_processed variables with an inputs and inputs_labels shuffled
+        
+        :param inputs: Represent input data
+        :param inputs_labels:  Represent labels data
+        """
+        c = list(zip(inputs, inputs_labels))
+        random.shuffle(c)
+        self.inputs_processed, self.labels_processed = zip(*c)
