@@ -379,7 +379,6 @@ def show_image_from_tensor(images,x_rows_column):
         cv2.waitKey(0)  # Wait until press key to destroy image
         #cv2.destroyAllWindows()  # Destroy all windows
 
-# Redoit when this file be a class
 def get_data_buffer_images(inputs, inputs_labels, batch_size, shuffle=False,to_type=None,x_rows_column=None,
                            to_array=False,is_test=False):
     """
@@ -391,7 +390,7 @@ def get_data_buffer_images(inputs, inputs_labels, batch_size, shuffle=False,to_t
     :param batch_size:
     :param index: # TODO make global in class attribute
     :param shuffle:
-    :param x_rows_column: A list [row,column] if want to reshape the images in that shape
+    :param x_rows_column: An array [row,column] if want to reshape the images in that shape
     :param to_array: If result must be and array and not a matrix
     :return:
     """
@@ -483,7 +482,7 @@ def preprocess_image(image, image_type, height, width):
     #cv2.waitKey(0)  # Wait until press key to destroy image
     return image
     # TODO Scale image to center into figure
-# Load an color image in grayscale (0 is gray scale)
+    # Load an color image in grayscale (0 is gray scale)
 
 
 class TFModels():
@@ -494,6 +493,12 @@ class TFModels():
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
                       learning_rate=1e-3, trains=None, type=None, validation=None,
                       validation_labels=None, deviation=None):
+        self._input = input
+        self._test = test
+        self._input_labels = input_labels
+        self._test_labels = test_labels
+        self._number_of_inputs = number_of_inputs
+        self._number_of_classes = number_of_classes
         self._learning_rate = learning_rate  # Learning rate
         self._show_info = 0  # Labels and logits info.
         self._show_images = 0  # if True show images when show_info is True
@@ -502,24 +507,21 @@ class TFModels():
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
-        self._num_epoch = 100  # Epochs number
+        self._epoch_numbers = 100  # Epochs number
         self._batch_size = 100  # Batch size
         self._input_size = len(input)
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
         self._index_buffer_data = 0  # The index for batches during training
         self._inputs_processed = []  # New inputs processed for training. (Change during shuffle)
         self._labels_processed = []  # New labels processed for training. (Change during shuffle)
-        '''
-        self._first_label_neurons = number_neurons(input_size, batch_size, number_of_classes)  # Weight first label neurons
-        self.second_label_neurons = number_neurons(input_size, first_label_neurons, number_of_classes)  # Weight second label neurons
-        self.third_label_neurons = number_neurons(input_size, second_label_neurons, number_of_classes)  # Weight third label neurons
-        '''
         self._first_label_neurons = 50
         self._second_label_neurons = 55
         self._third_label_neurons = 50
-        self._num_trains_acum = 0
+        self._num_trains_count = 0
         if not trains:
             self._trains = int(self.input_size / self.batch_size) + 1
+        else:
+            self._trains = trains
     def actual_configuration(self):
         """
         Return a string with actual features
@@ -562,6 +564,9 @@ class TFModels():
     @property
     def batch_size(self): return self._batch_size
 
+    @batch_size.setter
+    def batch_size(self,value): self._batch_size = value
+
     @property
     def train_dropout(self): return self._train_dropout
 
@@ -569,19 +574,19 @@ class TFModels():
     def index_buffer_data(self): return self._index_buffer_data
 
     @index_buffer_data.setter
-    def index_buffer_data(self,value): self.index_buffer_data = value
+    def index_buffer_data(self,value): self._index_buffer_data = value
 
     @property
     def labels_processed(self): return self._labels_processed
 
     @labels_processed.setter
-    def labels_processed(self,value): self.labels_processed = value
+    def labels_processed(self,value): self._labels_processed = value
 
     @property
     def inputs_processed(self): return self._inputs_processed
 
     @inputs_processed.setter
-    def inputs_processed(self,value): self.inputs_processed = value
+    def inputs_processed(self,value): self._inputs_processed = value
 
     @property
     def first_label_neurons(self): return self._first_label_neurons
@@ -596,10 +601,28 @@ class TFModels():
     def trains(self): return self._trains
 
     @property
-    def num_trains_count(self): return self._num_trains_acum
+    def num_trains_count(self): return self._num_trains_count
 
     @num_trains_count.setter
-    def num_trains_count(self,value): self.num_trains_acum = value
+    def num_trains_count(self,value): self._num_trains_count = value
+
+    @property
+    def number_of_classes(self): return self._number_of_classes
+
+    @property
+    def input_labels(self): return self._input_labels
+
+    @property
+    def test_labels(self): return self._test_labels
+
+    @property
+    def epoch_numbers(self): return self._epoch_numbers
+
+    @property
+    def input(self): return self._input
+
+    @property
+    def test(self): return self._test
 
     def update_inputs_and_labels_shuffling(self,inputs,inputs_labels):
         """
@@ -618,26 +641,26 @@ class TFModels():
         Generic convolutional model
         """
 
-        pt('first_label_neurons', first_label_neurons)
-        pt('second_label_neurons', second_label_neurons)
-        pt('third_label_neurons', third_label_neurons)
-        pt('input_size', input_size)
-        pt('batch_size', batch_size)
+        pt('first_label_neurons', self.first_label_neurons)
+        pt('second_label_neurons', self.second_label_neurons)
+        pt('third_label_neurons', self.third_label_neurons)
+        pt('input_size', self.input_size)
+        pt('batch_size', self.batch_size)
         # TODO Try python EVAL method to do multiple variable neurons
 
         # Placeholders
-        x = tf.placeholder(tf.float32, shape=[None, x_columns])  # All images will be 24*24 = 574
-        y_ = tf.placeholder(tf.float32, shape=[None, number_of_classes])  # Number of labels
+        x = tf.placeholder(tf.float32, shape=[None, self.input_columns_after_reshape])  # All images will be 24*24 = 574
+        y_ = tf.placeholder(tf.float32, shape=[None, self.number_of_classes])  # Number of labels
         keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
 
-        x_reshape = tf.reshape(x, [-1, x1_rows_number, x1_column_number,
+        x_reshape = tf.reshape(x, [-1, self.input_rows_numbers, self.input_columns_numbers,
                                    1])  # Reshape x placeholder into a specific tensor
         # TODO Define shape and stddev in methods
         # First Convolutional Layer
         convolution_1 = tf.layers.conv2d(
             inputs=x_reshape,
-            filters=third_label_neurons,
-            kernel_size=kernel_size,
+            filters=self.third_label_neurons,
+            kernel_size=self.kernel_size,
             padding="same",
             activation=tf.nn.relu)
         # Pool Layer 1 and reshape images by 2
@@ -646,8 +669,8 @@ class TFModels():
 
         convolution_2 = tf.layers.conv2d(
             inputs=pool1,
-            filters=third_label_neurons,
-            kernel_size=kernel_size,
+            filters=self.third_label_neurons,
+            kernel_size=self.kernel_size,
             padding="same",
             activation=tf.nn.relu)
 
@@ -655,12 +678,13 @@ class TFModels():
         pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
         # Dense Layer
         # TODO Checks max pools numbers
-        pool2_flat = tf.reshape(pool2, [-1, int(x1_rows_number / 4) * int(x1_column_number / 4) * third_label_neurons])
-        dense = tf.layers.dense(inputs=pool2_flat, units=third_label_neurons, activation=tf.nn.relu)
+        pool2_flat = tf.reshape(pool2, [-1, int(self._input_rows_numbers / 4) * int(self._input_columns_numbers / 4)
+                                        * self.third_label_neurons])
+        dense = tf.layers.dense(inputs=pool2_flat, units=self.third_label_neurons, activation=tf.nn.relu)
         dropout = tf.nn.dropout(dense, keep_probably)
         # Readout Layer
-        w_fc2 = weight_variable([third_label_neurons, number_of_classes])
-        b_fc2 = bias_variable([number_of_classes])
+        w_fc2 = weight_variable([self.third_label_neurons, self.number_of_classes])
+        b_fc2 = bias_variable([self.number_of_classes])
         y_convolution = (tf.matmul(dropout, w_fc2) + b_fc2)
 
         # Evaluate model
@@ -668,58 +692,43 @@ class TFModels():
             tf.nn.softmax_cross_entropy_with_logits(labels=y_,
                                                     logits=y_convolution))  # Cross entropy between y_ and y_conv
 
-        # train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer (gradient descent)
-        train_step = tf.train.AdamOptimizer(learning_rate).minimize(
+        # train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer
+        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(
             cross_entropy)  # Adam Optimizer (gradient descent)  # 97-98 test
-        # train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer (gradient descent)
+        # train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer
         # Sure is axis = 1
         correct_prediction = tf.equal(tf.argmax(y_convolution, axis=1),
                                       tf.argmax(y_, axis=1))  # Get Number of right values in tensor
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
         # Batching values and labels from input and labels (with batch size)
-        x_batch_feed, label_batch_feed = get_data_buffer_images(input, input_labels,
-                                                                batch_size=batch_size,
-                                                                shuffle=shuffle_data, to_type=Dictionary.gray_scale,
-                                                                x_rows_column=x_rows_column, to_array=to_array,
-                                                                is_test=False)
-        x_test_feed, y_test_feed = get_data_buffer_images(test, test_labels,
-                                                          batch_size=len(test),
-                                                          shuffle=False, to_type=Dictionary.gray_scale,
-                                                          x_rows_column=x_rows_column, to_array=to_array, is_test=True)
+        x_batch_feed, label_batch_feed = self.get_data_buffer_images(to_type=Dictionary.gray_scale,
+                                                               x_rows_column=self.input_rows_columns_array,
+                                                               to_array=self.to_array,
+                                                               is_test=False)
+        x_test_feed, y_test_feed = self.get_data_buffer_images(to_type=Dictionary.gray_scale,
+                                                               x_rows_column=self.input_rows_columns_array,
+                                                               to_array=self.to_array,
+                                                               is_test=True)
+
         # Session
         sess = tf.InteractiveSession()
         sess.run(tf.local_variables_initializer())
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver()
-        # initialize the queue threads to start to shovel data
-        # coord = tf.train.Coordinator()
-        # threads = tf.train.start_queue_runners(coord=coord)
 
         start_time = time.time()
-        num_trains_acum = 0
         # TRAIN
-        for epoch in range(num_epoch):
-            for i in range(trains):
-                '''
-                Test
-                '''
-
+        for epoch in range(self.epoch_numbers):
+            for i in range(self.trains):
                 # Setting values
-                feed_dict_train_50 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: train_dropout}
+                feed_dict_train_50 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: self.train_dropout}
                 feed_dict_train_100 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: 1}
                 feed_dict_test_100 = {x: x_test_feed, y_: y_test_feed, keep_probably: 1}
                 train_accuracy = accuracy.eval(feed_dict_train_100) * 100
                 train_step.run(feed_dict_train_50)
                 test_accuracy = accuracy.eval(feed_dict_test_100) * 100
 
-                # validation_accuracy = accuracy.eval(feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0}) * 100
-
-                crossEntropyTrain = cross_entropy.eval(feed_dict_train_100)
-                # crossEntropyValidation = cross_entropy.eval( feed_dict={x: validationPlaceholder, y_: validationLabels, keep_probably: 1.0})
-                # pt('conv1',tf.argmax(y_convolution, axis=1).eval(feed_dict_train_100))
-                y_pt = tf.argmax(y_, axis=1).eval(feed_dict_train_100)
-                # first_image = convolution_1.eval(feed_dict_train_100)[0]
-                # pt('convolution_1[shape]',first_image.shape)
+                cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
                 '''
                 if test_accuracy > 99:
                     # TODO return best previous model to check when save new model
@@ -729,13 +738,10 @@ class TFModels():
                 '''
 
                 # TODO Use validation set
-                # if show_info and epoch == 0 and i == 0:
-                if show_info:
-                    # pt('the image', x_batch_feed.shape)
+                if self.show_info:
 
                     y__ = y_.eval(feed_dict_train_100)
                     argmax_labels_y_ = [np.argmax(m) for m in y__]
-                    # pt('y__', argmax_labels_y_)
                     pt('y__shape', y__.shape)
                     pt('argmax_labels_y__', argmax_labels_y_)
                     pt('y__[-1]', y__[-1])
@@ -744,33 +750,112 @@ class TFModels():
                     argmax_labels_y_convolutional = [np.argmax(m) for m in y__conv]
                     pt('argmax_y_conv', argmax_labels_y_convolutional)
                     pt('y_conv_shape', y__conv.shape)
-                    # pt('y__conv', y__conv)
                     pt('index_buffer_data', index_buffer_data)
-                    if show_images and i == 0:
-                        show_image_from_tensor(x_batch_feed, x_rows_column)  # shows images
+                    if self.show_images and i == 0:
+                        show_image_from_tensor(x_batch_feed, self.input_rows_columns_array)  # shows images
                 if i == 0 or i % 10 == 0:
                     clear_console()
-                    os.system('cls')
-                    percent_avance = str(i * 100 / trains)
+                    percent_advance = str(i * 100 / self.trains)
                     pt('Seconds', (time.time() - start_time))
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
-                    pt('TRAIN NUMBER: ' + str(num_trains_acum + 1) + ' | Percent Epoch ' + str(
-                        epoch + 1) + ": " + percent_avance + '%')
+                    pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' + str(
+                        epoch + 1) + ": " + percent_advance + '%')
                     pt('train_accuracy', train_accuracy)
-                    pt('crossEntropyTrain', crossEntropyTrain)
+                    pt('cross_entropy_train', cross_entropy_train)
                     pt('test_accuracy', test_accuracy)
-                num_trains_acum += 1
-                # pt('correct_prediction',correct_prediction.eval())
-                # pt('y_conv',y_convolution.eval(feed_dict={x: x_batch_feed, y_: label_batch_feed, keep_probably: 1.0}) * 100)
-                # TODO Change to get without arguments (DO CLASS)
-                # Update batchs values
-                x_batch_feed, label_batch_feed = get_data_buffer_images(input, input_labels,
-                                                                        batch_size=batch_size,
-                                                                        shuffle=shuffle_data,
-                                                                        to_type=Dictionary.gray_scale,
-                                                                        x_rows_column=x_rows_column, to_array=to_array)
-
-        # When finish coord
-        # coord.request_stop()
-        # coord.join(threads)
+                self.num_trains_count += 1
+                # Update batches values
+                x_batch_feed, label_batch_feed = self.get_data_buffer_images(to_type=Dictionary.gray_scale,
+                                                                        x_rows_column=self.input_rows_columns_array,
+                                                                        to_array=self.to_array)
         pt('END TRAINING ')
+
+    # noinspection PyUnresolvedReferences
+    def get_data_buffer_images(self, to_type=None, x_rows_column=None,
+                               to_array=False, is_test=False):
+        """
+        Return a x_input and y_labels with a batch_size and the same order.
+        Inputs and inputs_label must have same shape.
+        If next batch is out of range then takes until last element.
+        :param input: Network inputs
+        :param input_labels: Network inputs labels
+        :param x_rows_column: An array [row,column] if want to reshape the images in that shape
+        :param to_array: If result must be and array and not a matrix
+        :return: x_batch, y_batch
+        """
+        # TODO DOCS
+        x_batch = []
+        y_batch = []
+        out_range = False  # True if next batch is out of range
+        image_type = None  # Represent the type of image (to_type)
+        if to_type is not None:
+            if to_type == Dictionary.gray_scale:
+                image_type = cv2.IMREAD_GRAYSCALE
+        if not is_test:
+            if self._shuffle_data and self.index_buffer_data == 0:
+                c = list(zip(self.input, self.input_labels))
+                random.shuffle(c)
+                self.inputs_processed, self.labels_processed = zip(*c)
+            elif self.index_buffer_data == 0:
+                self.inputs_processed, self.labels_processed = self.input, self.input_labels
+            # TODO Change if array
+            if len(self.input) - self.index_buffer_data == 0:  # When is all inputs
+                out_range = True
+            elif len(self.input) - self.index_buffer_data < self.batch_size:
+                self.batch_size = len(self.input) - self.index_buffer_data
+                out_range = True
+        for _ in range(self.batch_size):
+            # Reshape
+            if x_rows_column is not None:
+                img = self.preprocess_image(self.inputs_processed[self.index_buffer_data], image_type, x_rows_column[0],
+                                       x_rows_column[1])
+            if to_array:
+                img = img.reshape(-1)
+            x_batch.append(img)
+            y_batch.append(self.labels_processed[self.index_buffer_data])
+            self.index_buffer_data += 1
+        x_batch = np.asarray(x_batch)
+        y_batch = np.asarray(y_batch)
+        if out_range and not is_test:  # Reset index_buffer_data
+            self.index_buffer_data = 0
+        # TODO Check errors
+        return x_batch, y_batch
+
+    # noinspection PyUnresolvedReferences
+    def preprocess_image(self, image, image_type, height, width):
+        """
+    
+        :param image: The image to change
+        :param image_type: Gray Scale, RGB, HSV
+        :return:
+        """
+        # TODO Realize this with ALL inputs and use the returned sets to train
+        # TODO Normalize image
+        # 1- Get image in GrayScale
+        # 2- Modify intensity and contrast
+        # 3- Transform to gray scale
+        # 4- Return image
+        image = cv2.imread(image,0)
+        image = cv2.resize(image, (height, width))
+        image = cv2.equalizeHist(image)
+        image = cv2.equalizeHist(image)
+        random_percentage = random.randint(3,20)
+        to_crop_height = int((random_percentage*height)/100)
+        to_crop_width = int((random_percentage*width)/100)
+        image = image[to_crop_height:height-to_crop_height, to_crop_width:width-to_crop_width]
+        #image = np.array(image, dtype = np.float64)
+        #random_bright = .5+np.random.uniform()
+        #image[:,:,2] = image[:,:,2]*random_bright
+        #image[:,:,2][image[:,:,2]>255]  = 255
+        #image = cv2.normalize(image,image, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+        #image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        image = cv2.copyMakeBorder(image, top = to_crop_height,
+                                   bottom = to_crop_height,
+                                   left = to_crop_width,
+                                   right = to_crop_width,
+                                   borderType = cv2.BORDER_CONSTANT)
+        #cv2.imshow('image', image)
+        #cv2.waitKey(0)  # Wait until press key to destroy image
+        return image
+        # TODO Scale image to center into figure
+        # Load an color image in grayscale (0 is gray scale)
