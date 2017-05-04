@@ -46,7 +46,8 @@ def timed(method):
             pt("Running time method:"+ str(methodStr[9:-23]), time.time() - start)
     return inner
 
-
+def clear_console():
+    os.system('cls')
 """
 Signal competition
 """

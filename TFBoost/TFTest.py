@@ -140,10 +140,15 @@ Getting train, validation (if necessary) and test set.
 testSet = tfReader.test_set  # Test Set
 trainSet = tfReader.train_set  # Train Set
 
+models = models.TFModels(input=trainSet[0],test=testSet[0],
+                         input_labels=trainSet[1],test_labels=testSet[1],
+                         number_of_classes=number_of_classes).actual_configuration()
+pt(models)
 
 # Signal training
 models.convolution_model_image(input=trainSet[0],test=testSet[0],
                          input_labels=trainSet[1],test_labels=testSet[1],
                          number_of_classes=number_of_classes)
+
 
 # TODO Make TFModels heritable and with capability to return section of tensorflow code

@@ -277,12 +277,13 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
             y_pt = tf.argmax(y_, axis=1).eval(feed_dict_train_100)
             #first_image = convolution_1.eval(feed_dict_train_100)[0]
             # pt('convolution_1[shape]',first_image.shape)
+            '''
             if test_accuracy > 99:
                 # TODO return best previous model to check when save new model
                 # Save the variables to disk.
                 save_path = saver.save(sess, "/tmp/model.ckpt")
                 # TODO Write in text file new models with features
-
+            '''
 
             # TODO Use validation set
             # if show_info and epoch == 0 and i == 0:
@@ -305,6 +306,8 @@ def convolution_model_image(input, test, input_labels, test_labels, number_of_cl
                 if show_images and i == 0:
                     show_image_from_tensor(x_batch_feed,x_rows_column) # shows images
             if i == 0 or i % 10 == 0:
+                clear_console()
+                os.system('cls')
                 percent_avance = str(i*100/trains)
                 pt('Seconds', (time.time() - start_time))
                 pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
@@ -491,40 +494,95 @@ class TFModels():
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
                       learning_rate=1e-3, trains=None, type=None, validation=None,
                       validation_labels=None, deviation=None):
-        self.learning_rate = learning_rate  # Learning rate
-        self.show_info = 0  # Labels and logits info.
-        self.show_images = 0  # if True show images when show_info is True
-        self.shuffle_data = True
-        self.to_array = True  # If the images must be reshaped into an array
-        self.x1_rows_number = 60
-        self.x1_column_number = 60
-        self.x_columns = self.x1_rows_number * self.x1_column_number
-        self.x_rows_column = [self.x1_rows_number, self.x1_column_number]
-        self.kernel_size = [5, 5]  # Kernel patch size
-        self.input_size = len(input)
-        self.num_epoch = 100  # Epochs number
-        self.batch_size = 100  # Batch size
+        self._learning_rate = learning_rate  # Learning rate
+        self._show_info = 0  # Labels and logits info.
+        self._show_images = 0  # if True show images when show_info is True
+        self._shuffle_data = True
+        self._to_array = True  # If the images must be reshaped into an array
+        self._input_rows_numbers = 60
+        self._input_columns_numbers = 60
+        self._kernel_size = [5, 5]  # Kernel patch size
+        self._num_epoch = 100  # Epochs number
+        self._batch_size = 100  # Batch size
+        self._input_size = len(input)
         # capacity must be larger than min_after_dequeue and the amount larger
         # determines the maximum we will prefetch.
         # self.capacity = int(self.input_size / 4)
-        self.train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
-        self.index_buffer_data = 0  # The index for batches during training
-        self.inputs_processed, self.labels_processed = [], []  # New inputs and labels processed for training. (Change during shuffle)
+        self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
+        self._index_buffer_data = 0  # The index for batches during training
+        self._inputs_processed = []  # New inputs processed for training. (Change during shuffle)
+        self._labels_processed = []  # New labels processed for training. (Change during shuffle)
         '''
-        self.first_label_neurons = number_neurons(input_size, batch_size, number_of_classes)  # Weight first label neurons
+        self._first_label_neurons = number_neurons(input_size, batch_size, number_of_classes)  # Weight first label neurons
         self.second_label_neurons = number_neurons(input_size, first_label_neurons, number_of_classes)  # Weight second label neurons
         self.third_label_neurons = number_neurons(input_size, second_label_neurons, number_of_classes)  # Weight third label neurons
         '''
-        self.first_label_neurons = 50
-        self.second_label_neurons = 55
-        self.third_label_neurons = 50
-        self.num_trains_acum = 0
+        self._first_label_neurons = 50
+        self._second_label_neurons = 55
+        self._third_label_neurons = 50
+        self._num_trains_acum = 0
 
     def actual_configuration(self):
         """
         Return a string with actual features
         """
         return self.__dict__
+
+    @property
+    def show_info(self): return self._show_info
+
+    @property
+    def learning_rate(self): return self._learning_rate
+
+    @property
+    def show_images(self): return self._show_images
+
+    @property
+    def shuffle_data(self): return self._shuffle_data
+
+    @property
+    def to_array(self): return self._to_array
+
+    @property
+    def input_rows_numbers(self): return self._input_rows_numbers
+
+    @property
+    def input_columns_numbers(self): return self._input_columns_numbers
+
+    @property
+    def input_columns_after_reshape(self): return self.input_rows_numbers * self.input_columns_numbers
+
+    @property
+    def input_rows_columns_array(self): return [self.input_rows_numbers, self.input_columns_numbers]
+
+    @property
+    def kernel_size(self): return self._kernel_size
+
+    @property
+    def input_size(self): return self._input_size
+
+    @property
+    def train_dropout(self): return self._train_dropout
+
+    @property
+    def index_buffer_data(self): return self._index_buffer_data
+
+    @property
+    def labels_processed(self): return self._labels_processed
+
+    @property
+    def first_label_neurons(self): return self._first_label_neurons
+
+    @property
+    def second_label_neurons(self): return self._second_label_neurons
+
+    @property
+    def third_label_neurons(self): return self._third_label_neurons
+
+    @property
+    def num_trains_acum(self): return self._num_trains_acum
+
+
     def update_inputs_and_labels_shuffling(self,inputs,inputs_labels):
         """
         Update inputs_processed and labels_processed variables with an inputs and inputs_labels shuffled
