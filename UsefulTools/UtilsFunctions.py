@@ -25,7 +25,7 @@ def pt(title=None,text=None):
     """
     if text is None:
         text = title
-        title = Dictionary.separator
+        title = Dictionary.string_separator
     else:
         title+=':'
     print(str(title) + " \n " + str(text))
