@@ -38,29 +38,37 @@ class Dictionary(object):
     Value's Attribute = Dictionary Value
     Doing an abstract class like a Dictionary we have the references to all keys from another class.
     """
-
+    """
+    STRINGS
+    """
     # Data.csv from Breast_Cancer_Wisconsin project
-    path_Breast_Cancer_Wisconsin = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
+    string_path_Breast_Cancer_Wisconsin = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
     # Data.csv Label Column name
-    label_column_name_Breast_Cancer_Wisconsin = 'diagnosis'
+    string_label_column_name_Breast_Cancer_Wisconsin = 'diagnosis'
     # Signal University path train
     #path_signals_university_signal_train = 'D:\\UniversityResearching\\DITS-classification\\classification_train\\'
-    path_signals_university_signal_train = 'D:\\DITS-classification\\classification_train\\'
+    string_path_signals_university_signal_train = 'D:\\DITS-classification\\classification_train\\'
     # Signal University path test
     #path_signals_university_signal_test = 'D:\\UniversityResearching\\DITS-classification\\classification_test\\'
-    path_signals_university_signal_test = 'D:\\DITS-classification\\classification_test\\'
+    string_path_signals_university_signal_test = 'D:\\DITS-classification\\classification_test\\'
     # Hierarchy option
-    labels_type_option_hierarchy = 'hierarchy'
+    string_labels_type_option_hierarchy = 'hierarchy'
     # Format png
-    extension_png = '.png'
+    string_extension_png = '.png'
     # Train String
     string_train = 'train'
     # Test String
     string_test = 'test'
     # Separator
-    separator = '-------------------------------------'
+    string_separator = '-------------------------------------'
     # Gray scale
-    gray_scale = 'gray_scale'
+    string_gray_scale = 'gray_scale'
+    """
+    STRINGS OPTIONS
+    """
+    # Option signals image problem
+    string_option_signals_images_problem = 'signals_images_problems'
+
 class Errors(object):
     """
     Error Class
