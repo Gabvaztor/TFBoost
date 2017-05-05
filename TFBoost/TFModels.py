@@ -500,6 +500,9 @@ class TFModels():
         self._number_of_inputs = number_of_inputs
         self._number_of_classes = number_of_classes
         self._learning_rate = learning_rate  # Learning rate
+        self._inputs_processed = []  # New inputs processed for training. (Change during shuffle)
+        self._labels_processed = []  # New labels processed for training. (Change during shuffle)
+        # VARIABLES
         self._show_info = 0  # Labels and logits info.
         self._show_images = 0  # if True show images when show_info is True
         self._shuffle_data = True
@@ -512,8 +515,6 @@ class TFModels():
         self._input_size = len(input)
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
         self._index_buffer_data = 0  # The index for batches during training
-        self._inputs_processed = []  # New inputs processed for training. (Change during shuffle)
-        self._labels_processed = []  # New labels processed for training. (Change during shuffle)
         self._first_label_neurons = 50
         self._second_label_neurons = 55
         self._third_label_neurons = 50
@@ -564,9 +565,6 @@ class TFModels():
     @property
     def batch_size(self): return self._batch_size
 
-    @batch_size.setter
-    def batch_size(self,value): self._batch_size = value
-
     @property
     def train_dropout(self): return self._train_dropout
 
@@ -574,19 +572,19 @@ class TFModels():
     def index_buffer_data(self): return self._index_buffer_data
 
     @index_buffer_data.setter
-    def index_buffer_data(self,value): self._index_buffer_data = value
+    def index_buffer_data(self, value): self._index_buffer_data = value
 
     @property
     def labels_processed(self): return self._labels_processed
 
     @labels_processed.setter
-    def labels_processed(self,value): self._labels_processed = value
+    def labels_processed(self, value): self._labels_processed = value
 
     @property
     def inputs_processed(self): return self._inputs_processed
 
     @inputs_processed.setter
-    def inputs_processed(self,value): self._inputs_processed = value
+    def inputs_processed(self, value): self._inputs_processed = value
 
     @property
     def first_label_neurons(self): return self._first_label_neurons
@@ -604,7 +602,7 @@ class TFModels():
     def num_trains_count(self): return self._num_trains_count
 
     @num_trains_count.setter
-    def num_trains_count(self,value): self._num_trains_count = value
+    def num_trains_count(self, value): self._num_trains_count = value
 
     @property
     def number_of_classes(self): return self._number_of_classes
@@ -623,17 +621,6 @@ class TFModels():
 
     @property
     def test(self): return self._test
-
-    def update_inputs_and_labels_shuffling(self,inputs,inputs_labels):
-        """
-        Update inputs_processed and labels_processed variables with an inputs and inputs_labels shuffled
-        
-        :param inputs: Represent input data
-        :param inputs_labels:  Represent labels data
-        """
-        c = list(zip(inputs, inputs_labels))
-        random.shuffle(c)
-        self.inputs_processed, self.labels_processed = zip(*c)
 
     @timed
     def convolution_model_image(self):
@@ -700,15 +687,17 @@ class TFModels():
         correct_prediction = tf.equal(tf.argmax(y_convolution, axis=1),
                                       tf.argmax(y_, axis=1))  # Get Number of right values in tensor
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
+
+        options = [cv2.IMREAD_GRAYSCALE,self.input_rows_columns_array[0],self.input_rows_columns_array[1]]
         # Batching values and labels from input and labels (with batch size)
-        x_batch_feed, label_batch_feed = self.get_data_buffer_images(to_type=Dictionary.gray_scale,
-                                                               x_rows_column=self.input_rows_columns_array,
-                                                               to_array=self.to_array,
-                                                               is_test=False)
-        x_test_feed, y_test_feed = self.get_data_buffer_images(to_type=Dictionary.gray_scale,
-                                                               x_rows_column=self.input_rows_columns_array,
-                                                               to_array=self.to_array,
-                                                               is_test=True)
+        x_batch_feed, label_batch_feed = self.data_buffer_generic_class(shuffle_data=self.shuffle_data,
+                                                                        batch_size=self.batch_size,
+                                                                        is_test=False,
+                                                                        options=options)
+        x_test_feed, y_test_feed = self.data_buffer_generic_class(shuffle_data=self.shuffle_data,
+                                                                        batch_size=self.batch_size,
+                                                                        is_test=True,
+                                                                        options=options)
 
         # Session
         sess = tf.InteractiveSession()
@@ -763,99 +752,130 @@ class TFModels():
                     pt('train_accuracy', train_accuracy)
                     pt('cross_entropy_train', cross_entropy_train)
                     pt('test_accuracy', test_accuracy)
+                    pt('self.index_buffer_data',self.index_buffer_data)
                 self.num_trains_count += 1
                 # Update batches values
-                x_batch_feed, label_batch_feed = self.get_data_buffer_images(to_type=Dictionary.gray_scale,
-                                                                        x_rows_column=self.input_rows_columns_array,
-                                                                        to_array=self.to_array)
+                x_batch_feed, label_batch_feed = self.data_buffer_generic_class(shuffle_data=self.shuffle_data,
+                                                                                batch_size=self.batch_size,
+                                                                                is_test=False,
+                                                                                options=options)
         pt('END TRAINING ')
 
-    # noinspection PyUnresolvedReferences
-    def get_data_buffer_images(self, to_type=None, x_rows_column=None,
-                               to_array=False, is_test=False):
+    def update_inputs_and_labels_shuffling(self, inputs, inputs_labels):
         """
-        Return a x_input and y_labels with a batch_size and the same order.
-        Inputs and inputs_label must have same shape.
-        If next batch is out of range then takes until last element.
-        :param input: Network inputs
-        :param input_labels: Network inputs labels
-        :param x_rows_column: An array [row,column] if want to reshape the images in that shape
-        :param to_array: If result must be and array and not a matrix
-        :return: x_batch, y_batch
+        Update inputs_processed and labels_processed variables with an inputs and inputs_labels shuffled
+
+        :param inputs: Represent input data
+        :param inputs_labels:  Represent labels data
         """
-        # TODO DOCS
+        c = list(zip(inputs, inputs_labels))
+        random.shuffle(c)
+        self.inputs_processed, self.labels_processed = zip(*c)
+
+    def data_buffer_generic_class(self, shuffle_data, batch_size, is_test=False, options=None):
+        """
+        Create a data buffer having necessaries class attributes (inputs,labels,...)
+        :param shuffle_data: If it is necessary shuffle data.
+        :param batch_size: The batch size .
+        :param is_test: if the inputs are the test set.
+        :return: Two numpy arrays (x_batch and y_batch) with input data and input labels data batch_size like shape.
+        """
         x_batch = []
         y_batch = []
-        out_range = False  # True if next batch is out of range
-        image_type = None  # Represent the type of image (to_type)
-        if to_type is not None:
-            if to_type == Dictionary.gray_scale:
-                image_type = cv2.IMREAD_GRAYSCALE
+        out_range = False  # Will be True if next batch is out of range
         if not is_test:
-            if self._shuffle_data and self.index_buffer_data == 0:
-                c = list(zip(self.input, self.input_labels))
-                random.shuffle(c)
-                self.inputs_processed, self.labels_processed = zip(*c)
-            elif self.index_buffer_data == 0:
-                self.inputs_processed, self.labels_processed = self.input, self.input_labels
-            # TODO Change if array
-            if len(self.input) - self.index_buffer_data == 0:  # When is all inputs
-                out_range = True
-            elif len(self.input) - self.index_buffer_data < self.batch_size:
-                self.batch_size = len(self.input) - self.index_buffer_data
-                out_range = True
-        for _ in range(self.batch_size):
-            # Reshape
-            if x_rows_column is not None:
-                img = self.preprocess_image(self.inputs_processed[self.index_buffer_data], image_type, x_rows_column[0],
-                                       x_rows_column[1])
-            if to_array:
-                img = img.reshape(-1)
-            x_batch.append(img)
-            y_batch.append(self.labels_processed[self.index_buffer_data])
+            if shuffle_data and self.index_buffer_data == 0:
+                x_batch, y_batch = get_inputs_and_labels_shuffled(self.input,self.input_labels)
+            elif self.index_buffer_data == 0:  # It is first batch
+                x_batch, y_batch = self.input, self.input_labels
+                batch_size, out_range = self.get_out_range_and_batch()
+
+        pt("batrhc",batch_size)
+        #TODO FIX
+        for _ in range(batch_size-1):
+            x, y = process_input_unity_generic(x_batch[self.index_buffer_data],y_batch[self.index_buffer_data],options)
+            self.inputs_processed.append(x)
+            self.labels_processed.append(y)
             self.index_buffer_data += 1
+            pt("self.index_buffer_data", self.index_buffer_data)
         x_batch = np.asarray(x_batch)
         y_batch = np.asarray(y_batch)
         if out_range and not is_test:  # Reset index_buffer_data
             self.index_buffer_data = 0
-        # TODO Check errors
         return x_batch, y_batch
 
-    # noinspection PyUnresolvedReferences
-    def preprocess_image(self, image, image_type, height, width):
+    def get_out_range_and_batch(self):
         """
-    
-        :param image: The image to change
-        :param image_type: Gray Scale, RGB, HSV
-        :return:
+        Return out_range flag and new batch_size if necessary. It is necessary when batch is bigger than input rest of
+        self.index_buffer_data
+        :return: out_range (True or False), batch_size (int)
         """
-        # TODO Realize this with ALL inputs and use the returned sets to train
-        # TODO Normalize image
-        # 1- Get image in GrayScale
-        # 2- Modify intensity and contrast
-        # 3- Transform to gray scale
-        # 4- Return image
-        image = cv2.imread(image,0)
-        image = cv2.resize(image, (height, width))
-        image = cv2.equalizeHist(image)
-        image = cv2.equalizeHist(image)
-        random_percentage = random.randint(3,20)
-        to_crop_height = int((random_percentage*height)/100)
-        to_crop_width = int((random_percentage*width)/100)
-        image = image[to_crop_height:height-to_crop_height, to_crop_width:width-to_crop_width]
-        #image = np.array(image, dtype = np.float64)
-        #random_bright = .5+np.random.uniform()
-        #image[:,:,2] = image[:,:,2]*random_bright
-        #image[:,:,2][image[:,:,2]>255]  = 255
-        #image = cv2.normalize(image,image, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-        #image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        image = cv2.copyMakeBorder(image, top = to_crop_height,
-                                   bottom = to_crop_height,
-                                   left = to_crop_width,
-                                   right = to_crop_width,
-                                   borderType = cv2.BORDER_CONSTANT)
-        #cv2.imshow('image', image)
-        #cv2.waitKey(0)  # Wait until press key to destroy image
-        return image
-        # TODO Scale image to center into figure
-        # Load an color image in grayscale (0 is gray scale)
+        out_range = False
+        batch_size = self.batch_size
+        if self.input_size - self.index_buffer_data == 0:  # When is all inputs
+            out_range = True
+        elif self.input_size - self.index_buffer_data < self.batch_size:
+            batch_size = self.input_size - self.index_buffer_data
+            out_range = True
+        return batch_size, out_range
+
+"""
+STATIC METHODS
+"""
+
+def get_inputs_and_labels_shuffled(inputs, inputs_labels):
+    """
+    Get inputs_processed and labels_processed variables with an inputs and inputs_labels shuffled
+    :param inputs: Represent input data
+    :param inputs_labels:  Represent labels data
+    :returns inputs_processed, labels_processed
+    """
+    c = list(zip(inputs, inputs_labels))
+    random.shuffle(c)
+    inputs_processed, labels_processed = zip(*c)
+    return inputs_processed, labels_processed
+
+def process_input_unity_generic(x_input, y_label, options=None):
+    """
+    Generic method that process input and label across a if else statement witch contains a string that represent
+    the option (option = how process data)
+    :param x_input: A single input
+    :param y_label: A single input label 
+    :param options: All attributes to process data. First position must to be the option.
+    :return: x_input and y_label processed
+    """
+    if options:
+        option = options[0]  # Option selected
+        if option == Dictionary.string_option_signals_images_problem:
+            x_input = process_image_signals_problem(x_input,options[1],options[2],options[3])
+
+    return x_input, y_label
+
+# noinspection PyUnresolvedReferences
+def process_image_signals_problem(image, image_type, height, width):
+    """
+    :param image: The image to change
+    :param image_type: Gray Scale, RGB, HSV
+    :return:
+    """
+    # 1- Get image in GrayScale
+    # 2- Modify intensity and contrast
+    # 3- Transform to gray scale
+    # 4- Return image
+    image = cv2.imread(image, image_type)
+    image = cv2.resize(image, (height, width))
+    image = cv2.equalizeHist(image)
+    image = cv2.equalizeHist(image)
+    random_percentage = random.randint(3, 20)
+    to_crop_height = int((random_percentage * height) / 100)
+    to_crop_width = int((random_percentage * width) / 100)
+    image = image[to_crop_height:height - to_crop_height, to_crop_width:width - to_crop_width]
+    image = cv2.copyMakeBorder(image, top=to_crop_height,
+                                   bottom=to_crop_height,
+                                   left=to_crop_width,
+                                   right=to_crop_width,
+                                   borderType=cv2.BORDER_CONSTANT)
+    image = image.reshape(-1)
+    # cv2.imshow('image', image)
+    # cv2.waitKey(0)  # Wait until press key to destroy image
+    return image

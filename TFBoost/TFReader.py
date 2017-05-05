@@ -234,7 +234,7 @@ class Searcher(Reader):
         for path in self.path_to_read:
             for root, dirs, files in os.walk(path):
                 for file_name in files:
-                    if (file_name.endswith(Dictionary.extension_png)):
+                    if (file_name.endswith(Dictionary.string_extension_png)):
                         full_path = os.path.join(root, file_name)
                         self.__getSetsFromFullPathSignals(full_path)
 
