@@ -291,14 +291,21 @@ class TFModels():
                                                                         inputs_labels=self.input_labels,
                                                                         shuffle_data=self.shuffle_data,
                                                                         batch_size=self.batch_size,
+                                                                        is_test=False,
                                                                         options=options)
-        x_test_feed, y_test_feed = process_test_set(self.test,self.test_labels,options)
-
+        x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
+                                                                  inputs_labels=self.test_labels,
+                                                                  shuffle_data=self.shuffle_data,
+                                                                  batch_size=None,
+                                                                  is_test=True,
+                                                                  options=options)
         # Session
         sess = tf.InteractiveSession()
         sess.run(tf.local_variables_initializer())
         sess.run(tf.global_variables_initializer())
-        saver = tf.train.Saver()
+
+        #TODO SAVE MODELS
+        # saver = tf.train.Saver()
 
         start_time = time.time()
         # TRAIN
@@ -337,7 +344,6 @@ class TFModels():
                     pt('index_buffer_data', self.index_buffer_data)
 
                 if i == 0 or i % 10 == 0:
-                    clear_console()
                     percent_advance = str(i * 100 / self.trains)
                     pt('Seconds', (time.time() - start_time))
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
@@ -353,6 +359,7 @@ class TFModels():
                                                                                 inputs_labels=self.input_labels,
                                                                                 shuffle_data=self.shuffle_data,
                                                                                 batch_size=self.batch_size,
+                                                                                is_test=False,
                                                                                 options=options)
         pt('END TRAINING ')
 
@@ -367,7 +374,8 @@ class TFModels():
         random.shuffle(c)
         self.inputs_processed, self.labels_processed = zip(*c)
 
-    def data_buffer_generic_class(self,inputs, inputs_labels, shuffle_data, batch_size, options=None):
+    def data_buffer_generic_class(self,inputs, inputs_labels, shuffle_data=False, batch_size=None,is_test=False,
+                                  options=None):
         """
         Create a data buffer having necessaries class attributes (inputs,labels,...)
         :param shuffle_data: If it is necessary shuffle data.
@@ -377,21 +385,23 @@ class TFModels():
         """
         x_batch = []
         y_batch = []
-        if shuffle_data and self.index_buffer_data == 0:
-            self.input, self.input_labels = get_inputs_and_labels_shuffled(self.input,self.input_labels)
-            pt("SHUFLLEDDDDDDDDDDDDDDDDDDDDDDD")
-        batch_size, out_range = self.get_out_range_and_batch()  # out_range will be True if next batch is out of range
-        for _ in range(batch_size):
-            x, y = process_input_unity_generic(self.input[self.index_buffer_data],
-                                               self.input_labels[self.index_buffer_data],
-                                               options)
-            x_batch.append(x)
-            y_batch.append(y)
-            self.index_buffer_data += 1
-        x_batch = np.asarray(x_batch)
-        y_batch = np.asarray(y_batch)
-        if out_range:  # Reset index_buffer_data
-            self.index_buffer_data = 0
+        if is_test:
+            x_batch, y_batch = process_test_set(inputs,inputs_labels,options)
+        else:
+            if shuffle_data and self.index_buffer_data == 0:
+                self.input, self.input_labels = get_inputs_and_labels_shuffled(self.input,self.input_labels)
+            batch_size, out_range = self.get_out_range_and_batch()  # out_range will be True if next batch is out of range
+            for _ in range(batch_size):
+                x, y = process_input_unity_generic(self.input[self.index_buffer_data],
+                                                   self.input_labels[self.index_buffer_data],
+                                                   options)
+                x_batch.append(x)
+                y_batch.append(y)
+                self.index_buffer_data += 1
+            x_batch = np.asarray(x_batch)
+            y_batch = np.asarray(y_batch)
+            if out_range:  # Reset index_buffer_data
+                self.index_buffer_data = 0
         return x_batch, y_batch
 
     def get_out_range_and_batch(self):
@@ -425,24 +435,25 @@ def get_inputs_and_labels_shuffled(inputs, inputs_labels):
     inputs_processed, labels_processed = zip(*c)
     return inputs_processed, labels_processed
 
-def process_input_unity_generic(x_input, y_label, options=None):
+def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
     """
     Generic method that process input and label across a if else statement witch contains a string that represent
     the option (option = how process data)
     :param x_input: A single input
     :param y_label: A single input label 
     :param options: All attributes to process data. First position must to be the option.
+    :param is_test: Sometimes you don't want to do some operation to test set.
     :return: x_input and y_label processed
     """
     if options:
         option = options[0]  # Option selected
         if option == Dictionary.string_option_signals_images_problem:
-            x_input = process_image_signals_problem(x_input,options[1],options[2],options[3])
+            x_input = process_image_signals_problem(x_input,options[1],options[2],options[3],is_test=is_test)
 
     return x_input, y_label
 
 # noinspection PyUnresolvedReferences
-def process_image_signals_problem(image, image_type, height, width):
+def process_image_signals_problem(image, image_type, height, width,is_test=False):
     """
     :param image: The image to change
     :param image_type: Gray Scale, RGB, HSV
@@ -456,15 +467,16 @@ def process_image_signals_problem(image, image_type, height, width):
     image = cv2.resize(image, (height, width))
     image = cv2.equalizeHist(image)
     image = cv2.equalizeHist(image)
-    random_percentage = random.randint(3, 20)
-    to_crop_height = int((random_percentage * height) / 100)
-    to_crop_width = int((random_percentage * width) / 100)
-    image = image[to_crop_height:height - to_crop_height, to_crop_width:width - to_crop_width]
-    image = cv2.copyMakeBorder(image, top=to_crop_height,
-                                   bottom=to_crop_height,
-                                   left=to_crop_width,
-                                   right=to_crop_width,
-                                   borderType=cv2.BORDER_CONSTANT)
+    if not is_test:
+        random_percentage = random.randint(3, 20)
+        to_crop_height = int((random_percentage * height) / 100)
+        to_crop_width = int((random_percentage * width) / 100)
+        image = image[to_crop_height:height - to_crop_height, to_crop_width:width - to_crop_width]
+        image = cv2.copyMakeBorder(image, top=to_crop_height,
+                                       bottom=to_crop_height,
+                                       left=to_crop_width,
+                                       right=to_crop_width,
+                                       borderType=cv2.BORDER_CONSTANT)
     image = image.reshape(-1)
     # cv2.imshow('image', image)
     # cv2.waitKey(0)  # Wait until press key to destroy image
@@ -472,10 +484,17 @@ def process_image_signals_problem(image, image_type, height, width):
 
 
 def process_test_set(test, test_labels, options):
+    """
+    Process test set and return it
+    :param test: Test set
+    :param test_labels: Test labels set
+    :param options: All attributes to process data. First position must to be the option.
+    :return: x_test and y_test
+    """
     x_test = []
     y_test = []
     for i in range(len(test)):
-        x, y = process_input_unity_generic(test[i],test_labels[i],options)
+        x, y = process_input_unity_generic(test[i],test_labels[i],options,is_test=True)
         x_test.append(x)
         y_test.append(y)
     x_test = np.asarray(x_test)
