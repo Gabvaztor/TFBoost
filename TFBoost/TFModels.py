@@ -455,9 +455,13 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
 # noinspection PyUnresolvedReferences
 def process_image_signals_problem(image, image_type, height, width,is_test=False):
     """
+    Process signal image
     :param image: The image to change
     :param image_type: Gray Scale, RGB, HSV
-    :return:
+    :param height: image height
+    :param width: image width
+    :param is_test: flag with True if image is in test set
+    :return: 
     """
     # 1- Get image in GrayScale
     # 2- Modify intensity and contrast
