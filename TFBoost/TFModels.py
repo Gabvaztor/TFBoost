@@ -73,8 +73,8 @@ class TFModels():
     """
     # TODO Docs
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
-                      learning_rate=1e-3, trains=None, type=None, validation=None,
-                      validation_labels=None, deviation=None):
+                 learning_rate=1e-3, trains=None, type=None, validation=None,
+                 validation_labels=None, deviation=None):
         self._input = input
         self._test = test
         self._input_labels = input_labels
@@ -236,7 +236,7 @@ class TFModels():
         y_ = tf.placeholder(tf.float32, shape=[None, self.number_of_classes])  # Number of labels
         keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
 
-        x_reshape = tf.reshape(x, [-1, self.input_rows_numbers, self.input_columns_numbers,1])
+        x_reshape = tf.reshape(x, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
         # Reshape x placeholder into a specific tensor
 
         # First Convolutional Layer
@@ -284,8 +284,8 @@ class TFModels():
                                       tf.argmax(y_, axis=1))  # Get Number of right values in tensor
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
 
-        options = [Dictionary.string_option_signals_images_problem,cv2.IMREAD_GRAYSCALE,
-                   self.input_rows_columns_array[0],self.input_rows_columns_array[1]]
+        options = [Dictionary.string_option_signals_images_problem, cv2.IMREAD_GRAYSCALE,
+                   self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
         # Batching values and labels from input and labels (with batch size)
         x_batch_feed, label_batch_feed = self.data_buffer_generic_class(inputs=self.input,
                                                                         inputs_labels=self.input_labels,
@@ -304,7 +304,7 @@ class TFModels():
         sess.run(tf.local_variables_initializer())
         sess.run(tf.global_variables_initializer())
 
-        #TODO SAVE MODELS
+        # TODO SAVE MODELS
         # saver = tf.train.Saver()
 
         start_time = time.time()
@@ -352,7 +352,7 @@ class TFModels():
                     pt('train_accuracy', train_accuracy)
                     pt('cross_entropy_train', cross_entropy_train)
                     pt('test_accuracy', test_accuracy)
-                    pt('self.index_buffer_data',self.index_buffer_data)
+                    pt('self.index_buffer_data', self.index_buffer_data)
                 self.num_trains_count += 1
                 # Update batches values
                 x_batch_feed, label_batch_feed = self.data_buffer_generic_class(inputs=self.input,
@@ -374,13 +374,16 @@ class TFModels():
         random.shuffle(c)
         self.inputs_processed, self.labels_processed = zip(*c)
 
-    def data_buffer_generic_class(self,inputs, inputs_labels, shuffle_data=False, batch_size=None,is_test=False,
+    def data_buffer_generic_class(self, inputs, inputs_labels, shuffle_data=False, batch_size=None, is_test=False,
                                   options=None):
         """
         Create a data buffer having necessaries class attributes (inputs,labels,...)
+        :param inputs: Inputs
+        :param inputs_labels: Inputs labels
         :param shuffle_data: If it is necessary shuffle data.
         :param batch_size: The batch size .
         :param is_test: if the inputs are the test set.
+        :param options: options       
         :return: Two numpy arrays (x_batch and y_batch) with input data and input labels data batch_size like shape.
         """
         x_batch = []
@@ -390,7 +393,8 @@ class TFModels():
         else:
             if shuffle_data and self.index_buffer_data == 0:
                 self.input, self.input_labels = get_inputs_and_labels_shuffled(self.input,self.input_labels)
-            batch_size, out_range = self.get_out_range_and_batch()  # out_range will be True if next batch is out of range
+            batch_size, out_range = self.get_out_range_and_batch()  # out_range will be True if
+            # next batch is out of range
             for _ in range(batch_size):
                 x, y = process_input_unity_generic(self.input[self.index_buffer_data],
                                                    self.input_labels[self.index_buffer_data],
