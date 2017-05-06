@@ -133,7 +133,8 @@ class Reader(object):
         test_size = self.reader_features.train_validation_test_percentages[-1]  # last value contains testSize
         validationSize = None
 
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(input_data,label_data,test_size = test_size )  # Divide set into train and test sets (if it has validation set, into train and validation set for the first part and test set for the second part)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(input_data,label_data,test_size = test_size )
+        # Divide set into train and test sets (if it has validation set, into train and validation set for the first part and test set for the second part)
 
         if self.reader_features.there_is_validation:  # If it has validation percentage
 
@@ -160,7 +161,7 @@ class Reader(object):
         #TODO lowletters in methods
         features = self.reader_features
         tfSearch = Searcher(features=features)
-        tfSearch.findTrainAndTestSetFromPathSignals()
+        tfSearch.find_train_and_test_sets_from_path_signals()
 
         self.train_set.append(self.x_train)
         self.train_set.append(self.y_train)
@@ -225,10 +226,10 @@ class Searcher(Reader):
         super(Reader, self).__init__()
         self.path_to_read = features.set_data_files
         self.features = features
-    def findTrainAndTestSetFromPathSignals(self):
+    def find_train_and_test_sets_from_path_signals(self):
         """
 
-        :return: Path list from train and test path
+        :return: Paths list from train and test path
         """
         # TODO check nulls
         for path in self.path_to_read:
@@ -236,11 +237,11 @@ class Searcher(Reader):
                 for file_name in files:
                     if (file_name.endswith(Dictionary.string_extension_png)):
                         full_path = os.path.join(root, file_name)
-                        self.__getSetsFromFullPathSignals(full_path)
+                        self.__get_sets_from_full_path_signals(full_path)
 
 
 
-    def __getSetsFromFullPathSignals(self,path):
+    def __get_sets_from_full_path_signals(self,path):
         """
         If path contains 'train', y_label is two dir up. Else if path contains 'test', y_label is one dir up.
         :param path: the full path
