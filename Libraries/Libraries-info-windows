@@ -32,18 +32,13 @@ import scipy.io as sio
 To install python -m pip install matplotlib
 import matplotlib.pyplot as plt
 ########################################################################################
-''' Pillow URL: https://pillow.readthedocs.io/en/5.1.x/'''
-Problem with OpenCV on Raspbian. Installed Pillow.
-To install: pip3 install pillow
-from PIL import Image
-########################################################################################
 ''' TFLearn library. License MIT. '''
 Git Clone : https://github.com/tflearn/tflearn.git
 To install: pip install tflearn
 ########################################################################################
 '''
  Sklearn(scikit-learn): Simple and efficient tools for data mining and data analysis
- To install: pip3 install -U scikit-learn
+ To install: pip install -U scikit-learn
 '''
 from sklearn.model_selection import train_test_split
 ########################################################################################
@@ -53,16 +48,6 @@ To install pandas: pip3 install pandas
 import pandas as pd
 ########################################################################################
 '''"Best image library"
-pip3 install opencv-python'''
+pip install opencv-python'''
 import cv2 as cv2
 ########################################################################################
-"""H5PY"""
-
-########################################################################################
-Para descargar corpus de wikipedia en español u otros idiomas
-# IMPORTANTE: PARA INSTALAR TEXTACY HACE FALTA Microsoft Visual C++ 14.0. Si no lo instalas, te dará el siguiente error:
-#  error: Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools":
-#  http://landinghub.visualstudio.com/visual-cpp-build-tools
-# Instalarlo con la configuración por defecto, sino, no funcionará
-pip3 install textacy
-import textacy
