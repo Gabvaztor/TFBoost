@@ -34,6 +34,3 @@ class Settings():
             self.model_path=settings[self.string_model_path]
             self.submission_path=settings[self.string_submission_path]
 
-
-s = Settings()
-
