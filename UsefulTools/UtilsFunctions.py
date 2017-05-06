@@ -48,22 +48,22 @@ def timed(method):
 
 def clear_console():
     os.system('cls')
-"""
-Signal competition
-"""
 
-def getSetsFromFullPathSignals(path):
+def number_neurons(total_input_size, input_sample_size, output_size, alpha=1):
     """
-    If path contains 'train', y_label is two dir up. Else if path contains 'test', y_label is one dir up.
-    :param path: the full path
+    :param total_input_size: x
+    :param input_sample_size: x
+    :param output_size: x
+    :param alpha: x
+    :return: number of neurons for layer
     """
-    pt('path',path)
-    y_label_dir = ''
-    if Dictionary.string_train in path:  # If 'train' in path
-        y_label_dir = os.path.dirname(os.path.dirname(path))  # Directory of directory of file
-    elif Dictionary.string_test in path:  # If 'test' in path
-        y_label_dir = os.path.dirname(path)  # Directory of file
-    else:
-        raise ValueError(Errors.not_label_from_input)
-    y_label_num = os.path.basename(y_label_dir)
-    return y_label_num
+    return int(total_input_size/(alpha*(input_sample_size+output_size)))
+
+def write_string_to_pathfile(string, path):
+    """
+    Write a string to a path file
+    :param string: string to write
+    :param path: path where write
+    """
+    file = open(path, 'w')
+    # TODO

@@ -12,8 +12,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from pandas.core.indexing import _iAtIndexer
-
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -26,6 +24,7 @@ from pandas.core.indexing import _iAtIndexer
 from UsefulTools.UtilsFunctions import *
 from TFBoost.TFEncoder import Dictionary as dict
 from TFBoost.TFEncoder import Constant as const
+import SettingsObject
 ''' TensorFlow: https://www.tensorflow.org/
 To upgrade TensorFlow to last version:
 *CPU: pip3 install --upgrade tensorflow
@@ -44,13 +43,6 @@ http://www.numpy.org/
 https://en.wikipedia.org/wiki/NumPy '''
 import numpy as np
 
-'''
-# You need to install the 64bit version of Scipy, at least on Windows.
-# It is mandatory to install 'Numpy+MKL' before scipy.
-# http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
-# We can find scipi in the url: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy'''
-import scipy.io as sio
-
 ''' Matlab URL: http://matplotlib.org/users/installing.html'''
 import matplotlib.pyplot as plt
 from pylab import *
@@ -62,10 +54,13 @@ import tflearn
 pip install opencv-python'''
 import cv2
 
-""" Random to suffle lists """
+"""Python libraries"""
+""" Random to shuffle lists """
 import random
 """ Time """
 import time
+""" Json """
+import json
 
 class TFModels():
     """
@@ -84,7 +79,10 @@ class TFModels():
         self._learning_rate = learning_rate  # Learning rate
         self._inputs_processed = []  # New inputs processed for training. (Change during shuffle)
         self._labels_processed = []  # New labels processed for training. (Change during shuffle)
+        self._settings_object = SettingsObject.Settings(Dictionary.string_settings_path)  # Setting object represent a
+        #  kaggle configuration
         # VARIABLES
+        self._restore_model = False  # Labels and logits info.
         self._show_info = 0  # Labels and logits info.
         self._show_images = 0  # if True show images when show_info is True
         self._shuffle_data = True
@@ -109,6 +107,12 @@ class TFModels():
 
     @property
     def show_info(self): return self._show_info
+
+    @property
+    def restore_model(self): return self._restore_model
+
+    @property
+    def settings_object(self): return self._settings_object
 
     @property
     def learning_rate(self): return self._learning_rate
@@ -276,8 +280,7 @@ class TFModels():
                                                     logits=y_convolution))  # Cross entropy between y_ and y_conv
 
         # train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer
-        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(
-            cross_entropy)  # Adam Optimizer (gradient descent)  # 97-98 test
+        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cross_entropy)  # Adam Optimizer
         # train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer
         # Sure is axis = 1
         correct_prediction = tf.equal(tf.argmax(y_convolution, axis=1),
@@ -304,29 +307,35 @@ class TFModels():
         sess.run(tf.local_variables_initializer())
         sess.run(tf.global_variables_initializer())
 
-        # TODO SAVE MODELS
-        # saver = tf.train.Saver()
+        saver = tf.train.Saver()  # Saver
 
-        start_time = time.time()
-        # TRAIN
+        # TRAIN VARIABLES
+        start_time = time.time()  # Start time
+        is_first_time = True  # Check if is first train
+        feed_dict_train_100 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: 1}
+        feed_dict_test_100 = {x: x_test_feed, y_: y_test_feed, keep_probably: 1}
+
+        # TO RESTORE MODEL
+        if self.restore_model:
+            pass
+        # START TRAINING
         for epoch in range(self.epoch_numbers):
             for i in range(self.trains):
                 # Setting values
                 feed_dict_train_50 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: self.train_dropout}
-                feed_dict_train_100 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: 1}
-                feed_dict_test_100 = {x: x_test_feed, y_: y_test_feed, keep_probably: 1}
+
                 train_accuracy = accuracy.eval(feed_dict_train_100) * 100
                 train_step.run(feed_dict_train_50)
                 test_accuracy = accuracy.eval(feed_dict_test_100) * 100
 
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
-                '''
-                if test_accuracy > 99:
+
+                if self.should_save(train_accuracy,test_accuracy):
                     # TODO return best previous model to check when save new model
-                    # Save the variables to disk.
-                    save_path = saver.save(sess, "/tmp/model.ckpt")
+                    # Save variables to disk.
+                    if self.settings_object:
+                        save_path = saver.save(sess, self.settings_object.model_path)
                     # TODO Write in text file new models with features
-                '''
 
                 # TODO Use validation set
                 if self.show_info:
@@ -511,7 +520,7 @@ def process_test_set(test, test_labels, options):
 
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.01)
-    #initial = tf.zeros(shape, dtype=tf.float32)
+    # initial = tf.zeros(shape, dtype=tf.float32)
     return tf.Variable(initial)
 
 def bias_variable(shape):
@@ -525,12 +534,4 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                           strides=[1, 2, 2, 1], padding='SAME')
 
-def number_neurons(total_input_size, input_sample_size, output_size, alpha=1):
-    """
-    :param total_input_size: x
-    :param input_sample_size: x
-    :param output_size: x
-    :param alpha: x
-    :return: number of neurons for layer
-    """
-    return int(total_input_size/(alpha*(input_sample_size+output_size)))
+

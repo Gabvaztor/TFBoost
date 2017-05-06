@@ -41,6 +41,8 @@ class Dictionary(object):
     """
     STRINGS
     """
+    # Settings path (for save models) (it has the same configuration that kaggle submit best practice)
+    string_settings_path = "../SETTINGS.json"
     # Data.csv from Breast_Cancer_Wisconsin project
     string_path_Breast_Cancer_Wisconsin = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
     # Data.csv Label Column name

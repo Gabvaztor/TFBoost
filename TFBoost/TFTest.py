@@ -117,32 +117,40 @@ testSetCSV = ''
 """
 Creating Reader Features
 """
-pathTrainAndTestImages = [Dictionary.string_path_signals_university_signal_train,Dictionary.string_path_signals_university_signal_test]
+path_train_and_test_images = [Dictionary.string_path_signals_university_signal_train,Dictionary.string_path_signals_university_signal_test]
 number_of_classes = 59 # Start in 0
-percentagesSets = None  # Example
-labelsSet = [Dictionary.string_labels_type_option_hierarchy]
-isAnUniqueCSV = False  # If this variable is true, then only one CSV file will be passed and it will be treated like trainSet, validationSet and testSet
-knownDataType = ''  # Contains the type of data if the data file contains an unique type of data. Examples: Number or Chars.
+percentages_sets = None  # Example
+labels_set = [Dictionary.string_labels_type_option_hierarchy]
+is_an_unique_csv = False  # If this variable is true, then only one CSV file will be passed and it will be treated like trainSet, validationSet and testSet
+known_data_type = ''  # Contains the type of data if the data file contains an unique type of data. Examples: Number or Chars.
 
-tfReaderFeatures = tfr.ReaderFeatures(set_data_files = pathTrainAndTestImages,number_of_classes = number_of_classes,
-                                      labels_set = labelsSet,
-                                      is_unique_csv = isAnUniqueCSV,known_data_type = knownDataType,
-                                      percentages_sets = percentagesSets)
+reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images,number_of_classes = number_of_classes,
+                                      labels_set = labels_set,
+                                      is_unique_csv = is_an_unique_csv,known_data_type = known_data_type,
+                                      percentages_sets = percentages_sets)
 
 """
 Creating Reader from ReaderFeatures
 """
-tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with all information
+tf_reader = tfr.Reader(reader_features = reader_features)  # Reader Object with all information
 
 """
 Getting train, validation (if necessary) and test set.
 """
-testSet = tfReader.test_set  # Test Set
-trainSet = tfReader.train_set  # Train Set
+test_set = tf_reader.test_set  # Test Set
+train_set = tf_reader.train_set  # Train Set
 
-models = models.TFModels(input=trainSet[0],test=testSet[0],
-                         input_labels=trainSet[1],test_labels=testSet[1],
-                         number_of_classes=number_of_classes).convolution_model_image()
+del reader_features
+del tf_reader
+
+models = models.TFModels(input=train_set[0],test=test_set[0],
+                         input_labels=train_set[1],test_labels=test_set[1],
+                         number_of_classes=number_of_classes)
+
+conf = models.actual_configuration()
+sdf
+
+models.convolution_model_image()
 """
 # Signal training
 models.convolution_model_image(input=trainSet[0],test=testSet[0],

@@ -1,6 +1,6 @@
 {
-  "TRAIN_DATA_PATH": "PUT PATH",
-  "MODEL_PATH": "PUT PATH",
-  "TEST_DATA_PATH": "PUT PATH",
-  "SUBMISSION_PATH": "PUT PATH"
+  "TRAIN_DATA_PATH": "D:\\Competitions\\Kaggle-Data\\Sberbank-Russian-Housing-Market\\train.csv",
+  "MODEL_PATH": "D:\\Competitions\\Kaggle-Data\\Sberbank-Russian-Housing-Market\\models",
+  "TEST_DATA_PATH": "D:\\Competitions\\Kaggle-Data\\Sberbank-Russian-Housing-Market\\test.csv",
+  "SUBMISSION_PATH": "D:\\Competitions\\Kaggle-Data\\Sberbank-Russian-Housing-Market\\predictions\\"
 }
