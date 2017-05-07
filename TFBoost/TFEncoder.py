@@ -86,6 +86,8 @@ class Errors(object):
                        "and must sum 1."
     # Not find a label for input
     not_label_from_input = "There is not label for input"
+    # Not find a label for input
+    write_string_to_file = "Can't write to file. Make sure the file exists and you have privileges to write"
 class Constant(object):
     """
     Constant Class

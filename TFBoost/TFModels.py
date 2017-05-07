@@ -335,6 +335,7 @@ class TFModels():
                     # Save variables to disk.
                     if self.settings_object:
                         save_path = saver.save(sess, self.settings_object.model_path)
+                        write_string_to_pathfile(self.actual_configuration(), save_path)
                     # TODO Write in text file new models with features
 
                 # TODO Use validation set
@@ -431,6 +432,13 @@ class TFModels():
             batch_size = self.input_size - self.index_buffer_data
             out_range = True
         return batch_size, out_range
+
+    def should_save(self, train_accuracy, test_accuracy):
+        boolean = False
+        # TODO check previous model
+        if train_accuracy > 80. and test_accuracy > 50:
+            pass
+
 
 """
 STATIC METHODS
