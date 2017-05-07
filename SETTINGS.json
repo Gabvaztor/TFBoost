@@ -2,6 +2,6 @@
   "TRAIN_DATA_PATH": "D:\\Competitions\\Kaggle-Data\\Sberbank-Russian-Housing-Market\\train.csv",
   "MODEL_PATH": "D:\\Competitions\\Kaggle-Data\\Sberbank-Russian-Housing-Market\\models\\model.ckpt",
   "TEST_DATA_PATH": "D:\\Competitions\\Kaggle-Data\\Sberbank-Russian-Housing-Market\\test.csv",
-  "SUBMISSION_PATH": "D:\\Competitions\\Kaggle-Data\\Sberbank-Russian-Housing-Market\\predictions\\"
+  "SUBMISSION_PATH": "D:\\Competitions\\Kaggle-Data\\Sberbank-Russian-Housing-Market\\predictions\\",
   "INFORMATION_PATH": "D:\\Competitions\\Kaggle-Data\\Sberbank-Russian-Housing-Market\\models\\information_model.txt"
 }

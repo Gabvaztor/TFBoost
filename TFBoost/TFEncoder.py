@@ -57,6 +57,8 @@ class Dictionary(object):
     string_labels_type_option_hierarchy = 'hierarchy'
     # Format png
     string_extension_png = '.png'
+    # Format ckpt
+    string_ckpt_extension = '.ckpt'
     # Train String
     string_train = 'train'
     # Test String

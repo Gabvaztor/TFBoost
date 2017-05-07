@@ -148,9 +148,8 @@ models = models.TFModels(input=train_set[0],test=test_set[0],
                          number_of_classes=number_of_classes)
 
 conf = models.actual_configuration()
-sdf
-
 models.convolution_model_image()
+
 """
 # Signal training
 models.convolution_model_image(input=trainSet[0],test=testSet[0],

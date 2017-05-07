@@ -67,26 +67,21 @@ class TFModels():
     Long Docs ...
     """
     # TODO Docs
-    def __init__(self,input, test, input_labels, test_labels, number_of_classes, number_of_inputs=None,
-                 learning_rate=1e-3, trains=None, type=None, validation=None,
-                 validation_labels=None, deviation=None):
+    def __init__(self,input, test, input_labels, test_labels, number_of_classes,
+                 type=None, validation=None, validation_labels=None):
         self._input = input
         self._test = test
         self._input_labels = input_labels
         self._test_labels = test_labels
-        self._number_of_inputs = number_of_inputs
         self._number_of_classes = number_of_classes
-        self._learning_rate = learning_rate  # Learning rate
         self._inputs_processed = []  # New inputs processed for training. (Change during shuffle)
         self._labels_processed = []  # New labels processed for training. (Change during shuffle)
-        self._settings_object = SettingsObject.Settings(Dictionary.string_settings_path)  # Setting object represent a
-        #  kaggle configuration
+        self._settings_object = SettingsObject.Settings(Dictionary.string_settings_path)  # Setting object represent a kaggle configuration
         # VARIABLES
         self._restore_model = False  # Labels and logits info.
         self._show_info = 0  # Labels and logits info.
-        self._show_images = 0  # if True show images when show_info is True
+        self._show_images = 0  # If True show images when show_info is True
         self._shuffle_data = True
-        self._to_array = True  # If the images must be reshaped into an array
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
@@ -95,21 +90,34 @@ class TFModels():
         self._input_size = len(input)
         self._test_size = len(test)
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
-        self._index_buffer_data = 0  # The index for batches during training
         self._first_label_neurons = 50
         self._second_label_neurons = 55
         self._third_label_neurons = 50
+        self._learning_rate = 1e-3  # Learning rate
+        self._trains = int(self.input_size / self.batch_size) + 1
+        # INFORMATION VARIABLES
+        self._index_buffer_data = 0  # The index for batches during training
         self._num_trains_count = 0
-        if not trains:
-            self._trains = int(self.input_size / self.batch_size) + 1
-        else:
-            self._trains = trains
+        self._train_accuracy = None
+        self._test_accuracy = None
 
     @property
     def show_info(self): return self._show_info
 
     @property
     def restore_model(self): return self._restore_model
+
+    @property
+    def train_accuracy(self): return self._train_accuracy
+
+    @train_accuracy.setter
+    def train_accuracy(self, value): self._train_accuracy = value
+
+    @property
+    def test_accuracy(self): return self._test_accuracy
+
+    @test_accuracy.setter
+    def test_accuracy(self, value): self._test_accuracy = value
 
     @property
     def settings_object(self): return self._settings_object
@@ -220,7 +228,14 @@ class TFModels():
         """
         Return a string with actual features
         """
-        return self.__dict__
+        dict = self.__dict__
+        # Remove all not necessaries values
+        # TODO(gabvaztor) fix del class attributes
+        no_necessaries_attributes = ["_test","_input_labels","_test_labels",
+                                     "_index_buffer_data","_show_images","_show_info"]
+        for x in no_necessaries_attributes:
+            del dict[x]
+        return dict
 
     @timed
     def convolution_model_image(self):
@@ -324,18 +339,21 @@ class TFModels():
                 # Setting values
                 feed_dict_train_50 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: self.train_dropout}
 
-                train_accuracy = accuracy.eval(feed_dict_train_100) * 100
+                self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
                 train_step.run(feed_dict_train_50)
-                test_accuracy = accuracy.eval(feed_dict_test_100) * 100
+                self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
 
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
 
-                if self.should_save(train_accuracy,test_accuracy):
+                if self.num_trains_count == 10:
+                    save_path = saver.save(sess, self.settings_object.model_path)
+                    write_string_to_pathfile(self.actual_configuration(), self.settings_object.information_path)
+                if self.should_save():
                     # TODO return best previous model to check when save new model
                     # Save variables to disk.
                     if self.settings_object:
-                        save_path = saver.save(sess, self.settings_object.model_path)
-                        write_string_to_pathfile(self.actual_configuration(), save_path)
+                        save_path = saver.save(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
+                        write_string_to_pathfile(self.actual_configuration(), self.settings_object.information_path)
                     # TODO Write in text file new models with features
 
                 # TODO Use validation set
@@ -359,9 +377,9 @@ class TFModels():
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' + str(
                         epoch + 1) + ": " + percent_advance + '%')
-                    pt('train_accuracy', train_accuracy)
+                    pt('train_accuracy', self.train_accuracy)
                     pt('cross_entropy_train', cross_entropy_train)
-                    pt('test_accuracy', test_accuracy)
+                    pt('test_accuracy', self.test_accuracy)
                     pt('self.index_buffer_data', self.index_buffer_data)
                 self.num_trains_count += 1
                 # Update batches values
@@ -403,6 +421,8 @@ class TFModels():
         else:
             if shuffle_data and self.index_buffer_data == 0:
                 self.input, self.input_labels = get_inputs_and_labels_shuffled(self.input,self.input_labels)
+            else:
+                self.input, self.input_labels = self.input, self.input_labels  # To modify if is out class
             batch_size, out_range = self.get_out_range_and_batch()  # out_range will be True if
             # next batch is out of range
             for _ in range(batch_size):
@@ -433,11 +453,16 @@ class TFModels():
             out_range = True
         return batch_size, out_range
 
-    def should_save(self, train_accuracy, test_accuracy):
+    def should_save(self):
         boolean = False
         # TODO check previous model
-        if train_accuracy > 80. and test_accuracy > 50:
+        # last_train_accuracy, last_test_accuracy = self.get_lasts_accuracies()
+        if self.train_accuracy > 80. and self.test_accuracy > 50:
             pass
+        return boolean
+
+    def get_lasts_accuracies(self):
+        pass
 
 
 """

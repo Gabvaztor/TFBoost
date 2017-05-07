@@ -69,6 +69,6 @@ def write_string_to_pathfile(string, filepath):
         if not os.path.exists(directory):
             os.makedirs(directory)
         file = open(filepath, 'w+')
-        file.write(string)
+        file.write(str(string))
     except:
         raise ValueError(Errors.write_string_to_file)
