@@ -330,7 +330,7 @@ class TFModels():
         feed_dict_train_100 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: 1}
         feed_dict_test_100 = {x: x_test_feed, y_: y_test_feed, keep_probably: 1}
 
-        # TO RESTORE MODEL
+        # TODO RESTORE MODEL
         if self.restore_model:
             pass
         # START TRAINING
