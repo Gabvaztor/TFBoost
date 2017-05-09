@@ -132,9 +132,6 @@ class TFModels():
     def shuffle_data(self): return self._shuffle_data
 
     @property
-    def to_array(self): return self._to_array
-
-    @property
     def input_rows_numbers(self): return self._input_rows_numbers
 
     @property
@@ -375,8 +372,8 @@ class TFModels():
                     percent_advance = str(i * 100 / self.trains)
                     pt('Seconds', (time.time() - start_time))
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
-                    pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' + str(
-                        epoch + 1) + ": " + percent_advance + '%')
+                    pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' +
+                       str(epoch + 1) + ": " + percent_advance + '%')
                     pt('train_accuracy', self.train_accuracy)
                     pt('cross_entropy_train', cross_entropy_train)
                     pt('test_accuracy', self.test_accuracy)
