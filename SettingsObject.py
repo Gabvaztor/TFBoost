@@ -75,3 +75,8 @@ class Settings():
             self.model_path=settings[self.string_model_path]
             self.submission_path=settings[self.string_submission_path]
             self.information_path=settings[self.string_information_path]
+
+    def load_actual_configuration(self):
+        with open(self.string_information_path) as json_configuration:
+            configuration = json.load(json_configuration)
+            # TODO(gabvaztor) Finish

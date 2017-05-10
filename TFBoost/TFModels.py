@@ -74,8 +74,6 @@ class TFModels():
         self._input_labels = input_labels
         self._test_labels = test_labels
         self._number_of_classes = number_of_classes
-        self._inputs_processed = []  # New inputs processed for training. (Change during shuffle)
-        self._labels_processed = []  # New labels processed for training. (Change during shuffle)
         self._settings_object = SettingsObject.Settings(Dictionary.string_settings_path)  # Setting object represent a kaggle configuration
         # VARIABLES
         self._restore_model = False  # Labels and logits info.
@@ -87,8 +85,8 @@ class TFModels():
         self._kernel_size = [5, 5]  # Kernel patch size
         self._epoch_numbers = 100  # Epochs number
         self._batch_size = 100  # Batch size
-        self._input_size = len(input)
-        self._test_size = len(test)
+        self._input_size = len(input)  # Change if necessary
+        self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
         self._first_label_neurons = 50
         self._second_label_neurons = 55
@@ -163,18 +161,6 @@ class TFModels():
 
     @index_buffer_data.setter
     def index_buffer_data(self, value): self._index_buffer_data = value
-
-    @property
-    def labels_processed(self): return self._labels_processed
-
-    @labels_processed.setter
-    def labels_processed(self, value): self._labels_processed = value
-
-    @property
-    def inputs_processed(self): return self._inputs_processed
-
-    @inputs_processed.setter
-    def inputs_processed(self, value): self._inputs_processed = value
 
     @property
     def first_label_neurons(self): return self._first_label_neurons
@@ -368,9 +354,8 @@ class TFModels():
                     pt('y_conv_shape', y__conv.shape)
                     pt('index_buffer_data', self.index_buffer_data)
 
-                if i == 0 or i % 10 == 0:
+                if i % 10 == 0:
                     percent_advance = str(i * 100 / self.trains)
-                    pt('Seconds', (time.time() - start_time))
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' +
                        str(epoch + 1) + ": " + percent_advance + '%')
@@ -451,7 +436,14 @@ class TFModels():
         return batch_size, out_range
 
     def should_save(self):
+        """
+        Get last configuration from path
+        
+        :return: 
+        """
         boolean = False
+        self.settings_object.information_path
+
         # TODO check previous model
         # last_train_accuracy, last_test_accuracy = self.get_lasts_accuracies()
         if self.train_accuracy > 80. and self.test_accuracy > 50:
