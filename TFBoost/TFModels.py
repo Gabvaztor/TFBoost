@@ -223,13 +223,13 @@ class TFModels():
 
     def actual_configuration(self):
         """
-        Return a string with actual features
+        Return a string with actual features without not necessaries 
         """
-        dict = self.__dict__
+        dict = self.__dict__.copy()  # Need to be a copy
         # Remove all not necessaries values
-        # TODO(gabvaztor) fix del class attributes
-        no_necessaries_attributes = ["_test","_input_labels","_test_labels",
-                                     "_index_buffer_data","_show_images","_show_info"]
+        no_necessaries_attributes = ["_input","_test","_input_labels","_test_labels",
+                                     "_index_buffer_data","_show_images","_show_info",
+                                     "_settings_object"]
         for x in no_necessaries_attributes:
             del dict[x]
         return dict
