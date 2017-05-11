@@ -1,9 +1,11 @@
 # TensorFlow Boost
 TensorFlow-Boost's Repository
 
-With this project we are creating a framework which you can read any kind of tag labeled data (like kaggle, csv, images), create train, validation and test set from them, choose the best machine learning algorithm for your data, and besides, change the algorithm features.
+With this project we are creating a framework which you can read any kind of tag labeled data (like kaggle, csv, images),
+create train, validation and test set from them, choose the best machine learning algorithm for your data, and besides,
+change the algorithm features.
 
-You can do all this with a simple and beautiful user interface.
+You will be able to do all this with a simple and beautiful user interface.
 
 All project use "Google Python Style Guide":
 https://google.github.io/styleguide/pyguide.html

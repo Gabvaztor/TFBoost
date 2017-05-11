@@ -79,4 +79,22 @@ class Settings():
     def load_actual_configuration(self):
         with open(self.string_information_path) as json_configuration:
             configuration = json.load(json_configuration)
-            # TODO(gabvaztor) Finish
+            configuration.num_trains_count = configuration['_num_trains_count']
+            configuration.train_dropout = configuration['_train_dropout']
+            configuration.epoch_numbers = configuration['_epoch_numbers']
+            configuration.third_label_neurons = configuration['_third_label_neurons']
+            configuration.shuffle_data = configuration['_shuffle_data']
+            configuration.input_rows_numbers = configuration['_input_rows_numbers']
+            configuration.second_label_neurons = configuration['_second_label_neurons']
+            configuration.train_accuracy = configuration['_train_accuracy']
+            configuration.test_size = configuration['_test_size']
+            configuration.number_of_classes = configuration['_number_of_classes']
+            configuration.input_size = configuration['_input_size']
+            configuration.input_columns_numbers = configuration['_input_columns_numbers']
+            configuration.kernel_size = configuration['_kernel_size']
+            configuration.restore_model = configuration['_restore_model']
+            configuration.learning_rate = configuration['_learning_rate']
+            configuration.trains = configuration['_trains']
+            configuration.batch_size = configuration['_batch_size']
+            configuration.first_label_neurons = configuration['_first_label_neurons']
+            configuration.test_accuracy = configuration['_test_accuracy']
