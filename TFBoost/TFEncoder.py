@@ -67,6 +67,12 @@ class Dictionary(object):
     string_separator = '-------------------------------------'
     # Gray scale
     string_gray_scale = 'gray_scale'
+    # Want to save model
+    string_want_to_save = "Do you want to save the model? Press 'Y' to Yes or 'N' to No"
+    # Char Y
+    string_char_Y = "Y"
+    # Char N
+    string_char_N = "N"
     """
     STRINGS OPTIONS
     """

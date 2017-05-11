@@ -59,8 +59,8 @@ import cv2
 import random
 """ Time """
 import time
-""" Json """
-import json
+
+
 
 class TFModels():
     """
@@ -332,12 +332,13 @@ class TFModels():
                     save_path = saver.save(sess, self.settings_object.model_path)
                     write_string_to_pathfile(self.actual_configuration(), self.settings_object.information_path)
                 if self.should_save():
-                    # TODO return best previous model to check when save new model
                     # Save variables to disk.
                     if self.settings_object:
                         save_path = saver.save(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
                         write_string_to_pathfile(self.actual_configuration(), self.settings_object.information_path)
-                    # TODO Write in text file new models with features
+                    else:
+                        # TODO Must return error in save
+                        pass
 
                 # TODO Use validation set
                 if self.show_info:
@@ -441,18 +442,21 @@ class TFModels():
         
         :return: 
         """
-        boolean = False
-        self.settings_object.information_path
+        should_save = False
+        actual_configuration = self.settings_object.load_actual_configuration()
+        last_train_accuracy = actual_configuration.train_accuracy
+        last_test_accuracy = actual_configuration.test_accuracy
+        # TODO Create a class variable to choose if user want to save automatically
+        last_test_accuracy = None # To delete
+        if last_train_accuracy and last_test_accuracy:
+            if self.train_accuracy > last_train_accuracy and self.test_accuracy > last_test_accuracy:
+                should_save = True
+        else:
+            option_choosed = recurrent_ask_to_save_model()
+            if option_choosed:
+                should_save = True
 
-        # TODO check previous model
-        # last_train_accuracy, last_test_accuracy = self.get_lasts_accuracies()
-        if self.train_accuracy > 80. and self.test_accuracy > 50:
-            pass
-        return boolean
-
-    def get_lasts_accuracies(self):
-        pass
-
+        return should_save
 
 """
 STATIC METHODS

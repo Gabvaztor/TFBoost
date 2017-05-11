@@ -72,3 +72,16 @@ def write_string_to_pathfile(string, filepath):
         file.write(str(string))
     except:
         raise ValueError(Errors.write_string_to_file)
+
+def recurrent_ask_to_save_model():
+    """
+    Wait user to get response to save a model
+    :return: 
+    """
+    response = False
+    save = input(Dictionary.string_want_to_save)
+    if save == Dictionary.string_char_Y:
+        response = True
+    elif save != Dictionary.string_char_N:
+        recurrent_ask_to_save_model()
+    return response

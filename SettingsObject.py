@@ -77,6 +77,7 @@ class Settings():
             self.information_path=settings[self.string_information_path]
 
     def load_actual_configuration(self):
+        # Fix directory
         with open(self.string_information_path) as json_configuration:
             configuration = json.load(json_configuration)
             configuration.num_trains_count = configuration['_num_trains_count']
