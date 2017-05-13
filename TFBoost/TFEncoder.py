@@ -96,6 +96,10 @@ class Errors(object):
     not_label_from_input = "There is not label for input"
     # Not find a label for input
     write_string_to_file = "Can't write to file. Make sure the file exists and you have privileges to write"
+    # Error
+    error = "Error, see description"
+    # Setting Object model path bad config
+    model_path_bad_configuration = "Can't save model because model path is bad configured"
 class Constant(object):
     """
     Constant Class

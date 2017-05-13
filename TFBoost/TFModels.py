@@ -79,6 +79,7 @@ class TFModels():
         self._restore_model = False  # Labels and logits info.
         self._show_info = 0  # Labels and logits info.
         self._show_images = 0  # If True show images when show_info is True
+        self._save_model = False  # If must to save model or not
         self._shuffle_data = True
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
@@ -101,6 +102,9 @@ class TFModels():
 
     @property
     def show_info(self): return self._show_info
+
+    @property
+    def save_model(self): return self._save_model
 
     @property
     def restore_model(self): return self._restore_model
@@ -328,17 +332,16 @@ class TFModels():
 
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
 
-                if self.num_trains_count == 10:
-                    save_path = saver.save(sess, self.settings_object.model_path)
-                    write_string_to_pathfile(self.actual_configuration(), self.settings_object.information_path)
                 if self.should_save():
                     # Save variables to disk.
-                    if self.settings_object:
-                        save_path = saver.save(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
-                        write_string_to_pathfile(self.actual_configuration(), self.settings_object.information_path)
+                    if self.settings_object.model_path:
+                        try:
+                            saver.save(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
+                            write_string_to_pathfile(self.actual_configuration(), self.settings_object.information_path)
+                        except Exception as e:
+                            pt(Errors.error,e)
                     else:
-                        # TODO Must return error in save
-                        pass
+                        pt(Errors.error, Errors.model_path_bad_configuration)
 
                 # TODO Use validation set
                 if self.show_info:
@@ -448,13 +451,14 @@ class TFModels():
         last_test_accuracy = actual_configuration.test_accuracy
         # TODO Create a class variable to choose if user want to save automatically
         last_test_accuracy = None # To delete
-        if last_train_accuracy and last_test_accuracy:
-            if self.train_accuracy > last_train_accuracy and self.test_accuracy > last_test_accuracy:
-                should_save = True
-        else:
-            option_choosed = recurrent_ask_to_save_model()
-            if option_choosed:
-                should_save = True
+        if self.save_model:
+            if last_train_accuracy and last_test_accuracy:
+                if self.train_accuracy > last_train_accuracy and self.test_accuracy > last_test_accuracy:
+                    should_save = True
+            else:
+                option_choosed = recurrent_ask_to_save_model()
+                if option_choosed:
+                    should_save = True
 
         return should_save
 
