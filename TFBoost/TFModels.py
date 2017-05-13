@@ -79,13 +79,13 @@ class TFModels():
         self._restore_model = False  # Labels and logits info.
         self._show_info = 0  # Labels and logits info.
         self._show_images = 0  # If True show images when show_info is True
-        self._save_model = False  # If must to save model or not
+        self._save_model = True  # If must to save model or not
         self._shuffle_data = True
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
         self._epoch_numbers = 100  # Epochs number
-        self._batch_size = 100  # Batch size
+        self._batch_size = 2  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
@@ -446,19 +446,21 @@ class TFModels():
         :return: 
         """
         should_save = False
-        actual_configuration = self.settings_object.load_actual_configuration()
-        last_train_accuracy = actual_configuration.train_accuracy
-        last_test_accuracy = actual_configuration.test_accuracy
-        # TODO Create a class variable to choose if user want to save automatically
-        last_test_accuracy = None # To delete
         if self.save_model:
-            if last_train_accuracy and last_test_accuracy:
-                if self.train_accuracy > last_train_accuracy and self.test_accuracy > last_test_accuracy:
-                    should_save = True
+            actual_configuration = self.settings_object.load_actual_configuration()
+            if actual_configuration:
+                last_train_accuracy = actual_configuration.train_accuracy
+                last_test_accuracy = actual_configuration.test_accuracy
+                last_test_accuracy = None  # To delete
+                if last_train_accuracy and last_test_accuracy:
+                    if self.train_accuracy > last_train_accuracy and self.test_accuracy > last_test_accuracy:
+                        should_save = True
+                else:
+                    option_choosed = recurrent_ask_to_save_model()
+                    if option_choosed:
+                        should_save = True
             else:
-                option_choosed = recurrent_ask_to_save_model()
-                if option_choosed:
-                    should_save = True
+                should_save = True
 
         return should_save
 

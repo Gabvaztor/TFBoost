@@ -4,6 +4,10 @@ This class is used in kaggle competitions
 
 import json
 
+from pathlib import Path
+import os
+
+from TFBoost.TFEncoder import Dictionary
 class Settings():
     _train_path = "D:\\"
     _test_path = "D:\\"
@@ -54,6 +58,8 @@ class Settings():
     def path(self, value): self._path = value
 
     def __init__(self, path):
+        if not path:
+            path = Dictionary.string_settings_path
         self._path = path
         self._load_settings()
     def __str__(self):
@@ -77,25 +83,39 @@ class Settings():
             self.information_path=settings[self.string_information_path]
 
     def load_actual_configuration(self):
-        # Fix directory
-        with open(self.string_information_path) as json_configuration:
-            configuration = json.load(json_configuration)
-            configuration.num_trains_count = configuration['_num_trains_count']
-            configuration.train_dropout = configuration['_train_dropout']
-            configuration.epoch_numbers = configuration['_epoch_numbers']
-            configuration.third_label_neurons = configuration['_third_label_neurons']
-            configuration.shuffle_data = configuration['_shuffle_data']
-            configuration.input_rows_numbers = configuration['_input_rows_numbers']
-            configuration.second_label_neurons = configuration['_second_label_neurons']
-            configuration.train_accuracy = configuration['_train_accuracy']
-            configuration.test_size = configuration['_test_size']
-            configuration.number_of_classes = configuration['_number_of_classes']
-            configuration.input_size = configuration['_input_size']
-            configuration.input_columns_numbers = configuration['_input_columns_numbers']
-            configuration.kernel_size = configuration['_kernel_size']
-            configuration.restore_model = configuration['_restore_model']
-            configuration.learning_rate = configuration['_learning_rate']
-            configuration.trains = configuration['_trains']
-            configuration.batch_size = configuration['_batch_size']
-            configuration.first_label_neurons = configuration['_first_label_neurons']
-            configuration.test_accuracy = configuration['_test_accuracy']
+        """
+
+        :return:
+        """
+        # TODO DOCs
+        directory = os.path.dirname(self.information_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        if not os.path.exists(self.information_path):
+            open(self.information_path, 'w+')
+        if os.stat(self.information_path).st_size != 0:
+            with open(self.information_path) as json_configuration:
+                configuration = json.load(json_configuration)
+                configuration.num_trains_count = configuration['_num_trains_count']
+                configuration.train_dropout = configuration['_train_dropout']
+                configuration.epoch_numbers = configuration['_epoch_numbers']
+                configuration.third_label_neurons = configuration['_third_label_neurons']
+                configuration.shuffle_data = configuration['_shuffle_data']
+                configuration.input_rows_numbers = configuration['_input_rows_numbers']
+                configuration.second_label_neurons = configuration['_second_label_neurons']
+                configuration.train_accuracy = configuration['_train_accuracy']
+                configuration.test_size = configuration['_test_size']
+                configuration.number_of_classes = configuration['_number_of_classes']
+                configuration.input_size = configuration['_input_size']
+                configuration.input_columns_numbers = configuration['_input_columns_numbers']
+                configuration.kernel_size = configuration['_kernel_size']
+                configuration.restore_model = configuration['_restore_model']
+                configuration.learning_rate = configuration['_learning_rate']
+                configuration.trains = configuration['_trains']
+                configuration.batch_size = configuration['_batch_size']
+                configuration.first_label_neurons = configuration['_first_label_neurons']
+                configuration.test_accuracy = configuration['_test_accuracy']
+                return configuration
+        else:
+            configuration = None
+            return configuration

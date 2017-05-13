@@ -42,17 +42,18 @@ class Dictionary(object):
     STRINGS
     """
     # Settings path (for save models) (it has the same configuration that kaggle submit best practice)
-    string_settings_path = "../SETTINGS.json"
+    #string_settings_path = "../Settings/Sberbank_Russian_Houssing_Market/SETTINGS.json"
+    string_settings_path = "../Settings/German_Signal/SETTINGS.json"
     # Data.csv from Breast_Cancer_Wisconsin project
     string_path_Breast_Cancer_Wisconsin = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
     # Data.csv Label Column name
     string_label_column_name_Breast_Cancer_Wisconsin = 'diagnosis'
     # Signal University path train
-    #path_signals_university_signal_train = 'D:\\UniversityResearching\\DITS-classification\\classification_train\\'
-    string_path_signals_university_signal_train = 'D:\\DITS-classification\\classification_train\\'
+    string_path_signals_university_signal_train = 'D:\\UniversityResearching\\DITS-classification\\classification_train\\'
+    #string_path_signals_university_signal_train = 'D:\\DITS-classification\\classification_train\\'
     # Signal University path test
-    #path_signals_university_signal_test = 'D:\\UniversityResearching\\DITS-classification\\classification_test\\'
-    string_path_signals_university_signal_test = 'D:\\DITS-classification\\classification_test\\'
+    string_path_signals_university_signal_test = 'D:\\UniversityResearching\\DITS-classification\\classification_test\\'
+    #string_path_signals_university_signal_test = 'D:\\DITS-classification\\classification_test\\'
     # Hierarchy option
     string_labels_type_option_hierarchy = 'hierarchy'
     # Format png

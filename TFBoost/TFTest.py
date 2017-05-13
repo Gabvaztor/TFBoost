@@ -48,6 +48,7 @@ import TFBoost.TFDataMining as tfd
 from TFBoost.TFEncoder import Dictionary
 from UsefulTools.UtilsFunctions import *
 import TFBoost.TFModels as models
+import SettingsObject
 ''' TensorFlow: https://www.tensorflow.org/
 To upgrade TensorFlow to last version:
 *CPU: pip3 install --upgrade tensorflow
@@ -117,7 +118,9 @@ testSetCSV = ''
 """
 Creating Reader Features
 """
-path_train_and_test_images = [Dictionary.string_path_signals_university_signal_train,Dictionary.string_path_signals_university_signal_test]
+settings = SettingsObject.Settings(Dictionary.string_settings_path)
+path_train_and_test_images = [settings.train_path,settings.test_path]
+pt(path_train_and_test_images)
 number_of_classes = 59 # Start in 0
 percentages_sets = None  # Example
 labels_set = [Dictionary.string_labels_type_option_hierarchy]
