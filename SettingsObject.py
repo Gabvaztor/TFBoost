@@ -91,10 +91,12 @@ class Settings():
         directory = os.path.dirname(self.information_path)
         if not os.path.exists(directory):
             os.makedirs(directory)
-        if not os.path.exists(self.information_path):
-            open(self.information_path, 'w+')
+        if not os.path.exists(self.information_path):  # To create file
+            file = open(self.information_path, 'w+')
+            file.close()
         if os.stat(self.information_path).st_size != 0:
-            with open(self.information_path) as json_configuration:
+            # TODO FIX load model json
+            with open(self.information_path,"r") as json_configuration:
                 configuration = json.load(json_configuration)
                 configuration.num_trains_count = configuration['_num_trains_count']
                 configuration.train_dropout = configuration['_train_dropout']

@@ -160,8 +160,8 @@ class Reader(object):
         #TODO check nulls
         #TODO lowletters in methods
         features = self.reader_features
-        tfSearch = Searcher(features=features)
-        tfSearch.find_train_and_test_sets_from_path_signals()
+        tf_search = Searcher(features=features)
+        tf_search.find_train_and_test_sets_from_path_signals()
 
         self.train_set.append(self.x_train)
         self.train_set.append(self.y_train)
@@ -226,6 +226,7 @@ class Searcher(Reader):
         super(Reader, self).__init__()
         self.path_to_read = features.set_data_files
         self.features = features
+
     def find_train_and_test_sets_from_path_signals(self):
         """
 

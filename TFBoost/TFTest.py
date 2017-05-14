@@ -120,7 +120,6 @@ Creating Reader Features
 """
 settings = SettingsObject.Settings(Dictionary.string_settings_path)
 path_train_and_test_images = [settings.train_path,settings.test_path]
-pt(path_train_and_test_images)
 number_of_classes = 59 # Start in 0
 percentages_sets = None  # Example
 labels_set = [Dictionary.string_labels_type_option_hierarchy]
@@ -142,15 +141,11 @@ Getting train, validation (if necessary) and test set.
 """
 test_set = tf_reader.test_set  # Test Set
 train_set = tf_reader.train_set  # Train Set
-
 del reader_features
 del tf_reader
-
 models = models.TFModels(input=train_set[0],test=test_set[0],
                          input_labels=train_set[1],test_labels=test_set[1],
                          number_of_classes=number_of_classes)
-
-conf = models.actual_configuration()
 models.convolution_model_image()
 
 """
