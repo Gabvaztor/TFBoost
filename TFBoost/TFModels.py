@@ -220,6 +220,7 @@ class TFModels():
         no_necessaries_attributes = ["_input","_test","_input_labels","_test_labels",
                                      "_index_buffer_data","_show_images","_show_info",
                                      "_settings_object"]
+        # TODO Create STR Value for attribute
         for x in no_necessaries_attributes:
             del dict[x]
         return dict
