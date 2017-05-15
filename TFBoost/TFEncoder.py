@@ -69,7 +69,7 @@ class Dictionary(object):
     # Gray scale
     string_gray_scale = 'gray_scale'
     # Want to save model
-    string_want_to_save = "Do you want to save the model? Press 'Y' to Yes or 'N' to No"
+    string_want_to_save = "Do you want to save the model? Press 'Y' to Yes or 'N' to No: \n Answer:"
     # Char Y
     string_char_Y = "Y"
     # Char N

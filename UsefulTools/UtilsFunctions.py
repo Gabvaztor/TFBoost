@@ -73,6 +73,22 @@ def write_string_to_pathfile(string, filepath):
     except:
         raise ValueError(Errors.write_string_to_file)
 
+def write_json_to_pathfile(json, filepath):
+    """
+    Write a string to a path file
+    :param string: string to write
+    :param path: path where write
+    """
+    try:
+        directory = os.path.dirname(filepath)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        file = open(filepath, 'w+')
+        file.write(str(json))
+    except:
+        raise ValueError(Errors.write_string_to_file)
+
+
 def recurrent_ask_to_save_model():
     """
     Wait user to get response to save a model

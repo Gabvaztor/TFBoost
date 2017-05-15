@@ -3,11 +3,9 @@ This class is used in kaggle competitions
 """
 
 import json
-
-from pathlib import Path
 import os
-
 from TFBoost.TFEncoder import Dictionary
+import itertools  # To deserialize a Dict to an Object
 class Settings():
     _train_path = "D:\\"
     _test_path = "D:\\"
@@ -95,29 +93,36 @@ class Settings():
             file = open(self.information_path, 'w+')
             file.close()
         if os.stat(self.information_path).st_size != 0:
-            # TODO FIX load model json
-            with open(self.information_path,"r") as json_configuration:
-                configuration = json.load(json_configuration)
-                configuration.num_trains_count = configuration['_num_trains_count']
-                configuration.train_dropout = configuration['_train_dropout']
-                configuration.epoch_numbers = configuration['_epoch_numbers']
-                configuration.third_label_neurons = configuration['_third_label_neurons']
-                configuration.shuffle_data = configuration['_shuffle_data']
-                configuration.input_rows_numbers = configuration['_input_rows_numbers']
-                configuration.second_label_neurons = configuration['_second_label_neurons']
-                configuration.train_accuracy = configuration['_train_accuracy']
-                configuration.test_size = configuration['_test_size']
-                configuration.number_of_classes = configuration['_number_of_classes']
-                configuration.input_size = configuration['_input_size']
-                configuration.input_columns_numbers = configuration['_input_columns_numbers']
-                configuration.kernel_size = configuration['_kernel_size']
-                configuration.restore_model = configuration['_restore_model']
-                configuration.learning_rate = configuration['_learning_rate']
-                configuration.trains = configuration['_trains']
-                configuration.batch_size = configuration['_batch_size']
-                configuration.first_label_neurons = configuration['_first_label_neurons']
-                configuration.test_accuracy = configuration['_test_accuracy']
+            with open(self.information_path) as json_configuration:
+                dict = json.load(json_configuration)
+                configuration = Configuration(dict)
+                '''
+                configuration.num_trains_count = dict.get('_num_trains_count')
+                configuration.train_dropout = dict['_train_dropout']
+                configuration.epoch_numbers = dict['_epoch_numbers']
+                configuration.third_label_neurons = dict['_third_label_neurons']
+                configuration.shuffle_data = dict['_shuffle_data']
+                configuration.input_rows_numbers = dict['_input_rows_numbers']
+                configuration.second_label_neurons = dict['_second_label_neurons']
+                configuration.train_accuracy = dict['_train_accuracy']
+                configuration.test_size = dict['_test_size']
+                configuration.number_of_classes = dict['_number_of_classes']
+                configuration.input_size = dict['_input_size']
+                configuration.input_columns_numbers = dict['_input_columns_numbers']
+                configuration.kernel_size = dict['_kernel_size']
+                configuration.restore_model = dict['_restore_model']
+                configuration.learning_rate = dict['_learning_rate']
+                configuration.trains = dict['_trains']
+                configuration.batch_size = dict['_batch_size']
+                configuration.first_label_neurons = dict['_first_label_neurons']
+                configuration.test_accuracy = dict['_test_accuracy']
+                '''
                 return configuration
         else:
             configuration = None
             return configuration
+
+class Configuration():
+     def __init__(self, json_content):
+         for key, value in json_content.items():
+             self.__dict__[key] = value

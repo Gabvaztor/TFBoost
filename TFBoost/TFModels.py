@@ -59,8 +59,8 @@ import cv2
 import random
 """ Time """
 import time
-
-
+""" To serialize object"""
+import json
 
 class TFModels():
     """
@@ -211,7 +211,7 @@ class TFModels():
     @property
     def test(self): return self._test
 
-    def actual_configuration(self):
+    def properties(self):
         """
         Return a string with actual features without not necessaries 
         """
@@ -224,6 +224,10 @@ class TFModels():
         for x in no_necessaries_attributes:
             del dict[x]
         return dict
+
+    def to_json(self):
+        return json.dumps(self, default=lambda o: self.properties(),
+                          sort_keys=True, indent=4)
 
     @timed
     def convolution_model_image(self):
@@ -338,7 +342,7 @@ class TFModels():
                     if self.settings_object.model_path:
                         try:
                             saver.save(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
-                            write_string_to_pathfile(self.actual_configuration(), self.settings_object.information_path)
+                            write_string_to_pathfile(self.to_json(), self.settings_object.information_path)
                         except Exception as e:
                             pt(Errors.error,e)
                     else:
@@ -450,9 +454,8 @@ class TFModels():
         if self.save_model:
             actual_configuration = self.settings_object.load_actual_configuration()
             if actual_configuration:
-                last_train_accuracy = actual_configuration.train_accuracy
-                last_test_accuracy = actual_configuration.test_accuracy
-                last_test_accuracy = None  # To delete
+                last_train_accuracy = actual_configuration._train_accuracy
+                last_test_accuracy = actual_configuration._test_accuracy
                 if last_train_accuracy and last_test_accuracy:
                     if self.train_accuracy > last_train_accuracy and self.test_accuracy > last_test_accuracy:
                         should_save = True
