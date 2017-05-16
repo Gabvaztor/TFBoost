@@ -34,6 +34,7 @@ It had been used the version: 0.98.1
 
 from UsefulTools.UtilsFunctions import *
 from TFBoost.TFEncoder import *
+
 # --------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -41,6 +42,7 @@ from TFBoost.TFEncoder import *
 To install pandas: pip3 install pandas
 '''
 import pandas as pd
+
 # --------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -48,6 +50,7 @@ import pandas as pd
 Time
 '''
 import time
+
 # --------------------------------------------------------------------------
 '''
 Traceback and Os to search
@@ -59,6 +62,7 @@ import numpy as np
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 import tensorflow as tf
+
 # --------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -90,15 +94,14 @@ class Reader(object):
     x_test = []  # Test inputs without labels
     y_test = []  # Test labels without inputs
 
+    number_classes = None  # Represent number of columns in csv without labels
     reader_features = None  # ReaderFeatures Object
 
     def __init__(self,reader_features):
         """
-
         :param reader_features:
         """
         # TODO: Check if knownDataType is empty, number or char.
-
         self.reader_features = reader_features
         if self.reader_features.is_unique_csv:
             self.uniqueDataFile()
@@ -109,8 +112,7 @@ class Reader(object):
     def uniqueDataFile(self):
         """
         This method will be used only when one data file was passed.
-        Return train, validation and test sets from an unique file.
-
+        Return train, validation and test sets from an unique file.		
         """
 
         # TODO When the csv has only a type is much better use numpy. Use known_data_type
@@ -118,21 +120,21 @@ class Reader(object):
         # Time to execute Breast_Cancer_Wisconsin Data.csv with np.fromfile:  0.0s
 
         # TODO Parametrizable delimiter
-        self.data = pd.read_csv(self.reader_features.set_data_files[0], delimiter=',')
+		# TODO Do delimiter and enconding as parameter
+        self.data = pd.read_csv(self.reader_features.set_data_files[0], delimiter=';', encoding="ISO-8859-1")
         # Time to execute Breast_Cancer_Wisconsin Data.csv with pd.read_csv:  0.007000446319580078s
         pt("DataTest Shape",self.data.shape)
 
         # TODO Create labelData Variable from a list of strings
         # TODO For each pop we have a class
         # TODO Fix this with advanced for <--
-        label_data = [self.data.pop(self.reader_features.labels_sets[index]) for index in self.reader_features.labels_sets]  # Data's labels
-        pt('label_data', label_data)
+        label_data = np.asarray([self.data.pop(self.reader_features.labels_sets[0])],dtype=np.float32)  # Data's labels
+        # label_data = label_data.transpose()
         input_data = self.data  # Input data
-
+        # self.number_classes = len(self.data.columns)
         trainSize = self.reader_features.train_validation_test_percentages[0]  # first value contains trainSize
         test_size = self.reader_features.train_validation_test_percentages[-1]  # last value contains testSize
         validationSize = None
-
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(input_data,label_data,test_size = test_size )
         # Divide set into train and test sets (if it has validation set, into train and validation set for the first part and test set for the second part)
 
@@ -147,10 +149,17 @@ class Reader(object):
 
             pt("ValidationSize: ",validationSize)
             # TODO Convert sets into Tensors
-            self.x_train, self.x_validation, self.y_train, self.y_validation = tf.convert_to_tensor(train_test_split(self.x_train,
-                                                                                                self.y_train,
-                                                                                                test_size=validationSize))  # Divide train and validation sets into two separate sets.
+            self.x_train, self.x_validation, self.y_train, self.y_validation = train_test_split(self.x_train,
+								 self.y_train,
+								 test_size=validationSize)  # Divide train and validation sets into two separate sets.
             # TODO If there is not train and test set with optional validation then Reader will do nothing
+        self.load_sets()
+
+    def load_sets(self):
+        self.train_set.append(np.asarray(self.x_train))
+        self.train_set.append(np.asarray(self.y_train))
+        self.test_set.append(np.asarray(self.x_test))
+        self.test_set.append(np.asarray(self.y_test))
 
     def multipleDataFiles(self):
         """
@@ -162,11 +171,7 @@ class Reader(object):
         features = self.reader_features
         tf_search = Searcher(features=features)
         tf_search.find_train_and_test_sets_from_path_signals()
-
-        self.train_set.append(self.x_train)
-        self.train_set.append(self.y_train)
-        self.test_set.append(self.x_test)
-        self.test_set.append(self.y_test)
+        self.load_sets()
 
 class ReaderFeatures():
     """ ReaderFeatures Class
@@ -207,17 +212,17 @@ class ReaderFeatures():
             if type(percentages_sets) is type([]) \
                     and (len(percentages_sets) is 2 or len(percentages_sets) is 3)\
                     and all(isinstance(x, float) for x in percentages_sets)\
-                    and sum(percentages_sets) == 1. \
-                    and len([x for x in percentages_sets if x > 0]):  # Must be float list, all values must be float and all values must be positives
+                    and sum(percentages_sets) == 1. and len([x for x in percentages_sets if x > 0]):  # Must be float list, all values must be float and all values must be positives
                 if len(percentages_sets) is 3:
                     self.there_is_validation = True
                     if percentages_sets[1] <= percentages_sets[0]:
                         self.train_validation_test_percentages = percentages_sets
                     else:
                         raise RuntimeError (Errors.validation_error)
+                else:
+                    self.train_validation_test_percentages = percentages_sets
             else:
                 raise RuntimeError(Errors.percentages_sets)
-
 
 class Searcher(Reader):
     path_to_read = ''
@@ -229,7 +234,6 @@ class Searcher(Reader):
 
     def find_train_and_test_sets_from_path_signals(self):
         """
-
         :return: Paths list from train and test path
         """
         # TODO check nulls
@@ -239,8 +243,6 @@ class Searcher(Reader):
                     if (file_name.endswith(Dictionary.string_extension_png)):
                         full_path = os.path.join(root, file_name)
                         self.__get_sets_from_full_path_signals(full_path)
-
-
 
     def __get_sets_from_full_path_signals(self,path):
         """
