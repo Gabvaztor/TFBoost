@@ -226,6 +226,11 @@ class TFModels():
         return dict
 
     def to_json(self):
+        """
+        Convert TFModel class to json with properties method.
+        
+        :return: 
+        """
         return json.dumps(self, default=lambda o: self.properties(),
                           sort_keys=True, indent=4)
 

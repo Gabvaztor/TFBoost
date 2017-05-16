@@ -41,6 +41,9 @@ class Dictionary(object):
     """
     STRINGS
     """
+
+    # German Prices
+    string_german_prices_csv_path = "D:\Machine_Learning\DataSets\German-Prices\GermanyPrices2005-2016.csv"
     # Settings path (for save models) (it has the same configuration that kaggle submit best practice)
     #string_settings_path = "../Settings/Sberbank_Russian_Houssing_Market/SETTINGS.json"
     string_settings_path = "../Settings/German_Signal/SETTINGS.json"
@@ -79,6 +82,9 @@ class Dictionary(object):
     """
     # Option signals image problem
     string_option_signals_images_problem = 'signals_images_problems'
+    # Option german prizes problem
+    string_option_german_prizes_problem = 'german_prizes_problem'
+
 
 class Errors(object):
     """

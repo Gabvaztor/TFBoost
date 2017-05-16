@@ -148,11 +148,6 @@ models = models.TFModels(input=train_set[0],test=test_set[0],
                          number_of_classes=number_of_classes)
 models.convolution_model_image()
 
-"""
-# Signal training
-models.convolution_model_image(input=trainSet[0],test=testSet[0],
-                         input_labels=trainSet[1],test_labels=testSet[1],
-                         number_of_classes=number_of_classes)
-"""
+
 
 # TODO Make TFModels heritable and with capability to return section of tensorflow code
