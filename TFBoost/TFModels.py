@@ -25,6 +25,7 @@ from UsefulTools.UtilsFunctions import *
 from TFBoost.TFEncoder import Dictionary as dict
 from TFBoost.TFEncoder import Constant as const
 import SettingsObject
+
 ''' TensorFlow: https://www.tensorflow.org/
 To upgrade TensorFlow to last version:
 *CPU: pip3 install --upgrade tensorflow
@@ -32,6 +33,7 @@ To upgrade TensorFlow to last version:
 '''
 import tensorflow as tf
 print("TensorFlow: " + tf.__version__)
+
 
 
 ''' Numpy is an extension to the Python programming language, adding support for large,
@@ -46,10 +48,12 @@ import numpy as np
 ''' Matlab URL: http://matplotlib.org/users/installing.html'''
 import matplotlib.pyplot as plt
 from pylab import *
+
 ''' TFLearn library. License MIT.
 Git Clone : https://github.com/tflearn/tflearn.git
 To install: pip install tflearn'''
 import tflearn
+
 '''"Best image library"
 pip install opencv-python'''
 import cv2
@@ -57,10 +61,12 @@ import cv2
 """Python libraries"""
 """ Random to shuffle lists """
 import random
+
 """ Time """
 import time
 """ To serialize object"""
 import json
+
 
 class TFModels():
     """
@@ -217,10 +223,9 @@ class TFModels():
         """
         dict = self.__dict__.copy()  # Need to be a copy
         # Remove all not necessaries values
-        no_necessaries_attributes = ["_input","_test","_input_labels","_test_labels",
-                                     "_index_buffer_data","_show_images","_show_info",
+        no_necessaries_attributes = ["_input", "_test", "_input_labels", "_test_labels",
+                                     "_index_buffer_data", "_show_images", "_show_info",
                                      "_settings_object"]
-        # TODO Create STR Value for attribute
         for x in no_necessaries_attributes:
             del dict[x]
         return dict
@@ -239,7 +244,6 @@ class TFModels():
         """
         Generic convolutional model
         """
-
         pt('first_label_neurons', self.first_label_neurons)
         pt('second_label_neurons', self.second_label_neurons)
         pt('third_label_neurons', self.third_label_neurons)
@@ -252,8 +256,8 @@ class TFModels():
         y_ = tf.placeholder(tf.float32, shape=[None, self.number_of_classes])  # Number of labels
         keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
 
-        x_reshape = tf.reshape(x, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
         # Reshape x placeholder into a specific tensor
+        x_reshape = tf.reshape(x, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
 
         # First Convolutional Layer
         convolution_1 = tf.layers.conv2d(
@@ -335,13 +339,10 @@ class TFModels():
             for i in range(self.trains):
                 # Setting values
                 feed_dict_train_50 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: self.train_dropout}
-
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
                 train_step.run(feed_dict_train_50)
                 self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
-
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
-
                 if self.should_save():
                     # Save variables to disk.
                     if self.settings_object.model_path:
@@ -352,22 +353,18 @@ class TFModels():
                             pt(Errors.error,e)
                     else:
                         pt(Errors.error, Errors.model_path_bad_configuration)
-
                 # TODO Use validation set
                 if self.show_info:
-
                     y__ = y_.eval(feed_dict_train_100)
                     argmax_labels_y_ = [np.argmax(m) for m in y__]
                     pt('y__shape', y__.shape)
                     pt('argmax_labels_y__', argmax_labels_y_)
                     pt('y__[-1]', y__[-1])
-
                     y__conv = y_convolution.eval(feed_dict_train_100)
                     argmax_labels_y_convolutional = [np.argmax(m) for m in y__conv]
                     pt('argmax_y_conv', argmax_labels_y_convolutional)
                     pt('y_conv_shape', y__conv.shape)
                     pt('index_buffer_data', self.index_buffer_data)
-
                 if i % 10 == 0:
                     percent_advance = str(i * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
@@ -390,6 +387,7 @@ class TFModels():
     def update_inputs_and_labels_shuffling(self, inputs, inputs_labels):
         """
         Update inputs_processed and labels_processed variables with an inputs and inputs_labels shuffled
+	 
 
         :param inputs: Represent input data
         :param inputs_labels:  Represent labels data
@@ -455,6 +453,7 @@ class TFModels():
         
         :return: 
         """
+        # TODO Print model information when ask to save
         should_save = False
         if self.save_model:
             actual_configuration = self.settings_object.load_actual_configuration()
@@ -470,13 +469,10 @@ class TFModels():
                         should_save = True
             else:
                 should_save = True
-
         return should_save
-
 """
 STATIC METHODS
 """
-
 def get_inputs_and_labels_shuffled(inputs, inputs_labels):
     """
     Get inputs_processed and labels_processed variables with an inputs and inputs_labels shuffled
@@ -488,6 +484,10 @@ def get_inputs_and_labels_shuffled(inputs, inputs_labels):
     random.shuffle(c)
     inputs_processed, labels_processed = zip(*c)
     return inputs_processed, labels_processed
+
+
+
+
 
 def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
     """
@@ -503,11 +503,15 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
         option = options[0]  # Option selected
         if option == Dictionary.string_option_signals_images_problem:
             x_input = process_image_signals_problem(x_input,options[1],options[2],options[3],is_test=is_test)
+        if option == Dictionary.string_option_german_prizes_problem:
+            x_input = process_german_prizes_csv(x_input, is_test=is_test)
+
 
     return x_input, y_label
 
+
 # noinspection PyUnresolvedReferences
-def process_image_signals_problem(image, image_type, height, width,is_test=False):
+def process_image_signals_problem(image, image_type, height, width, is_test=False):
     """
     Process signal image
     :param image: The image to change
@@ -531,10 +535,10 @@ def process_image_signals_problem(image, image_type, height, width,is_test=False
         to_crop_width = int((random_percentage * width) / 100)
         image = image[to_crop_height:height - to_crop_height, to_crop_width:width - to_crop_width]
         image = cv2.copyMakeBorder(image, top=to_crop_height,
-                                       bottom=to_crop_height,
-                                       left=to_crop_width,
-                                       right=to_crop_width,
-                                       borderType=cv2.BORDER_CONSTANT)
+                                   bottom=to_crop_height,
+                                   left=to_crop_width,
+                                   right=to_crop_width,
+                                   borderType=cv2.BORDER_CONSTANT)
     image = image.reshape(-1)
     # cv2.imshow('image', image)
     # cv2.waitKey(0)  # Wait until press key to destroy image
@@ -559,14 +563,26 @@ def process_test_set(test, test_labels, options):
     y_test = np.asarray(y_test)
     return x_test, y_test
 
+def process_german_prizes_csv(x_input, is_test=False):
+    return x_input
+
+def weighted_mape_tf(y_true, y_pred):
+    tot = tf.reduce_sum(y_true)
+    # tot = tf.clip_by_value(tot, clip_value_min=-550, clip_value_max=550)
+	# wmape = tf.realdiv(tf.reduce_sum(tf.abs(tf.subtract(y_true, y_pred))), tot)  # /tot
+    wmape = tf.truediv(tf.reduce_sum(tf.abs(tf.subtract(y_true, y_pred))),tot)# /tot
+    return wmape
+
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.01)
     # initial = tf.zeros(shape, dtype=tf.float32)
     return tf.Variable(initial)
 
+
 def bias_variable(shape):
     initial = tf.constant(0.01, shape=shape)
     return tf.Variable(initial)
+
 
 def conv2d(x, W):
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
@@ -574,5 +590,3 @@ def conv2d(x, W):
 def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                           strides=[1, 2, 2, 1], padding='SAME')
-
-
