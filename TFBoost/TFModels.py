@@ -67,7 +67,6 @@ import time
 """ To serialize object"""
 import json
 
-
 class TFModels():
     """
     Long Docs ...
@@ -485,10 +484,6 @@ def get_inputs_and_labels_shuffled(inputs, inputs_labels):
     inputs_processed, labels_processed = zip(*c)
     return inputs_processed, labels_processed
 
-
-
-
-
 def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
     """
     Generic method that process input and label across a if else statement witch contains a string that represent
@@ -505,10 +500,7 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
             x_input = process_image_signals_problem(x_input,options[1],options[2],options[3],is_test=is_test)
         if option == Dictionary.string_option_german_prizes_problem:
             x_input = process_german_prizes_csv(x_input, is_test=is_test)
-
-
     return x_input, y_label
-
 
 # noinspection PyUnresolvedReferences
 def process_image_signals_problem(image, image_type, height, width, is_test=False):
@@ -544,7 +536,6 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
     # cv2.waitKey(0)  # Wait until press key to destroy image
     return image
 
-
 def process_test_set(test, test_labels, options):
     """
     Process test set and return it
@@ -578,11 +569,9 @@ def weight_variable(shape):
     # initial = tf.zeros(shape, dtype=tf.float32)
     return tf.Variable(initial)
 
-
 def bias_variable(shape):
     initial = tf.constant(0.01, shape=shape)
     return tf.Variable(initial)
-
 
 def conv2d(x, W):
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
