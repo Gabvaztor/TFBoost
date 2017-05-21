@@ -82,7 +82,7 @@ class TFModels():
         self._number_of_classes = number_of_classes
         self._settings_object = SettingsObject.Settings(Dictionary.string_settings_path)  # Setting object represent a kaggle configuration
         # VARIABLES
-        self._restore_model = False  # Labels and logits info.
+        self._restore_model = True  # Labels and logits info.
         self._show_info = 0  # Labels and logits info.
         self._show_images = 0  # If True show images when show_info is True
         self._save_model = True  # If must to save model or not
@@ -333,7 +333,17 @@ class TFModels():
 
         # TODO RESTORE MODEL
         if self.restore_model:
-            pass
+            # Check if exist model
+            # - If exists: restore model
+            # - If not: pass
+            if self.settings_object.model_path:
+                try:
+                    # TODO(@gabvaztor) Fix out memory
+                    # Restore variables from disk.
+                    e = saver.restore(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
+                    pt("sdd",e)
+                except Exception as e:
+                    pt(Errors.error, e)
         # START TRAINING
         for epoch in range(self.epoch_numbers):
             for i in range(self.trains):
