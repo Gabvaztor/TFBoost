@@ -338,10 +338,10 @@ class TFModels():
             # - If not: pass
             if self.settings_object.model_path:
                 try:
+                    # TODO(@gabvaztor) Check if file exist
                     # TODO(@gabvaztor) Fix out memory
                     # Restore variables from disk.
                     e = saver.restore(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
-                    pt("sdd",e)
                 except Exception as e:
                     pt(Errors.error, e)
         # START TRAINING
