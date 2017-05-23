@@ -83,15 +83,16 @@ class TFModels():
         self._settings_object = SettingsObject.Settings(Dictionary.string_settings_path)  # Setting object represent a kaggle configuration
         # VARIABLES
         self._restore_model = True  # Labels and logits info.
+        self._save_model = True  # If must to save model or not
+        self._ask_to_save_model = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
         self._show_info = 0  # Labels and logits info.
         self._show_images = 0  # If True show images when show_info is True
-        self._save_model = False  # If must to save model or not
         self._shuffle_data = True
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
         self._epoch_numbers = 100  # Epochs number
-        self._batch_size = 2  # Batch size
+        self._batch_size = 64  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
@@ -103,6 +104,7 @@ class TFModels():
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for batches during training
         self._num_trains_count = 0
+        # TODO(@gabvaztor) add validation_accuracy
         self._train_accuracy = None
         self._test_accuracy = None
 
@@ -111,6 +113,13 @@ class TFModels():
 
     @property
     def save_model(self): return self._save_model
+
+    @property
+    def ask_to_save_model(self):
+        if self.save_model:
+            return  self._ask_to_save_model
+        else:
+            return False
 
     @property
     def restore_model(self): return self._restore_model
@@ -335,14 +344,18 @@ class TFModels():
         if self.restore_model:
             if self.settings_object.model_path:
                 try:
-                    if file_exists_in_path_or_create_path(self.settings_object.model_path):
-                        # TODO(@gabvaztor) Fix out memory
+                    if file_exists_in_path_or_create_path(self.settings_object.model_path+Dictionary.string_ckpt_extension) or \
+                            file_exists_in_path_or_create_path(self.settings_object.model_path+Dictionary.string_ckpt_extension+Dictionary.string_meta_extension):
+                        # TODO(@gabvaztor) Fix when has meta values
+                        saver = tf.train.import_meta_graph(self.settings_object.model_path+Dictionary.string_ckpt_extension+Dictionary.string_meta_extension)
                         # Restore variables from disk.
-                        saver.restore(sess, self.settings_object.model_path)
+                        saver.restore(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
                     else:
-                        raise ValueError(Errors.can_not_restore_model_because_path_not_exists)
+                        pt(Errors.error, Errors.can_not_restore_model_because_path_not_exists)
+                        input("Press enter to continue")
                 except Exception as e:
                     pt(Errors.error, e)
+                    input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
         # START TRAINING
         for epoch in range(self.epoch_numbers):
             for i in range(self.trains):
@@ -460,7 +473,7 @@ class TFModels():
         """
         Get last configuration from path
         
-        :return: 
+        :return: if should save 
         """
         # TODO Print model information when ask to save
         should_save = False
@@ -470,10 +483,18 @@ class TFModels():
                 last_train_accuracy = actual_configuration._train_accuracy
                 last_test_accuracy = actual_configuration._test_accuracy
                 if last_train_accuracy and last_test_accuracy:
-                    if self.train_accuracy > last_train_accuracy and self.test_accuracy > last_test_accuracy:
+                    # TODO(@gabvaztor) Check when, randomly, gradient descent obtain 100% accuracy
+                    if self.test_accuracy > last_test_accuracy:
                         should_save = True
                 else:
-                    option_choosed = recurrent_ask_to_save_model()
+                    if self.ask_to_save_model:
+                        pt("last_train_accuracy", last_train_accuracy)
+                        pt("last_test_accuracy", last_test_accuracy)
+                        pt("actual_train_accuracy", self.train_accuracy)
+                        pt("actual_test_accuracy", self.test_accuracy)
+                        option_choosed = recurrent_ask_to_save_model()
+                    else:
+                        option_choosed = True
                     if option_choosed:
                         should_save = True
             else:

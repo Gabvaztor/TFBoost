@@ -1,6 +1,6 @@
 {
   "TRAIN_DATA_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\DITS-classification\\classification_train\\",
-  "MODEL_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Models\\model.ckpt",
+  "MODEL_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Models\\model",
   "TEST_DATA_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\DITS-classification\\classification_test\\",
   "SUBMISSION_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Predictions\\",
   "INFORMATION_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Models\\information_model.json"

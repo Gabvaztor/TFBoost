@@ -114,5 +114,7 @@ def file_exists_in_path_or_create_path(filepath):
             os.makedirs(directory)
         if os.path.exists(filepath):
             return True
+        else:
+            return False
     except:
         raise ValueError(Errors.check_dir_exists_and_create)
