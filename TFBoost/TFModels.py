@@ -85,7 +85,7 @@ class TFModels():
         self._restore_model = True  # Labels and logits info.
         self._show_info = 0  # Labels and logits info.
         self._show_images = 0  # If True show images when show_info is True
-        self._save_model = True  # If must to save model or not
+        self._save_model = False  # If must to save model or not
         self._shuffle_data = True
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
@@ -234,7 +234,7 @@ class TFModels():
         """
         Convert TFModel class to json with properties method.
         
-        :return: 
+        :return: sort json from class properties
         """
         return json.dumps(self, default=lambda o: self.properties(),
                           sort_keys=True, indent=4)
@@ -333,15 +333,14 @@ class TFModels():
 
         # TODO RESTORE MODEL
         if self.restore_model:
-            # Check if exist model
-            # - If exists: restore model
-            # - If not: pass
             if self.settings_object.model_path:
                 try:
-                    # TODO(@gabvaztor) Check if file exist
-                    # TODO(@gabvaztor) Fix out memory
-                    # Restore variables from disk.
-                    e = saver.restore(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
+                    if file_exists_in_path_or_create_path(self.settings_object.model_path):
+                        # TODO(@gabvaztor) Fix out memory
+                        # Restore variables from disk.
+                        saver.restore(sess, self.settings_object.model_path)
+                    else:
+                        raise ValueError(Errors.can_not_restore_model_because_path_not_exists)
                 except Exception as e:
                     pt(Errors.error, e)
         # START TRAINING

@@ -95,7 +95,10 @@ class Errors(object):
 
     # Validation error in percentages_set
     validation_error = "'ReaderFeatures.percentages_sets.validation' Must be lower or equal than train percentage."
-
+    # Validation error in percentages_set
+    can_not_restore_model_because_path_not_exists = "Can not restore model because file not exists."
+    # Validation error in percentages_set
+    check_dir_exists_and_create = "Error checking file and creating folders."
     # Check the correct structure in ReaderFeatures.percentages_sets
     percentages_sets = "ReaderFeatures.percentages_sets needs to be a list with 2 or 3 positives float values " \
                        "and must sum 1."

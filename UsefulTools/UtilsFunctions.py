@@ -101,3 +101,18 @@ def recurrent_ask_to_save_model():
     elif save != Dictionary.string_char_N:
         recurrent_ask_to_save_model()
     return response
+
+def file_exists_in_path_or_create_path(filepath):
+    """
+    Check if filepath exists and, if not, it creates the dir
+    :param filepath: the path to check
+    :return True if exists filepath, False otherwise
+    """
+    try:
+        directory = os.path.dirname(filepath)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        if os.path.exists(filepath):
+            return True
+    except:
+        raise ValueError(Errors.check_dir_exists_and_create)
