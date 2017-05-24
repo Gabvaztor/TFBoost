@@ -243,7 +243,7 @@ class TFModels():
         """
         Convert TFModel class to json with properties method.
         
-        :return: sort json from class properties
+        :return: sort json from class properties.
         """
         return json.dumps(self, default=lambda o: self.properties(),
                           sort_keys=True, indent=4)
@@ -253,6 +253,7 @@ class TFModels():
         """
         Generic convolutional model
         """
+        # Print actual configuration
         pt('first_label_neurons', self.first_label_neurons)
         pt('second_label_neurons', self.second_label_neurons)
         pt('third_label_neurons', self.third_label_neurons)
@@ -278,7 +279,6 @@ class TFModels():
         # Pool Layer 1 and reshape images by 2
         pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
         # Second Convolutional Layer
-
         convolution_2 = tf.layers.conv2d(
             inputs=pool1,
             filters=self.third_label_neurons,
@@ -332,6 +332,7 @@ class TFModels():
         sess.run(tf.local_variables_initializer())
         sess.run(tf.global_variables_initializer())
 
+        # Saver session
         saver = tf.train.Saver()  # Saver
 
         # TRAIN VARIABLES
@@ -346,7 +347,6 @@ class TFModels():
                 try:
                     if file_exists_in_path_or_create_path(self.settings_object.model_path+Dictionary.string_ckpt_extension) or \
                             file_exists_in_path_or_create_path(self.settings_object.model_path+Dictionary.string_ckpt_extension+Dictionary.string_meta_extension):
-                        # TODO(@gabvaztor) Fix when has meta values
                         saver = tf.train.import_meta_graph(self.settings_object.model_path+Dictionary.string_ckpt_extension+Dictionary.string_meta_extension)
                         # Restore variables from disk.
                         saver.restore(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
@@ -483,7 +483,7 @@ class TFModels():
                 last_train_accuracy = actual_configuration._train_accuracy
                 last_test_accuracy = actual_configuration._test_accuracy
                 if last_train_accuracy and last_test_accuracy:
-                    # TODO(@gabvaztor) Check when, randomly, gradient descent obtain 100% accuracy
+                    # TODO(@gabvaztor) Check when, randomly, gradient descent obtain aprox 100% accuracy
                     if self.test_accuracy > last_test_accuracy:
                         should_save = True
                 else:
