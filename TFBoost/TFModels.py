@@ -307,11 +307,12 @@ class TFModels():
         # train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer
         train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cross_entropy)  # Adam Optimizer
         # train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer
+
         # Sure is axis = 1
         correct_prediction = tf.equal(tf.argmax(y_convolution, axis=1),
                                       tf.argmax(y_, axis=1))  # Get Number of right values in tensor
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
-
+        # TODO(@gabvaztor) define options
         options = [Dictionary.string_option_signals_images_problem, cv2.IMREAD_GRAYSCALE,
                    self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
         # Batching values and labels from input and labels (with batch size)
@@ -475,7 +476,6 @@ class TFModels():
         
         :return: if should save 
         """
-        # TODO Print model information when ask to save
         should_save = False
         if self.save_model:
             actual_configuration = self.settings_object.load_actual_configuration()
