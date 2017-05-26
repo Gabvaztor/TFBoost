@@ -72,21 +72,22 @@ class TFModels():
     Long Docs ...
     """
     # TODO Docs
-    def __init__(self,input, test, input_labels, test_labels, number_of_classes,
-                 type=None, validation=None, validation_labels=None):
+    def __init__(self,input, test, input_labels, test_labels, number_of_classes, setting_object,
+                 type=None, validation=None, validation_labels=None, load_model_configuration=None):
         # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
         self._input = input
         self._test = test
         self._input_labels = input_labels
         self._test_labels = test_labels
         self._number_of_classes = number_of_classes
-        self._settings_object = SettingsObject.Settings(Dictionary.string_settings_path)  # Setting object represent a kaggle configuration
+        self._settings_object = setting_object  # Setting object represent a kaggle configuration
         # VARIABLES
         self._restore_model = True  # Labels and logits info.
         self._save_model = True  # If must to save model or not
         self._ask_to_save_model = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
-        self._show_info = 0  # Labels and logits info.
-        self._show_images = 0  # If True show images when show_info is True
+        self._show_info = False  # Labels and logits info.
+        self._show_images = False  # If True show images when show_info is True
+        self._save_model_configuration = False  # If True, then all attributes will be saved a settings_object path
         self._shuffle_data = True
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
@@ -107,6 +108,15 @@ class TFModels():
         # TODO(@gabvaztor) add validation_accuracy
         self._train_accuracy = None
         self._test_accuracy = None
+        # TODO(@gabvaztor) Finish load_model_configuration function
+        # If load_model_configuration is True, then it will load a configuration from settings_object method
+        if load_model_configuration:
+            self._load_model_configuration(self._settings_object.load_model_configuration())
+        # TODO(@gabvaztor) Finish _save_model_configuration function
+        if self._save_model_configuration:
+            # Save model configuration in a json file
+            pass
+
 
     @property
     def show_info(self): return self._show_info
@@ -232,10 +242,10 @@ class TFModels():
         """
         dict = self.__dict__.copy()  # Need to be a copy
         # Remove all not necessaries values
-        no_necessaries_attributes = ["_input", "_test", "_input_labels", "_test_labels",
+        not_necessaries_attributes = ["_input", "_test", "_input_labels", "_test_labels",
                                      "_index_buffer_data", "_show_images", "_show_info",
                                      "_settings_object"]
-        for x in no_necessaries_attributes:
+        for x in not_necessaries_attributes:
             del dict[x]
         return dict
 
@@ -342,7 +352,7 @@ class TFModels():
         feed_dict_train_100 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: 1}
         feed_dict_test_100 = {x: x_test_feed, y_: y_test_feed, keep_probably: 1}
 
-        # TODO RESTORE MODEL
+        # To restore model
         if self.restore_model:
             if self.settings_object.model_path:
                 try:
@@ -357,6 +367,7 @@ class TFModels():
                 except Exception as e:
                     pt(Errors.error, e)
                     input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
+
         # START TRAINING
         for epoch in range(self.epoch_numbers):
             for i in range(self.trains):
@@ -500,6 +511,18 @@ class TFModels():
             else:
                 should_save = True
         return should_save
+
+    def _load_model_configuration(self, configuration):
+        """
+        Load previous configuration to class Model (self). 
+        
+        This will update all class values's attributes with the configuration in a json file. 
+        :param configuration: the json class 
+        """
+        # TODO Load model from json path
+        pass
+
+
 """
 STATIC METHODS
 """

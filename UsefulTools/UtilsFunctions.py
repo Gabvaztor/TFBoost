@@ -11,12 +11,15 @@ This class contains useful functions
 """
 """LOCAL IMPORTS"""
 from TFBoost.TFEncoder import *
+
 '''Time library'''
 import time
+
 '''OS'''
 import os
 
-def pt(title=None,text=None):
+
+def pt(title=None, text=None):
     """
     Use the print function to print a title and an object coverted to string
     :param title:
@@ -26,8 +29,9 @@ def pt(title=None,text=None):
         text = title
         title = Dictionary.string_separator
     else:
-        title+=':'
+        title += ':'
     print(str(title) + " \n " + str(text))
+
 
 def timed(method):
     """
@@ -36,17 +40,21 @@ def timed(method):
     :param A method
     :return: The method called
     """
+
     def inner(*args, **kwargs):
         start = time.time()
         try:
             return method(*args, **kwargs)
         finally:
             methodStr = str(method)
-            pt("Running time method:"+ str(methodStr[9:-23]), time.time() - start)
+            pt("Running time method:" + str(methodStr[9:-23]), time.time() - start)
+
     return inner
+
 
 def clear_console():
     os.system('cls')
+
 
 def number_neurons(total_input_size, input_sample_size, output_size, alpha=1):
     """
@@ -56,7 +64,8 @@ def number_neurons(total_input_size, input_sample_size, output_size, alpha=1):
     :param alpha: x
     :return: number of neurons for layer
     """
-    return int(total_input_size/(alpha*(input_sample_size+output_size)))
+    return int(total_input_size / (alpha * (input_sample_size + output_size)))
+
 
 def write_string_to_pathfile(string, filepath):
     """
@@ -72,6 +81,7 @@ def write_string_to_pathfile(string, filepath):
         file.write(str(string))
     except:
         raise ValueError(Errors.write_string_to_file)
+
 
 def write_json_to_pathfile(json, filepath):
     """
@@ -102,6 +112,7 @@ def recurrent_ask_to_save_model():
         recurrent_ask_to_save_model()
     return response
 
+
 def file_exists_in_path_or_create_path(filepath):
     """
     Check if filepath exists and, if not, it creates the dir
@@ -118,3 +129,13 @@ def file_exists_in_path_or_create_path(filepath):
             return False
     except:
         raise ValueError(Errors.check_dir_exists_and_create)
+
+def factorial(num):
+    """
+    Factorial of a number. Recursive.
+    :param num: Number
+    :return: Factorial
+    """
+    if num > 1:
+        num = num * factorial(num - 1)
+    return num

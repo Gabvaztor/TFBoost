@@ -96,27 +96,6 @@ class Settings():
             with open(self.information_path) as json_configuration:
                 dict = json.load(json_configuration)
                 configuration = Configuration(dict)
-                '''
-                configuration.num_trains_count = dict.get('_num_trains_count')
-                configuration.train_dropout = dict['_train_dropout']
-                configuration.epoch_numbers = dict['_epoch_numbers']
-                configuration.third_label_neurons = dict['_third_label_neurons']
-                configuration.shuffle_data = dict['_shuffle_data']
-                configuration.input_rows_numbers = dict['_input_rows_numbers']
-                configuration.second_label_neurons = dict['_second_label_neurons']
-                configuration.train_accuracy = dict['_train_accuracy']
-                configuration.test_size = dict['_test_size']
-                configuration.number_of_classes = dict['_number_of_classes']
-                configuration.input_size = dict['_input_size']
-                configuration.input_columns_numbers = dict['_input_columns_numbers']
-                configuration.kernel_size = dict['_kernel_size']
-                configuration.restore_model = dict['_restore_model']
-                configuration.learning_rate = dict['_learning_rate']
-                configuration.trains = dict['_trains']
-                configuration.batch_size = dict['_batch_size']
-                configuration.first_label_neurons = dict['_first_label_neurons']
-                configuration.test_accuracy = dict['_test_accuracy']
-                '''
                 return configuration
         else:
             configuration = None

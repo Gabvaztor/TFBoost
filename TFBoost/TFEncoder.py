@@ -44,19 +44,14 @@ class Dictionary(object):
 
     # German Prices
     string_german_prices_csv_path = "D:\Machine_Learning\DataSets\German-Prices\GermanyPrices2005-2016.csv"
-    # Settings path (for save models) (it has the same configuration that kaggle submit best practice)
-    #string_settings_path = "../Settings/Sberbank_Russian_Houssing_Market/SETTINGS.json"
-    string_settings_path = "../Settings/German_Signal/SETTINGS.json"
     # Data.csv from Breast_Cancer_Wisconsin project
     string_path_Breast_Cancer_Wisconsin = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
     # Data.csv Label Column name
     string_label_column_name_Breast_Cancer_Wisconsin = 'diagnosis'
     # Signal University path train
     string_path_signals_university_signal_train = 'D:\\UniversityResearching\\DITS-classification\\classification_train\\'
-    #string_path_signals_university_signal_train = 'D:\\DITS-classification\\classification_train\\'
     # Signal University path test
     string_path_signals_university_signal_test = 'D:\\UniversityResearching\\DITS-classification\\classification_test\\'
-    #string_path_signals_university_signal_test = 'D:\\DITS-classification\\classification_test\\'
     # Hierarchy option
     string_labels_type_option_hierarchy = 'hierarchy'
     # Format png
@@ -80,7 +75,20 @@ class Dictionary(object):
     # Char N
     string_char_N = "N"
     """
+    STRINGS PROBLEMS
+    
+    Here will be all problems to load configuration
+    """
+    # TODO(@gabvaztor) Create new Dict (or class) to contain the different parts of Dictionary
+    # Settings path (for save models) (it has the same configuration that kaggle submit best practice)
+    string_settings_sberbank_russian_houssing_market_path = "../Settings/Sberbank_Russian_Houssing_Market/SETTINGS.json"
+
+    string_settings_german_signal_path = "../Settings/German_Signal/SETTINGS.json"
+
+    """
     STRINGS OPTIONS
+    
+    Here you add the id option of your problem
     """
     # Option signals image problem
     string_option_signals_images_problem = 'signals_images_problems'
@@ -132,5 +140,6 @@ class Constant(object):
     second_label_neurons = 16
     # Third label neurons
     third_label_neurons = 8
+
 
 
