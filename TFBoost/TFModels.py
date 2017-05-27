@@ -125,6 +125,9 @@ class TFModels():
     def save_model(self): return self._save_model
 
     @property
+    def save_model_configuration(self): return self._save_model_configuration
+
+    @property
     def ask_to_save_model(self):
         if self.save_model:
             return  self._ask_to_save_model
