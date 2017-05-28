@@ -627,6 +627,7 @@ def root_mean_squared_logarithmic_error(y_true, y_pred):
     :param y_pred: 
     :return: Root Mean Squared Logarithmic Error
     """
+    # TODO (@gabvaztor) Do Root Mean Squared Logarithmic Error
     pass
 
 def weight_variable(shape):
