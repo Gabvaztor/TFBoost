@@ -620,6 +620,14 @@ def weighted_mape_tf(y_true, y_pred):
 	# wmape = tf.realdiv(tf.reduce_sum(tf.abs(tf.subtract(y_true, y_pred))), tot)  # /tot
     wmape = tf.truediv(tf.reduce_sum(tf.abs(tf.subtract(y_true, y_pred))),tot)# /tot
     return wmape
+def root_mean_squared_logarithmic_error(y_true, y_pred):
+    """
+    Calculate the Root Mean Squared Logarithmic Error
+    :param y_true: 
+    :param y_pred: 
+    :return: Root Mean Squared Logarithmic Error
+    """
+    pass
 
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.01)
