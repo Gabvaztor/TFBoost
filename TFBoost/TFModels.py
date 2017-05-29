@@ -111,12 +111,12 @@ class TFModels():
         # TODO(@gabvaztor) Finish load_model_configuration function
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
-            self._load_model_configuration(self._settings_object.load_model_configuration())
+            self._load_model_configuration(
+                self.settings_object.load_model_configuration(self.settings_object.configuration_path))
         # TODO(@gabvaztor) Finish _save_model_configuration function
         if self._save_model_configuration:
             # Save model configuration in a json file
             pass
-
 
     @property
     def show_info(self): return self._show_info
@@ -492,10 +492,10 @@ class TFModels():
         """
         should_save = False
         if self.save_model:
-            actual_configuration = self.settings_object.load_actual_information()
-            if actual_configuration:
-                last_train_accuracy = actual_configuration._train_accuracy
-                last_test_accuracy = actual_configuration._test_accuracy
+            actual_information = self.settings_object.load_actual_information()
+            if actual_information:
+                last_train_accuracy = actual_information._train_accuracy
+                last_test_accuracy = actual_information._test_accuracy
                 if last_train_accuracy and last_test_accuracy:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain aprox 100% accuracy
                     if self.test_accuracy > last_test_accuracy:  # Save checking tests accuracies in this moment
@@ -522,9 +522,27 @@ class TFModels():
         This will update all class'  with the configuration in a json file. 
         :param configuration: the json class 
         """
-        # TODO Load model from json path
-        pass
-
+        # TODO Finish this
+        self._restore_model = configuration._restore_model
+        self._save_model = configuration._save_model
+        self._ask_to_save_model = configuration._ask_to_save_model
+        self._show_info = configuration._show_info
+        self._show_images = configuration._show_images
+        self._save_model_configuration = configuration._save_model_configuration
+        self._shuffle_data = configuration._shuffle_data
+        self._input_rows_numbers = configuration._input_rows_numbers
+        self._input_columns_numbers = configuration._input_columns_numbers
+        self._kernel_size = configuration._kernel_size
+        self._epoch_numbers = configuration._epoch_numbers
+        self._batch_size = configuration._batch_size
+        self._input_size = configuration._input_size
+        self._test_size = configuration._test_size
+        self._train_dropout = configuration._train_dropout
+        self._first_label_neurons = configuration._first_label_neurons
+        self._second_label_neurons = configuration._second_label_neurons
+        self._third_label_neurons = configuration._third_label_neurons
+        self._learning_rate = configuration._learning_rate
+        self._trains = configuration._trains
 
 """
 STATIC METHODS
