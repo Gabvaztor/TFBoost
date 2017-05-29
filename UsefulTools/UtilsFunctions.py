@@ -18,7 +18,6 @@ import time
 '''OS'''
 import os
 
-
 def pt(title=None, text=None):
     """
     Use the print function to print a title and an object coverted to string
@@ -31,7 +30,6 @@ def pt(title=None, text=None):
     else:
         title += ':'
     print(str(title) + " \n " + str(text))
-
 
 def timed(method):
     """
@@ -55,7 +53,6 @@ def timed(method):
 def clear_console():
     os.system('cls')
 
-
 def number_neurons(total_input_size, input_sample_size, output_size, alpha=1):
     """
     :param total_input_size: x
@@ -74,14 +71,11 @@ def write_string_to_pathfile(string, filepath):
     :param path: path where write
     """
     try:
-        directory = os.path.dirname(filepath)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        create_directory_from_fullpath(filepath)
         file = open(filepath, 'w+')
         file.write(str(string))
     except:
         raise ValueError(Errors.write_string_to_file)
-
 
 def write_json_to_pathfile(json, filepath):
     """
@@ -90,14 +84,11 @@ def write_json_to_pathfile(json, filepath):
     :param path: path where write
     """
     try:
-        directory = os.path.dirname(filepath)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        create_directory_from_fullpath(filepath)
         file = open(filepath, 'w+')
         file.write(str(json))
     except:
         raise ValueError(Errors.write_string_to_file)
-
 
 def recurrent_ask_to_save_model():
     """
@@ -105,7 +96,7 @@ def recurrent_ask_to_save_model():
     :return: 
     """
     response = False
-    save = input(Dictionary.string_want_to_save)
+    save = str(input(Dictionary.string_want_to_save)).upper()
     if save == Dictionary.string_char_Y:
         response = True
     elif save != Dictionary.string_char_N:
@@ -120,9 +111,7 @@ def file_exists_in_path_or_create_path(filepath):
     :return True if exists filepath, False otherwise
     """
     try:
-        directory = os.path.dirname(filepath)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        create_directory_from_fullpath(filepath)
         if os.path.exists(filepath):
             return True
         else:
@@ -139,3 +128,21 @@ def factorial(num):
     if num > 1:
         num = num * factorial(num - 1)
     return num
+
+def create_directory_from_fullpath(fullpath):
+    """
+    Create directory from a fullpath if it not exists.
+    """
+    # TODO (@gabvaztor) Check errors
+    directory = os.path.dirname(fullpath)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+def create_file_from_fullpath(fullpath):
+    """
+    Create file from a fullpath if it not exists.
+    """
+    # TODO (@gabvaztor) Check errors
+    if not os.path.exists(fullpath):  # To create file
+        file = open(fullpath, 'w+')
+        file.close()

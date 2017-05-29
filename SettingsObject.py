@@ -5,18 +5,21 @@ This class is used in kaggle competitions
 import json
 import os
 from TFBoost.TFEncoder import Dictionary
-import itertools  # To deserialize a Dict to an Object
+from UsefulTools.UtilsFunctions import *
+
 class Settings():
     _train_path = "D:\\"
     _test_path = "D:\\"
     _model_path = "D:\\"
     _submission_path = "D:\\"
+    _configuration_path = "D:\\"
     _information_path= "D:\\"
     _path = "SETTINGS.json"
     string_train_path = "TRAIN_DATA_PATH"
     string_test_path = "TEST_DATA_PATH"
     string_model_path = "MODEL_PATH"
     string_submission_path = "SUBMISSION_PATH"
+    string_configuration_path = "CONFIGURATION_PATH"
     string_information_path = "INFORMATION_PATH"
 
     @property
@@ -30,6 +33,9 @@ class Settings():
 
     @property
     def submission_path(self): return self._submission_path
+
+    @property
+    def configuration_path(self): return self._configuration_path
 
     @property
     def information_path(self): return self._information_path
@@ -49,6 +55,9 @@ class Settings():
     @submission_path.setter
     def submission_path(self, value): self._submission_path=value
 
+    @configuration_path.setter
+    def configuration_path(self, value): self._configuration_path=value
+
     @information_path.setter
     def information_path(self, value): self._information_path=value
 
@@ -56,8 +65,6 @@ class Settings():
     def path(self, value): self._path = value
 
     def __init__(self, path):
-        if not path:
-            path = Dictionary.string_settings_path
         self._path = path
         self._load_settings()
     def __str__(self):
@@ -78,20 +85,17 @@ class Settings():
             self.test_path=settings[self.string_test_path]
             self.model_path=settings[self.string_model_path]
             self.submission_path=settings[self.string_submission_path]
+            self.configuration_path=settings[self.string_configuration_path]
             self.information_path=settings[self.string_information_path]
 
-    def load_actual_configuration(self):
+    def load_actual_information(self):
         """
 
         :return:
         """
-        # TODO DOCs
-        directory = os.path.dirname(self.information_path)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        if not os.path.exists(self.information_path):  # To create file
-            file = open(self.information_path, 'w+')
-            file.close()
+        # TODO (@gabvaztor) DOCs
+        create_directory_from_fullpath(self.information_path)
+        create_file_from_fullpath(self.information_path)
         if os.stat(self.information_path).st_size != 0:
             with open(self.information_path) as json_configuration:
                 dict = json.load(json_configuration)

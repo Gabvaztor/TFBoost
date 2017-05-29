@@ -492,13 +492,13 @@ class TFModels():
         """
         should_save = False
         if self.save_model:
-            actual_configuration = self.settings_object.load_actual_configuration()
+            actual_configuration = self.settings_object.load_actual_information()
             if actual_configuration:
                 last_train_accuracy = actual_configuration._train_accuracy
                 last_test_accuracy = actual_configuration._test_accuracy
                 if last_train_accuracy and last_test_accuracy:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain aprox 100% accuracy
-                    if self.test_accuracy > last_test_accuracy:
+                    if self.test_accuracy > last_test_accuracy:  # Save checking tests accuracies in this moment
                         should_save = True
                 else:
                     if self.ask_to_save_model:
@@ -519,7 +519,7 @@ class TFModels():
         """
         Load previous configuration to class Model (self). 
         
-        This will update all class values's attributes with the configuration in a json file. 
+        This will update all class'  with the configuration in a json file. 
         :param configuration: the json class 
         """
         # TODO Load model from json path
