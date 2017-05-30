@@ -118,24 +118,40 @@ class TFModels():
             # Save model configuration in a json file
             pass
 
+    # All properties must to have a setter
     @property
     def show_info(self): return self._show_info
+
+    @show_info.setter
+    def show_info(self, value): self._show_info = value
 
     @property
     def save_model(self): return self._save_model
 
+    @save_model.setter
+    def save_model(self, value): self._save_model = value
+
     @property
     def save_model_configuration(self): return self._save_model_configuration
+
+    @save_model_configuration.setter
+    def save_model_configuration(self, value):  self._save_model_configuration = value
 
     @property
     def ask_to_save_model(self):
         if self.save_model:
-            return  self._ask_to_save_model
+            return self._ask_to_save_model
         else:
             return False
 
+    @ask_to_save_model.setter
+    def ask_to_save_model(self, value): self._ask_to_save_model = value
+
     @property
     def restore_model(self): return self._restore_model
+
+    @restore_model.setter
+    def restore_model(self, value): self._restore_model = value
 
     @property
     def train_accuracy(self): return self._train_accuracy
@@ -152,41 +168,80 @@ class TFModels():
     @property
     def settings_object(self): return self._settings_object
 
+    @settings_object.setter
+    def settings_object(self, value): self._settings_object = value
+
     @property
     def learning_rate(self): return self._learning_rate
+
+    @learning_rate.setter
+    def learning_rate(self, value): self._learning_rate = value
 
     @property
     def show_images(self): return self._show_images
 
+    @show_images.setter
+    def show_images(self, value): self._show_images = value
+
     @property
     def shuffle_data(self): return self._shuffle_data
+
+    @shuffle_data.setter
+    def shuffle_data(self, value): self._shuffle_data = value
 
     @property
     def input_rows_numbers(self): return self._input_rows_numbers
 
+    @input_rows_numbers.setter
+    def input_rows_numbers(self, value): self._input_rows_numbers = value
+
     @property
     def input_columns_numbers(self): return self._input_columns_numbers
+
+    @input_columns_numbers.setter
+    def input_columns_numbers(self, value): self._input_columns_numbers = value
 
     @property
     def input_columns_after_reshape(self): return self.input_rows_numbers * self.input_columns_numbers
 
+    @input_columns_after_reshape.setter
+    def input_columns_after_reshape(self, value): self.input_columns_after_reshape = value
+
     @property
     def input_rows_columns_array(self): return [self.input_rows_numbers, self.input_columns_numbers]
+
+    @input_rows_columns_array.setter
+    def input_rows_columns_array(self, value): self.input_rows_columns_array = value
 
     @property
     def kernel_size(self): return self._kernel_size
 
+    @kernel_size.setter
+    def kernel_size(self, value): self._kernel_size = value
+
     @property
     def input_size(self): return self._input_size
+
+    @input_size.setter
+    def input_size(self, value): self._input_size = value
 
     @property
     def test_size(self): return self._test_size
 
+    @test_size.setter
+    def test_size(self, value): self._test_size = value
+
     @property
     def batch_size(self): return self._batch_size
 
+    @batch_size.setter
+    def batch_size(self, value): self._batch_size = value
+
     @property
     def train_dropout(self): return self._train_dropout
+
+    @train_dropout.setter
+    def train_dropout(self, value): self._train_dropout = value
 
     @property
     def index_buffer_data(self): return self._index_buffer_data
@@ -197,11 +252,20 @@ class TFModels():
     @property
     def first_label_neurons(self): return self._first_label_neurons
 
+    @first_label_neurons.setter
+    def first_label_neurons(self, value): self._first_label_neurons = value
+
     @property
     def second_label_neurons(self): return self._second_label_neurons
 
+    @second_label_neurons.setter
+    def second_label_neurons(self, value): self._second_label_neurons = value
+
     @property
     def third_label_neurons(self): return self._third_label_neurons
+
+    @third_label_neurons.setter
+    def third_label_neurons(self, value): self._third_label_neurons = value
 
     @property
     def trains(self): return self._trains
@@ -218,6 +282,9 @@ class TFModels():
     @property
     def number_of_classes(self): return self._number_of_classes
 
+    @number_of_classes.setter
+    def number_of_classes(self, value): self._number_of_classes = value
+
     @property
     def input_labels(self): return self._input_labels
 
@@ -227,8 +294,14 @@ class TFModels():
     @property
     def test_labels(self): return self._test_labels
 
+    @test_labels.setter
+    def test_labels(self, value): self._test_labels = value
+
     @property
     def epoch_numbers(self): return self._epoch_numbers
+
+    @epoch_numbers.setter
+    def epoch_numbers(self, value): self._epoch_numbers = value
 
     @property
     def input(self): return self._input
@@ -238,6 +311,9 @@ class TFModels():
 
     @property
     def test(self): return self._test
+
+    @test.setter
+    def test(self, value): self._test = value
 
     def properties(self):
         """
