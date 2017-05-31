@@ -73,7 +73,7 @@ class TFModels():
     """
     # TODO Docs
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, setting_object,
-                 type=None, validation=None, validation_labels=None, load_model_configuration=None):
+                 type=None, validation=None, validation_labels=None, load_model_configuration=False):
         # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
         self._input = input
         self._test = test
@@ -595,7 +595,7 @@ class TFModels():
         """
         Load previous configuration to class Model (self). 
         
-        This will update all class'  with the configuration in a json file. 
+        This will update all class' attributes with the configuration in a json file.
         :param configuration: the json class 
         """
         # TODO Finish this
