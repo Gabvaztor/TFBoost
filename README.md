@@ -5,6 +5,8 @@ With this project we are creating a framework which you can read any kind of tag
 csv, images), create train, validation and test set from them, choose the best machine learning algorithm for your data,
 and besides, change the algorithm features.
 
+Now it is possible to save models configurations by problem and load previous models configurations.
+
 You will be able to do all this with a simple and beautiful user interface (in curse).
 
 All project use "Google Python Style Guide":
