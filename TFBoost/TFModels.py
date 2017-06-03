@@ -87,7 +87,7 @@ class TFModels():
         self._ask_to_save_model = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
         self._show_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
-        self._save_model_configuration = False  # If True, then all attributes will be saved a settings_object path
+        self._save_model_configuration = False  # If True, then all attributes will be saved in a settings_object path
         self._shuffle_data = True
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
@@ -596,12 +596,12 @@ class TFModels():
 
     def _load_model_configuration(self, configuration):
         """
-        Load previous configuration to class Model (self). 
+        Load previous configuration to class Model (self).
         
         This will update all class' attributes with the configuration in a json file.
         :param configuration: the json class 
         """
-        # TODO Finish this
+        # TODO Add to docs WHEN it is necessary to add more attributes
         self._restore_model = configuration._restore_model
         self._save_model = configuration._save_model
         self._ask_to_save_model = configuration._ask_to_save_model
@@ -630,7 +630,6 @@ class TFModels():
         """
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
-
 
 """
 STATIC METHODS
