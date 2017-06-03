@@ -94,16 +94,14 @@ class Settings():
         :return:
         """
         # TODO (@gabvaztor) DOCs
+        configuration = None
         create_directory_from_fullpath(self.information_path)
         create_file_from_fullpath(self.information_path)
         if os.stat(self.information_path).st_size != 0:
             with open(self.information_path) as json_configuration:
                 dict = json.load(json_configuration)
                 configuration = Configuration(dict)
-                return configuration
-        else:
-            configuration = None
-            return configuration
+        return configuration
 
 class Configuration():
      def __init__(self, json_content):

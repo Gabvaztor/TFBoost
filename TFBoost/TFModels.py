@@ -116,7 +116,8 @@ class TFModels():
         # TODO(@gabvaztor) Finish _save_model_configuration function
         if self._save_model_configuration:
             # Save model configuration in a json file
-
+            self._save_model_configuration_to_json(self.settings_object.configuration_path,
+                                                   Constant.attributes_to_delete_save_all)
 
     # All properties must to have a setter
     @property
@@ -315,26 +316,26 @@ class TFModels():
     @test.setter
     def test(self, value): self._test = value
 
-    def properties(self):
+    def properties(self, attributes_to_delete=None):
         """
-        Return a string with actual features without not necessaries 
+        Return a string with actual features without not necessaries
+        :param attributes_to_delete: represent witch attributes set must be deleted.
+        :return:
         """
-        dict = self.__dict__.copy()  # Need to be a copy
+        dict_copy = self.__dict__.copy()  # Need to be a copy to not get original class' attributes.
         # Remove all not necessaries values
-        not_necessaries_attributes = ["_input", "_test", "_input_labels", "_test_labels",
-                                     "_index_buffer_data", "_show_images", "_show_info",
-                                     "_settings_object"]
-        for x in not_necessaries_attributes:
-            del dict[x]
-        return dict
+        if attributes_to_delete:
+            for x in attributes_to_delete:
+                del dict_copy[x]
+        return dict_copy
 
-    def to_json(self):
+    def to_json(self, attributes_to_delete=None):
         """
         Convert TFModel class to json with properties method.
         
         :return: sort json from class properties.
         """
-        return json.dumps(self, default=lambda o: self.properties(),
+        return json.dumps(self, default=lambda o: self.properties(attributes_to_delete),
                           sort_keys=True, indent=4)
 
     @timed
@@ -461,7 +462,9 @@ class TFModels():
                     if self.settings_object.model_path:
                         try:
                             saver.save(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
-                            self._save_model_configuration_to_json()
+                            self._save_model_configuration_to_json(
+                                fullpath=self.settings_object.information_path,
+                                attributes_to_delete=Constant.attributes_to_delete_save_all)
                         except Exception as e:
                             pt(Errors.error,e)
                     else:
@@ -620,11 +623,13 @@ class TFModels():
         self._learning_rate = configuration._learning_rate
         self._trains = configuration._trains
 
-    def _save_model_configuration_to_json(self):
+    def _save_model_configuration_to_json(self, fullpath, attributes_to_delete=None):
         """
-        Save actual model configuration (with some attributes) in a json file
+        Save actual model configuration (with some attributes) in a json file.
+        :param attributes_to_delete: represent witch attributes set must not be save in json file.
         """
-        write_string_to_pathfile(self.to_json(), self.settings_object.information_path)
+        write_string_to_pathfile(self.to_json(attributes_to_delete),
+                                 fullpath)
 
 
 """

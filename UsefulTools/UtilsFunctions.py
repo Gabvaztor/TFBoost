@@ -85,8 +85,9 @@ def write_json_to_pathfile(json, filepath):
     """
     try:
         create_directory_from_fullpath(filepath)
-        file = open(filepath, 'w+')
-        file.write(str(json))
+        with open(filepath, 'w+') as file:
+            # file = open(filepath, 'w+')
+            file.write(str(json))
     except:
         raise ValueError(Errors.write_string_to_file)
 
