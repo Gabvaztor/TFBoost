@@ -116,7 +116,7 @@ class TFModels():
         # TODO(@gabvaztor) Finish _save_model_configuration function
         if self._save_model_configuration:
             # Save model configuration in a json file
-            pass
+
 
     # All properties must to have a setter
     @property
@@ -461,7 +461,7 @@ class TFModels():
                     if self.settings_object.model_path:
                         try:
                             saver.save(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
-                            write_string_to_pathfile(self.to_json(), self.settings_object.information_path)
+                            self._save_model_configuration_to_json()
                         except Exception as e:
                             pt(Errors.error,e)
                     else:
@@ -619,6 +619,13 @@ class TFModels():
         self._third_label_neurons = configuration._third_label_neurons
         self._learning_rate = configuration._learning_rate
         self._trains = configuration._trains
+
+    def _save_model_configuration_to_json(self):
+        """
+        Save actual model configuration (with some attributes) in a json file
+        """
+        write_string_to_pathfile(self.to_json(), self.settings_object.information_path)
+
 
 """
 STATIC METHODS
