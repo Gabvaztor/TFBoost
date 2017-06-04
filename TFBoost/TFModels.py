@@ -620,7 +620,7 @@ class TFModels():
 
     def create_path_and_restore_model(self, session):
         """
-        Restore a model from a model_path and check if model_path exists and create if not.
+        Restore a model from a model_path checking if model_path exists and create if not.
         :param session: Tensorflow session
         """
         if self.settings_object.model_path:
