@@ -119,7 +119,6 @@ class TFModels():
             self._save_model_configuration_to_json(self.settings_object.configuration_path,
                                                    Constant.attributes_to_delete_save_all)
 
-    # All properties must to have a setter
     @property
     def show_info(self): return self._show_info
 
@@ -434,19 +433,7 @@ class TFModels():
 
         # To restore model
         if self.restore_model:
-            if self.settings_object.model_path:
-                try:
-                    if file_exists_in_path_or_create_path(self.settings_object.model_path+Dictionary.string_ckpt_extension) or \
-                            file_exists_in_path_or_create_path(self.settings_object.model_path+Dictionary.string_ckpt_extension+Dictionary.string_meta_extension):
-                        saver = tf.train.import_meta_graph(self.settings_object.model_path+Dictionary.string_ckpt_extension+Dictionary.string_meta_extension)
-                        # Restore variables from disk.
-                        saver.restore(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
-                    else:
-                        pt(Errors.error, Errors.can_not_restore_model_because_path_not_exists)
-                        input("Press enter to continue")
-                except Exception as e:
-                    pt(Errors.error, e)
-                    input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
+            self.create_path_and_restore_model(sess)
 
         # START TRAINING
         for epoch in range(self.epoch_numbers):
@@ -630,6 +617,29 @@ class TFModels():
         """
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
+
+    def create_path_and_restore_model(self, session):
+        """
+        Restore a model from a model_path and check if model_path exists and create if not.
+        :param session: Tensorflow session
+        """
+        if self.settings_object.model_path:
+            try:
+                if file_exists_in_path_or_create_path(
+                                self.settings_object.model_path + Dictionary.string_ckpt_extension) or \
+                        file_exists_in_path_or_create_path(
+                                            self.settings_object.model_path + Dictionary.string_ckpt_extension + Dictionary.string_meta_extension):
+                    saver = tf.train.import_meta_graph(
+                        self.settings_object.model_path + Dictionary.string_ckpt_extension + Dictionary.string_meta_extension)
+                    # Restore variables from disk.
+                    saver.restore(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
+                else:
+                    pt(Errors.error, Errors.can_not_restore_model_because_path_not_exists)
+                    input("Press enter to continue")
+            except Exception as e:
+                pt(Errors.error, e)
+                input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
+
 
 """
 STATIC METHODS
