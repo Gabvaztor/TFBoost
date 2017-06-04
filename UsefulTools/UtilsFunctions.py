@@ -61,6 +61,7 @@ def number_neurons(total_input_size, input_sample_size, output_size, alpha=1):
     :param alpha: x
     :return: number of neurons for layer
     """
+    # TODO Finish docs
     return int(total_input_size / (alpha * (input_sample_size + output_size)))
 
 
