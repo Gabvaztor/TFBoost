@@ -75,19 +75,21 @@ class TFModels():
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, setting_object,
                  type=None, validation=None, validation_labels=None, load_model_configuration=False):
         # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
+        # TODO (@gabvaztor) Add all methods using 'self' like class methods
         self._input = input
         self._test = test
         self._input_labels = input_labels
         self._test_labels = test_labels
         self._number_of_classes = number_of_classes
         self._settings_object = setting_object  # Setting object represent a kaggle configuration
-        # VARIABLES
+        # CONFIGURATION VARIABLES
         self._restore_model = True  # Labels and logits info.
         self._save_model = True  # If must to save model or not
         self._ask_to_save_model = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
         self._show_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
         self._save_model_configuration = False  # If True, then all attributes will be saved in a settings_object path
+        # TRAIN MODEL VARIABLES
         self._shuffle_data = True
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
@@ -112,6 +114,7 @@ class TFModels():
         # TODO(@gabvaztor) Finish load_model_configuration function
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
+            pt("Loading model", self.settings_object.configuration_path)
             self._load_model_configuration(
                 self.settings_object.load_model_configuration(self.settings_object.configuration_path))
         # TODO(@gabvaztor) Finish _save_model_configuration function
@@ -512,6 +515,7 @@ class TFModels():
         :param options: options       
         :return: Two numpy arrays (x_batch and y_batch) with input data and input labels data batch_size like shape.
         """
+        # TODO Add this method like class method
         x_batch = []
         y_batch = []
         if is_test:
@@ -616,16 +620,21 @@ class TFModels():
         Save actual model configuration (with some attributes) in a json file.
         :param attributes_to_delete: represent witch attributes set must not be save in json file.
         """
+        pt("Saving model...")
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
+        pt("Model has been saved")
 
     def create_path_and_restore_model(self, session):
         """
         Restore a model from a model_path checking if model_path exists and create if not.
         :param session: Tensorflow session
         """
+        # TODO Show comments when restoring model operation start or finish
         if self.settings_object.model_path:
+            pt("Restoring model...", self.settings_object.model_path)
             try:
+                # TODO (@gabvaztor) Fix this 'if' statement
                 if file_exists_in_path_or_create_path(
                                 self.settings_object.model_path + Dictionary.string_ckpt_extension) or \
                         file_exists_in_path_or_create_path(
@@ -634,6 +643,7 @@ class TFModels():
                         self.settings_object.model_path + Dictionary.string_ckpt_extension + Dictionary.string_meta_extension)
                     # Restore variables from disk.
                     saver.restore(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
+                    pt("Model restored without problems")
                 else:
                     pt(Errors.error, Errors.can_not_restore_model_because_path_not_exists)
                     input("Press enter to continue")

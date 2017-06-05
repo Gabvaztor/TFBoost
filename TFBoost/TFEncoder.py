@@ -108,7 +108,8 @@ class Errors(object):
     # can_not_restore_model
     can_not_restore_model = "Can not restore model. See details."
     # can_not_restore_model_because_path_not_exists
-    can_not_restore_model_because_path_not_exists = "Can not restore model because file not exists."
+    can_not_restore_model_because_path_not_exists = "You select 'restore_model' but " \
+                                                    "can not restore model because file not exists."
     # Check_dir_exists_and_create
     check_dir_exists_and_create = "Error checking file and creating folders."
     # Check the correct structure in ReaderFeatures.percentages_sets
