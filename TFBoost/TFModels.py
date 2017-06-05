@@ -108,6 +108,7 @@ class TFModels():
         # TODO(@gabvaztor) add validation_accuracy
         self._train_accuracy = None
         self._test_accuracy = None
+        # SAVE AND LOAD MODEL
         # TODO(@gabvaztor) Finish load_model_configuration function
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
@@ -331,7 +332,7 @@ class TFModels():
     def to_json(self, attributes_to_delete=None):
         """
         Convert TFModel class to json with properties method.
-        
+        :param attributes_to_delete: String set with all attributes' names to delete from properties method
         :return: sort json from class properties.
         """
         return json.dumps(self, default=lambda o: self.properties(attributes_to_delete),
