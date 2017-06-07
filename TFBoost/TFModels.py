@@ -84,11 +84,12 @@ class TFModels():
         self._settings_object = setting_object  # Setting object represent a kaggle configuration
         # CONFIGURATION VARIABLES
         self._restore_model = True  # Labels and logits info.
+        # TODO (@gabvaztor) Change to save_model_information
         self._save_model = True  # If must to save model or not
         self._ask_to_save_model = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
         self._show_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
-        self._save_model_configuration = False  # If True, then all attributes will be saved in a settings_object path
+        self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path
         # TRAIN MODEL VARIABLES
         self._shuffle_data = True
         self._input_rows_numbers = 60
@@ -114,7 +115,7 @@ class TFModels():
         # TODO(@gabvaztor) Finish load_model_configuration function
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
-            pt("Loading model", self.settings_object.configuration_path)
+            pt("Loading model configuration", self.settings_object.configuration_path)
             self._load_model_configuration(
                 self.settings_object.load_model_configuration(self.settings_object.configuration_path))
         # TODO(@gabvaztor) Finish _save_model_configuration function
@@ -122,6 +123,7 @@ class TFModels():
             # Save model configuration in a json file
             self._save_model_configuration_to_json(self.settings_object.configuration_path,
                                                    Constant.attributes_to_delete_save_all)
+            pt("Model configuration has been saved")
 
     @property
     def show_info(self): return self._show_info
@@ -446,6 +448,7 @@ class TFModels():
                 feed_dict_train_50 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: self.train_dropout}
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
                 train_step.run(feed_dict_train_50)
+                # TODO (@gabvaztor) Check problem with eval
                 self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
                 if self.should_save():
@@ -456,6 +459,7 @@ class TFModels():
                             self._save_model_configuration_to_json(
                                 fullpath=self.settings_object.information_path,
                                 attributes_to_delete=Constant.attributes_to_delete_save_all)
+                            pt("Model information has been saved")
                         except Exception as e:
                             pt(Errors.error,e)
                     else:
@@ -568,7 +572,7 @@ class TFModels():
                 last_train_accuracy = actual_information._train_accuracy
                 last_test_accuracy = actual_information._test_accuracy
                 if last_train_accuracy and last_test_accuracy:
-                    # TODO(@gabvaztor) Check when, randomly, gradient descent obtain aprox 100% accuracy
+                    # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
                     if self.test_accuracy > last_test_accuracy:  # Save checking tests accuracies in this moment
                         should_save = True
                 else:
@@ -614,6 +618,7 @@ class TFModels():
         self._third_label_neurons = configuration._third_label_neurons
         self._learning_rate = configuration._learning_rate
         self._trains = configuration._trains
+        pt("Loaded model configuration")
 
     def _save_model_configuration_to_json(self, fullpath, attributes_to_delete=None):
         """
@@ -623,7 +628,7 @@ class TFModels():
         pt("Saving model...")
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
-        pt("Model has been saved")
+
 
     def create_path_and_restore_model(self, session):
         """
@@ -634,15 +639,17 @@ class TFModels():
         if self.settings_object.model_path:
             pt("Restoring model...", self.settings_object.model_path)
             try:
-                # TODO (@gabvaztor) Fix this 'if' statement
-                if file_exists_in_path_or_create_path(
-                                self.settings_object.model_path + Dictionary.string_ckpt_extension) or \
-                        file_exists_in_path_or_create_path(
-                                            self.settings_object.model_path + Dictionary.string_ckpt_extension + Dictionary.string_meta_extension):
-                    saver = tf.train.import_meta_graph(
-                        self.settings_object.model_path + Dictionary.string_ckpt_extension + Dictionary.string_meta_extension)
+                # TODO (@gabvaztor) Do Generic possibles models
+                model_possible_1 = self.settings_object.model_path + Dictionary.string_ckpt_extension
+                model_possible_2 = model_possible_1 + Dictionary.string_meta_extension
+                model_possible_3 = model_possible_1 + Dictionary.string_ckpt_extension
+                model_possible_4 = model_possible_3 + Dictionary.string_meta_extension
+                possibles_models = [model_possible_1, model_possible_2, model_possible_3, model_possible_4]
+                model = [x for x in possibles_models if file_exists_in_path_or_create_path(x)]
+                if model:
+                    saver = tf.train.import_meta_graph(model[0])
                     # Restore variables from disk.
-                    saver.restore(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
+                    saver.restore(session, model_possible_1)
                     pt("Model restored without problems")
                 else:
                     pt(Errors.error, Errors.can_not_restore_model_because_path_not_exists)
@@ -650,7 +657,6 @@ class TFModels():
             except Exception as e:
                 pt(Errors.error, e)
                 input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
-
 
 """
 STATIC METHODS

@@ -88,7 +88,7 @@ class Settings():
             self.configuration_path=settings[self.string_configuration_path]
             self.information_path=settings[self.string_information_path]
 
-    def load_actual_information(self, fullpath):
+    def load_actual_information(self):
         """
 
         :return:
