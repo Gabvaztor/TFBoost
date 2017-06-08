@@ -84,9 +84,8 @@ class TFModels():
         self._settings_object = setting_object  # Setting object represent a kaggle configuration
         # CONFIGURATION VARIABLES
         self._restore_model = True  # Labels and logits info.
-        # TODO (@gabvaztor) Change to save_model_information
-        self._save_model = True  # If must to save model or not
-        self._ask_to_save_model = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
+        self._save_model_information = True  # If must to save model or not
+        self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
         self._show_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
         self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path
@@ -132,10 +131,10 @@ class TFModels():
     def show_info(self, value): self._show_info = value
 
     @property
-    def save_model(self): return self._save_model
+    def save_model_information(self): return self._save_model_information
 
-    @save_model.setter
-    def save_model(self, value): self._save_model = value
+    @save_model_information.setter
+    def save_model_information(self, value): self._save_model_information = value
 
     @property
     def save_model_configuration(self): return self._save_model_configuration
@@ -144,14 +143,14 @@ class TFModels():
     def save_model_configuration(self, value):  self._save_model_configuration = value
 
     @property
-    def ask_to_save_model(self):
-        if self.save_model:
-            return self._ask_to_save_model
+    def ask_to_save_model_information(self):
+        if self._save_model_information:
+            return self._ask_to_save_model_information
         else:
             return False
 
-    @ask_to_save_model.setter
-    def ask_to_save_model(self, value): self._ask_to_save_model = value
+    @ask_to_save_model_information.setter
+    def ask_to_save_model_information(self, value): self._ask_to_save_model_information = value
 
     @property
     def restore_model(self): return self._restore_model
@@ -566,7 +565,7 @@ class TFModels():
         :return: if should save 
         """
         should_save = False
-        if self.save_model:
+        if self.save_model_information:
             actual_information = self.settings_object.load_actual_information()
             if actual_information:
                 last_train_accuracy = actual_information._train_accuracy
@@ -576,7 +575,7 @@ class TFModels():
                     if self.test_accuracy > last_test_accuracy:  # Save checking tests accuracies in this moment
                         should_save = True
                 else:
-                    if self.ask_to_save_model:
+                    if self.ask_to_save_model_information:
                         pt("last_train_accuracy", last_train_accuracy)
                         pt("last_test_accuracy", last_test_accuracy)
                         pt("actual_train_accuracy", self.train_accuracy)
@@ -632,7 +631,7 @@ class TFModels():
 
     def create_path_and_restore_model(self, session):
         """
-        Restore a model from a model_path checking if model_path exists and create if not.
+        Restore a tensorflow model from a model_path checking if model_path exists and create if not.
         :param session: Tensorflow session
         """
         # TODO Show comments when restoring model operation start or finish
