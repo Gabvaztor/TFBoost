@@ -447,7 +447,6 @@ class TFModels():
                 feed_dict_train_50 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: self.train_dropout}
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
                 train_step.run(feed_dict_train_50)
-                # TODO (@gabvaztor) Check problem with eval
                 self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
                 if self.should_save():
@@ -455,9 +454,10 @@ class TFModels():
                     if self.settings_object.model_path:
                         try:
                             saver.save(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
+                            # TODO (@gabvaztor) Save a historic file if file exists to have an historic information
                             self._save_model_configuration_to_json(
                                 fullpath=self.settings_object.information_path,
-                                attributes_to_delete=Constant.attributes_to_delete_save_all)
+                                attributes_to_delete=Constant.attributes_to_delete_information)
                             pt("Model information has been saved")
                         except Exception as e:
                             pt(Errors.error,e)
