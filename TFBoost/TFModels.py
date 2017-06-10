@@ -407,6 +407,9 @@ class TFModels():
                                       tf.argmax(y_, axis=1))  # Get Number of right values in tensor
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
         # TODO(@gabvaztor) define options
+        # Options represent a list with this structure:
+        #               - First position: "string_option" --> unique string to represent problem in question
+        #               - Others positions: all variables you need to pass to process each input and label elements
         options = [Dictionary.string_option_signals_images_problem, cv2.IMREAD_GRAYSCALE,
                    self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
         # Batching values and labels from input and labels (with batch size)
@@ -497,8 +500,6 @@ class TFModels():
     def update_inputs_and_labels_shuffling(self, inputs, inputs_labels):
         """
         Update inputs_processed and labels_processed variables with an inputs and inputs_labels shuffled
-	 
-
         :param inputs: Represent input data
         :param inputs_labels:  Represent labels data
         """
