@@ -356,57 +356,17 @@ class TFModels():
         # TODO Try python EVAL method to do multiple variable neurons
 
         # Placeholders
-        x = tf.placeholder(tf.float32, shape=[None, self.input_columns_after_reshape])  # All images will be 24*24 = 574
-        y_ = tf.placeholder(tf.float32, shape=[None, self.number_of_classes])  # Number of labels
-        keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
+        x, y_labels, keep_probably = self.placeholders()
 
         # Reshape x placeholder into a specific tensor
         x_reshape = tf.reshape(x, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
 
-        # First Convolutional Layer
-        convolution_1 = tf.layers.conv2d(
-            inputs=x_reshape,
-            filters=self.third_label_neurons,
-            kernel_size=self.kernel_size,
-            padding="same",
-            activation=tf.nn.relu)
-        # Pool Layer 1 and reshape images by 2
-        pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
-        # Second Convolutional Layer
-        convolution_2 = tf.layers.conv2d(
-            inputs=pool1,
-            filters=self.third_label_neurons,
-            kernel_size=self.kernel_size,
-            padding="same",
-            activation=tf.nn.relu)
+        # Network structure
+        y_prediction = self.network_structure(x_reshape,None,keep_probably=keep_probably)
 
-        # # Pool Layer 2 nd reshape images by 2
-        pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
-        # Dense Layer
-        # TODO Checks max pools numbers
-        pool2_flat = tf.reshape(pool2, [-1, int(self._input_rows_numbers / 4) * int(self._input_columns_numbers / 4)
-                                        * self.third_label_neurons])
-        dense = tf.layers.dense(inputs=pool2_flat, units=self.third_label_neurons, activation=tf.nn.relu)
-        dropout = tf.nn.dropout(dense, keep_probably)
-        # Readout Layer
-        w_fc2 = weight_variable([self.third_label_neurons, self.number_of_classes])
-        b_fc2 = bias_variable([self.number_of_classes])
-        y_convolution = (tf.matmul(dropout, w_fc2) + b_fc2)
+        cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
+                                                                                        y_prediction=y_prediction)
 
-        # Evaluate model
-        cross_entropy = tf.reduce_mean(
-            tf.nn.softmax_cross_entropy_with_logits(labels=y_,
-                                                    logits=y_convolution))  # Cross entropy between y_ and y_conv
-
-        # train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer
-        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cross_entropy)  # Adam Optimizer
-        # train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer
-
-        # Sure is axis = 1
-        correct_prediction = tf.equal(tf.argmax(y_convolution, axis=1),
-                                      tf.argmax(y_, axis=1))  # Get Number of right values in tensor
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
-        # TODO(@gabvaztor) define options
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
         #               - Others positions: all variables you need to pass to process each input and label elements
@@ -436,8 +396,8 @@ class TFModels():
         # TRAIN VARIABLES
         start_time = time.time()  # Start time
         is_first_time = True  # Check if is first train
-        feed_dict_train_100 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: 1}
-        feed_dict_test_100 = {x: x_test_feed, y_: y_test_feed, keep_probably: 1}
+        feed_dict_train_100 = {x: x_batch_feed, y_labels: label_batch_feed, keep_probably: 1}
+        feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
 
         # To restore model
         if self.restore_model:
@@ -447,7 +407,7 @@ class TFModels():
         for epoch in range(self.epoch_numbers):
             for i in range(self.trains):
                 # Setting values
-                feed_dict_train_50 = {x: x_batch_feed, y_: label_batch_feed, keep_probably: self.train_dropout}
+                feed_dict_train_50 = {x: x_batch_feed, y_labels: label_batch_feed, keep_probably: self.train_dropout}
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
                 train_step.run(feed_dict_train_50)
                 self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
@@ -468,12 +428,12 @@ class TFModels():
                         pt(Errors.error, Errors.model_path_bad_configuration)
                 # TODO Use validation set
                 if self.show_info:
-                    y__ = y_.eval(feed_dict_train_100)
+                    y__ = y_labels.eval(feed_dict_train_100)
                     argmax_labels_y_ = [np.argmax(m) for m in y__]
                     pt('y__shape', y__.shape)
                     pt('argmax_labels_y__', argmax_labels_y_)
                     pt('y__[-1]', y__[-1])
-                    y__conv = y_convolution.eval(feed_dict_train_100)
+                    y__conv = y_prediction.eval(feed_dict_train_100)
                     argmax_labels_y_convolutional = [np.argmax(m) for m in y__conv]
                     pt('argmax_y_conv', argmax_labels_y_convolutional)
                     pt('y_conv_shape', y__conv.shape)
@@ -487,6 +447,7 @@ class TFModels():
                     pt('cross_entropy_train', cross_entropy_train)
                     pt('test_accuracy', self.test_accuracy)
                     pt('self.index_buffer_data', self.index_buffer_data)
+                # Update num_trains_count
                 self.num_trains_count += 1
                 # Update batches values
                 x_batch_feed, label_batch_feed = self.data_buffer_generic_class(inputs=self.input,
@@ -658,6 +619,63 @@ class TFModels():
                 pt(Errors.error, e)
                 input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
 
+    def placeholders(self, *args, **kwargs):
+        # Placeholders
+        x = tf.placeholder(tf.float32, shape=[None, self.input_columns_after_reshape])  # All images will be 24*24 = 574
+        y_ = tf.placeholder(tf.float32, shape=[None, self.number_of_classes])  # Number of labels
+        keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
+        return x, y_, keep_probably
+
+    def network_structure(self, x_reshape, *args, **kwargs):
+        # First Convolutional Layer
+        convolution_1 = tf.layers.conv2d(
+            inputs=x_reshape,
+            filters=self.third_label_neurons,
+            kernel_size=self.kernel_size,
+            padding="same",
+            activation=tf.nn.relu)
+        # Pool Layer 1 and reshape images by 2
+        pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
+        # Second Convolutional Layer
+        convolution_2 = tf.layers.conv2d(
+            inputs=pool1,
+            filters=self.third_label_neurons,
+            kernel_size=self.kernel_size,
+            padding="same",
+            activation=tf.nn.relu)
+
+        # # Pool Layer 2 nd reshape images by 2
+        pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
+        # Dense Layer
+        # TODO Checks max pools numbers
+        pool2_flat = tf.reshape(pool2, [-1, int(self._input_rows_numbers / 4) * int(self._input_columns_numbers / 4)
+                                        * self.third_label_neurons])
+        dense = tf.layers.dense(inputs=pool2_flat, units=self.third_label_neurons, activation=tf.nn.relu)
+        dropout = tf.nn.dropout(dense, kwargs.get('keep_dropout'))
+        # Readout Layer
+        w_fc2 = weight_variable([self.third_label_neurons, self.number_of_classes])
+        b_fc2 = bias_variable([self.number_of_classes])
+        y_convolution = (tf.matmul(dropout, w_fc2) + b_fc2)
+        return y_convolution
+
+    def model_evaluation(self, y_labels, y_prediction):
+        # Evaluate model
+        cross_entropy = tf.reduce_mean(
+            tf.nn.softmax_cross_entropy_with_logits(labels=y_labels,
+                                                    logits=y_prediction))  # Cross entropy between y_ and y_conv
+
+        # train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer
+        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cross_entropy)  # Adam Optimizer
+        # train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer
+
+        # Sure is axis = 1
+        correct_prediction = tf.equal(tf.argmax(y_prediction, axis=1),
+                                      tf.argmax(y_labels, axis=1))  # Get Number of right values in tensor
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))  # Get accuracy in float
+
+        return cross_entropy, train_step, correct_prediction, accuracy
+
+
 """
 STATIC METHODS
 """
@@ -746,17 +764,17 @@ def process_test_set(test, test_labels, options):
 def process_german_prizes_csv(x_input, is_test=False):
     return x_input
 
-def weighted_mape_tf(y_true, y_pred):
+def weighted_mape_tf(y_true, y_prediction):
     tot = tf.reduce_sum(y_true)
     # tot = tf.clip_by_value(tot, clip_value_min=-550, clip_value_max=550)
 	# wmape = tf.realdiv(tf.reduce_sum(tf.abs(tf.subtract(y_true, y_pred))), tot)  # /tot
-    wmape = tf.truediv(tf.reduce_sum(tf.abs(tf.subtract(y_true, y_pred))),tot)# /tot
+    wmape = tf.truediv(tf.reduce_sum(tf.abs(tf.subtract(y_true, y_prediction))),tot)# /tot
     return wmape
-def root_mean_squared_logarithmic_error(y_true, y_pred):
+def root_mean_squared_logarithmic_error(y_true, y_prediction):
     """
     Calculate the Root Mean Squared Logarithmic Error
     :param y_true: 
-    :param y_pred: 
+    :param y_prediction:
     :return: Root Mean Squared Logarithmic Error
     """
     # TODO (@gabvaztor) Do Root Mean Squared Logarithmic Error
