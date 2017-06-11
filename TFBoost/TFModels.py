@@ -95,7 +95,7 @@ class TFModels():
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
         self._epoch_numbers = 100  # Epochs number
-        self._batch_size = 64  # Batch size
+        self._batch_size = 2  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
@@ -121,7 +121,7 @@ class TFModels():
         if self._save_model_configuration:
             # Save model configuration in a json file
             self._save_model_configuration_to_json(self.settings_object.configuration_path,
-                                                   Constant.attributes_to_delete_save_all)
+                                                   Constant.attributes_to_delete_configuration)
             pt("Model configuration has been saved")
 
     @property
@@ -362,7 +362,8 @@ class TFModels():
         x_reshape = tf.reshape(x, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
 
         # Network structure
-        y_prediction = self.network_structure(x_reshape,None,keep_probably=keep_probably)
+        kwargs = {'keep_probably': keep_probably}
+        y_prediction = self.network_structure(x_reshape, args=None, kwargs=kwargs)
 
         cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
                                                                                         y_prediction=y_prediction)
@@ -423,7 +424,7 @@ class TFModels():
                                 attributes_to_delete=Constant.attributes_to_delete_information)
                             pt("Model information has been saved")
                         except Exception as e:
-                            pt(Errors.error,e)
+                            pt(Errors.error, e)
                     else:
                         pt(Errors.error, Errors.model_path_bad_configuration)
                 # TODO Use validation set
@@ -627,6 +628,8 @@ class TFModels():
         return x, y_, keep_probably
 
     def network_structure(self, x_reshape, *args, **kwargs):
+        pt('kwargs',kwargs['kwargs']['keep_probably'])
+        keep_dropout = kwargs['kwargs']['keep_probably']
         # First Convolutional Layer
         convolution_1 = tf.layers.conv2d(
             inputs=x_reshape,
@@ -651,7 +654,7 @@ class TFModels():
         pool2_flat = tf.reshape(pool2, [-1, int(self._input_rows_numbers / 4) * int(self._input_columns_numbers / 4)
                                         * self.third_label_neurons])
         dense = tf.layers.dense(inputs=pool2_flat, units=self.third_label_neurons, activation=tf.nn.relu)
-        dropout = tf.nn.dropout(dense, kwargs.get('keep_dropout'))
+        dropout = tf.nn.dropout(dense, keep_dropout)
         # Readout Layer
         w_fc2 = weight_variable([self.third_label_neurons, self.number_of_classes])
         b_fc2 = bias_variable([self.number_of_classes])
