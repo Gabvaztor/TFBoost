@@ -75,6 +75,7 @@ class TFModels():
     """
     # TODO Docs
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, setting_object,
+                 option_problem=None,
                  type=None, validation=None, validation_labels=None, load_model_configuration=False):
         # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
         # TODO (@gabvaztor) Add all methods using 'self' like class methods
