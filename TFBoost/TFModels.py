@@ -22,6 +22,7 @@ from __future__ import print_function
 
 '''LOCAL IMPORTS'''
 from UsefulTools.UtilsFunctions import *
+from UsefulTools.TensorFlowUtils import *
 from TFBoost.TFEncoder import Dictionary as dict
 from TFBoost.TFEncoder import Constant as const
 import SettingsObject
@@ -57,6 +58,7 @@ import tflearn
 '''"Best image library"
 pip install opencv-python'''
 import cv2
+sys.modules['cv2'] = cv2
 
 """Python libraries"""
 """ Random to shuffle lists """
@@ -324,7 +326,7 @@ class TFModels():
         """
         Return a string with actual features without not necessaries
         :param attributes_to_delete: represent witch attributes set must be deleted.
-        :return:
+        :return: A copy of class.__dic__ without deleted attributes
         """
         dict_copy = self.__dict__.copy()  # Need to be a copy to not get original class' attributes.
         # Remove all not necessaries values
@@ -356,18 +358,21 @@ class TFModels():
         # TODO Try python EVAL method to do multiple variable neurons
 
         # Placeholders
-        x, y_labels, keep_probably = self.placeholders()
+        x, y_labels, keep_probably = self.placeholders(args=None, kwargs=None)
 
         # Reshape x placeholder into a specific tensor
         x_reshape = tf.reshape(x, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
 
         # Network structure
-        kwargs = {'keep_probably': keep_probably}
-        y_prediction = self.network_structure(x_reshape, args=None, kwargs=kwargs)
+        network_kwargs= {'keep_probably': keep_probably}
+        y_prediction = self.network_structure(x_reshape, args=None, kwargs=network_kwargs)
 
         cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
-                                                                                        y_prediction=y_prediction)
+                                                                                        y_prediction=y_prediction,
+                                                                                        args=None,
+                                                                                        kwargs=None)
 
+        # TODO (@gabvaztor) Make "string_option" a class attribute
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
         #               - Others positions: all variables you need to pass to process each input and label elements
@@ -387,18 +392,16 @@ class TFModels():
                                                                   is_test=True,
                                                                   options=options)
         # Session
-        sess = tf.InteractiveSession()
-        sess.run(tf.local_variables_initializer())
-        sess.run(tf.global_variables_initializer())
+        sess = initialize_session()
 
         # Saver session
         saver = tf.train.Saver()  # Saver
 
         # TRAIN VARIABLES
         start_time = time.time()  # Start time
-        is_first_time = True  # Check if is first train
         feed_dict_train_100 = {x: x_batch_feed, y_labels: label_batch_feed, keep_probably: 1}
         feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
+        feed_dict_train_50 = {x: x_batch_feed, y_labels: label_batch_feed, keep_probably: self.train_dropout}
 
         # To restore model
         if self.restore_model:
@@ -408,37 +411,15 @@ class TFModels():
         for epoch in range(self.epoch_numbers):
             for i in range(self.trains):
                 # Setting values
-                feed_dict_train_50 = {x: x_batch_feed, y_labels: label_batch_feed, keep_probably: self.train_dropout}
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
                 train_step.run(feed_dict_train_50)
                 self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
                 if self.should_save():
-                    # Save variables to disk.
-                    if self.settings_object.model_path:
-                        try:
-                            saver.save(sess, self.settings_object.model_path+Dictionary.string_ckpt_extension)
-                            # TODO (@gabvaztor) Save a historic file if file exists to have an historic information
-                            self._save_model_configuration_to_json(
-                                fullpath=self.settings_object.information_path,
-                                attributes_to_delete=Constant.attributes_to_delete_information)
-                            pt("Model information has been saved")
-                        except Exception as e:
-                            pt(Errors.error, e)
-                    else:
-                        pt(Errors.error, Errors.model_path_bad_configuration)
+                    self.save(saver=saver,session=sess)
                 # TODO Use validation set
                 if self.show_info:
-                    y__ = y_labels.eval(feed_dict_train_100)
-                    argmax_labels_y_ = [np.argmax(m) for m in y__]
-                    pt('y__shape', y__.shape)
-                    pt('argmax_labels_y__', argmax_labels_y_)
-                    pt('y__[-1]', y__[-1])
-                    y__conv = y_prediction.eval(feed_dict_train_100)
-                    argmax_labels_y_convolutional = [np.argmax(m) for m in y__conv]
-                    pt('argmax_y_conv', argmax_labels_y_convolutional)
-                    pt('y_conv_shape', y__conv.shape)
-                    pt('index_buffer_data', self.index_buffer_data)
+                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction, feed_dict=feed_dict_train_100)
                 if i % 10 == 0:
                     percent_advance = str(i * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
@@ -458,6 +439,8 @@ class TFModels():
                                                                                 is_test=False,
                                                                                 options=options)
         pt('END TRAINING ')
+        self.show_statistics()
+
 
     def update_inputs_and_labels_shuffling(self, inputs, inputs_labels):
         """
@@ -597,6 +580,7 @@ class TFModels():
         Restore a tensorflow model from a model_path checking if model_path exists and create if not.
         :param session: Tensorflow session
         """
+        pt("sess", session)
         # TODO Show comments when restoring model operation start or finish
         if self.settings_object.model_path:
             pt("Restoring model...", self.settings_object.model_path)
@@ -661,7 +645,7 @@ class TFModels():
         y_convolution = (tf.matmul(dropout, w_fc2) + b_fc2)
         return y_convolution
 
-    def model_evaluation(self, y_labels, y_prediction):
+    def model_evaluation(self, y_labels, y_prediction, *args, **kwargs):
         # Evaluate model
         cross_entropy = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits(labels=y_labels,
@@ -678,10 +662,46 @@ class TFModels():
 
         return cross_entropy, train_step, correct_prediction, accuracy
 
+    def show_advanced_information(self, y_labels, y_prediction, feed_dict):
+        y__ = y_labels.eval(feed_dict)
+        argmax_labels_y_ = [np.argmax(m) for m in y__]
+        pt('y__shape', y__.shape)
+        pt('argmax_labels_y__', argmax_labels_y_)
+        pt('y__[-1]', y__[-1])
+        y__conv = y_prediction.eval(feed_dict)
+        argmax_labels_y_convolutional = [np.argmax(m) for m in y__conv]
+        pt('argmax_y_conv', argmax_labels_y_convolutional)
+        pt('y_conv_shape', y__conv.shape)
+        pt('index_buffer_data', self.index_buffer_data)
+
+    def save(self, saver, session):
+        # Save variables to disk.
+        if self.settings_object.model_path:
+            try:
+                saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
+                # TODO (@gabvaztor) Save a historic file if file exists to have an historic information
+                self._save_model_configuration_to_json(
+                    fullpath=self.settings_object.information_path,
+                    attributes_to_delete=Constant.attributes_to_delete_information)
+                pt("Model information has been saved")
+            except Exception as e:
+                pt(Errors.error, e)
+        else:
+            pt(Errors.error, Errors.model_path_bad_configuration)
+
+    def show_statistics(self):
+        """
+        Show all necessary visual and text information.
+        """
+        # TODO(@gabvaztor) Generate graphs
+        pass
+
 
 """
-STATIC METHODS
+STATIC METHODS: Not need "self" :argument
 """
+
+
 def get_inputs_and_labels_shuffled(inputs, inputs_labels):
     """
     Get inputs_processed and labels_processed variables with an inputs and inputs_labels shuffled
@@ -693,6 +713,7 @@ def get_inputs_and_labels_shuffled(inputs, inputs_labels):
     random.shuffle(c)
     inputs_processed, labels_processed = zip(*c)
     return inputs_processed, labels_processed
+
 
 def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
     """
@@ -707,10 +728,12 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
     if options:
         option = options[0]  # Option selected
         if option == Dictionary.string_option_signals_images_problem:
-            x_input = process_image_signals_problem(x_input,options[1],options[2],options[3],is_test=is_test)
+            x_input = process_image_signals_problem(x_input, options[1], options[2],
+                                                    options[3], is_test=is_test)
         if option == Dictionary.string_option_german_prizes_problem:
             x_input = process_german_prizes_csv(x_input, is_test=is_test)
     return x_input, y_label
+
 
 # noinspection PyUnresolvedReferences
 def process_image_signals_problem(image, image_type, height, width, is_test=False):
@@ -746,6 +769,7 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
     # cv2.waitKey(0)  # Wait until press key to destroy image
     return image
 
+
 def process_test_set(test, test_labels, options):
     """
     Process test set and return it
@@ -764,37 +788,6 @@ def process_test_set(test, test_labels, options):
     y_test = np.asarray(y_test)
     return x_test, y_test
 
+
 def process_german_prizes_csv(x_input, is_test=False):
     return x_input
-
-def weighted_mape_tf(y_true, y_prediction):
-    tot = tf.reduce_sum(y_true)
-    # tot = tf.clip_by_value(tot, clip_value_min=-550, clip_value_max=550)
-	# wmape = tf.realdiv(tf.reduce_sum(tf.abs(tf.subtract(y_true, y_pred))), tot)  # /tot
-    wmape = tf.truediv(tf.reduce_sum(tf.abs(tf.subtract(y_true, y_prediction))),tot)# /tot
-    return wmape
-def root_mean_squared_logarithmic_error(y_true, y_prediction):
-    """
-    Calculate the Root Mean Squared Logarithmic Error
-    :param y_true: 
-    :param y_prediction:
-    :return: Root Mean Squared Logarithmic Error
-    """
-    # TODO (@gabvaztor) Do Root Mean Squared Logarithmic Error
-    pass
-
-def weight_variable(shape):
-    initial = tf.truncated_normal(shape, stddev=0.01)
-    # initial = tf.zeros(shape, dtype=tf.float32)
-    return tf.Variable(initial)
-
-def bias_variable(shape):
-    initial = tf.constant(0.01, shape=shape)
-    return tf.Variable(initial)
-
-def conv2d(x, W):
-    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
-
-def max_pool_2x2(x):
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
-                          strides=[1, 2, 2, 1], padding='SAME')
