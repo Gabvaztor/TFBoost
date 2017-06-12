@@ -580,8 +580,6 @@ class TFModels():
         Restore a tensorflow model from a model_path checking if model_path exists and create if not.
         :param session: Tensorflow session
         """
-        pt("sess", session)
-        # TODO Show comments when restoring model operation start or finish
         if self.settings_object.model_path:
             pt("Restoring model...", self.settings_object.model_path)
             try:
