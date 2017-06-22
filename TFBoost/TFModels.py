@@ -604,18 +604,27 @@ class TFModels():
                 input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
 
     def placeholders(self, *args, **kwargs):
+        """
+        This method will contains all TensorFlow code about placeholders (variables which will be modified during 
+        process)
+        :return: Inputs, labels and others placeholders
+        """
         # Placeholders
         x = tf.placeholder(tf.float32, shape=[None, self.input_columns_after_reshape])  # All images will be 24*24 = 574
         y_ = tf.placeholder(tf.float32, shape=[None, self.number_of_classes])  # Number of labels
         keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
         return x, y_, keep_probably
 
-    def network_structure(self, x_reshape, *args, **kwargs):
-        pt('kwargs',kwargs['kwargs']['keep_probably'])
+    def network_structure(self, input, *args, **kwargs):
+        """
+        This method will contains all TensorFlow code about your network structure. 
+        :param input: inputs 
+        :return: The prediction (network output)
+        """
         keep_dropout = kwargs['kwargs']['keep_probably']
         # First Convolutional Layer
         convolution_1 = tf.layers.conv2d(
-            inputs=x_reshape,
+            inputs=input,
             filters=self.third_label_neurons,
             kernel_size=self.kernel_size,
             padding="same",
@@ -645,6 +654,12 @@ class TFModels():
         return y_convolution
 
     def model_evaluation(self, y_labels, y_prediction, *args, **kwargs):
+        """
+        This methods will contains all TensorFlow about model evaluation. 
+        :param y_labels: Labels
+        :param y_prediction: The prediction
+        :return: The output must contains all necessaries variables that it used during training
+        """
         # Evaluate model
         cross_entropy = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits(labels=y_labels,
