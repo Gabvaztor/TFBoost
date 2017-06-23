@@ -147,11 +147,13 @@ train_set = tf_reader.train_set  # Train Set
 del reader_features
 del tf_reader
 
+option_problem = Dictionary.string_option_signals_images_problem
+
 models = models.TFModels(input=train_set[0],test=test_set[0],
                          input_labels=train_set[1],test_labels=test_set[1],
-                         number_of_classes=number_of_classes, setting_object=setting_object)
+                         number_of_classes=number_of_classes, setting_object=setting_object,
+                         option_problem=option_problem)
 models.convolution_model_image()
-
 
 
 # TODO Make TFModels heritable and with capability to return section of tensorflow code

@@ -75,8 +75,8 @@ class TFModels():
     """
     # TODO Docs
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, setting_object,
-                 option_problem=None,
-                 type=None, validation=None, validation_labels=None, load_model_configuration=False):
+                 option_problem=None,type=None, validation=None, validation_labels=None,
+                 load_model_configuration=False):
         # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
         # TODO (@gabvaztor) Add all methods using 'self' like class methods
         self._input = input
@@ -85,6 +85,8 @@ class TFModels():
         self._test_labels = test_labels
         self._number_of_classes = number_of_classes
         self._settings_object = setting_object  # Setting object represent a kaggle configuration
+        self._input_batch = None
+        self._label_batch = None
         # CONFIGURATION VARIABLES
         self._restore_model = True  # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
@@ -113,19 +115,41 @@ class TFModels():
         # TODO(@gabvaztor) add validation_accuracy
         self._train_accuracy = None
         self._test_accuracy = None
+        # OPTIONS
+        # TODO (@gabvaztor) Make "string_option" a class attribute
+        # Options represent a list with this structure:
+        #               - First position: "string_option" --> unique string to represent problem in question
+        #               - Others positions: all variables you need to process each input and label elements
+        self._options = [option_problem, cv2.IMREAD_GRAYSCALE,
+                   self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
         # SAVE AND LOAD MODEL
-        # TODO(@gabvaztor) Finish load_model_configuration function
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
             pt("Loading model configuration", self.settings_object.configuration_path)
             self._load_model_configuration(
                 self.settings_object.load_model_configuration(self.settings_object.configuration_path))
-        # TODO(@gabvaztor) Finish _save_model_configuration function
         if self._save_model_configuration:
             # Save model configuration in a json file
             self._save_model_configuration_to_json(self.settings_object.configuration_path,
                                                    Constant.attributes_to_delete_configuration)
-            pt("Model configuration has been saved")
+
+    @property
+    def options(self): return self._options
+
+    @options.setter
+    def options(self, value): self._options = value
+
+    @property
+    def input_batch(self): return self._input_batch
+
+    @input_batch.setter
+    def input_batch(self, value): self._input_batch = value
+
+    @property
+    def label_batch(self): return self._label_batch
+
+    @label_batch.setter
+    def label_batch(self, value): self._label_batch = value
 
     @property
     def show_info(self): return self._show_info
@@ -351,97 +375,28 @@ class TFModels():
         Generic convolutional model
         """
         # Print actual configuration
-        pt('first_label_neurons', self.first_label_neurons)
-        pt('second_label_neurons', self.second_label_neurons)
-        pt('third_label_neurons', self.third_label_neurons)
-        pt('input_size', self.input_size)
-        pt('batch_size', self.batch_size)
+        self.print_actual_configuration()
         # TODO Try python EVAL method to do multiple variable neurons
-
         # Placeholders
-        x, y_labels, keep_probably = self.placeholders(args=None, kwargs=None)
-
+        x_input, y_labels, keep_probably = self.placeholders(args=None, kwargs=None)
         # Reshape x placeholder into a specific tensor
-        x_reshape = tf.reshape(x, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
-
+        x_reshape = tf.reshape(x_input, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
         # Network structure
         network_kwargs= {'keep_probably': keep_probably}
         y_prediction = self.network_structure(x_reshape, args=None, kwargs=network_kwargs)
-
         cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
-                                                                                        y_prediction=y_prediction,
-                                                                                        args=None,
-                                                                                        kwargs=None)
-
-        # TODO (@gabvaztor) Make "string_option" a class attribute
-        # Options represent a list with this structure:
-        #               - First position: "string_option" --> unique string to represent problem in question
-        #               - Others positions: all variables you need to pass to process each input and label elements
-        options = [Dictionary.string_option_signals_images_problem, cv2.IMREAD_GRAYSCALE,
-                   self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
+                                                                                        y_prediction=y_prediction)
         # Batching values and labels from input and labels (with batch size)
-        x_batch_feed, label_batch_feed = self.data_buffer_generic_class(inputs=self.input,
-                                                                        inputs_labels=self.input_labels,
-                                                                        shuffle_data=self.shuffle_data,
-                                                                        batch_size=self.batch_size,
-                                                                        is_test=False,
-                                                                        options=options)
-        x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
-                                                                  inputs_labels=self.test_labels,
-                                                                  shuffle_data=self.shuffle_data,
-                                                                  batch_size=None,
-                                                                  is_test=True,
-                                                                  options=options)
+        self.get_batches()
         # Session
         sess = initialize_session()
-
         # Saver session
         saver = tf.train.Saver()  # Saver
-
-        # TRAIN VARIABLES
-        start_time = time.time()  # Start time
-        feed_dict_train_100 = {x: x_batch_feed, y_labels: label_batch_feed, keep_probably: 1}
-        feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
-        feed_dict_train_50 = {x: x_batch_feed, y_labels: label_batch_feed, keep_probably: self.train_dropout}
-
         # To restore model
         if self.restore_model:
             self.create_path_and_restore_model(sess)
-
-        # START TRAINING
-        for epoch in range(self.epoch_numbers):
-            for i in range(self.trains):
-                # Setting values
-                self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
-                train_step.run(feed_dict_train_50)
-                self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
-                cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
-                if self.should_save():
-                    self.save(saver=saver,session=sess)
-                # TODO Use validation set
-                if self.show_info:
-                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction, feed_dict=feed_dict_train_100)
-                if i % 10 == 0:
-                    percent_advance = str(i * 100 / self.trains)
-                    pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
-                    pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' +
-                       str(epoch + 1) + ": " + percent_advance + '%')
-                    pt('train_accuracy', self.train_accuracy)
-                    pt('cross_entropy_train', cross_entropy_train)
-                    pt('test_accuracy', self.test_accuracy)
-                    pt('self.index_buffer_data', self.index_buffer_data)
-                # Update num_trains_count
-                self.num_trains_count += 1
-                # Update batches values
-                x_batch_feed, label_batch_feed = self.data_buffer_generic_class(inputs=self.input,
-                                                                                inputs_labels=self.input_labels,
-                                                                                shuffle_data=self.shuffle_data,
-                                                                                batch_size=self.batch_size,
-                                                                                is_test=False,
-                                                                                options=options)
-        pt('END TRAINING ')
+        self.train_model(kwargs=locals())
         self.show_statistics()
-
 
     def update_inputs_and_labels_shuffling(self, inputs, inputs_labels):
         """
@@ -460,7 +415,7 @@ class TFModels():
         :param inputs: Inputs
         :param inputs_labels: Inputs labels
         :param shuffle_data: If it is necessary shuffle data.
-        :param batch_size: The batch size .
+        :param batch_size: The batch size.
         :param is_test: if the inputs are the test set.
         :param options: options       
         :return: Two numpy arrays (x_batch and y_batch) with input data and input labels data batch_size like shape.
@@ -574,6 +529,7 @@ class TFModels():
         pt("Saving model...")
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
+        pt("Model configuration has been saved")
 
 
     def create_path_and_restore_model(self, session):
@@ -638,7 +594,6 @@ class TFModels():
             kernel_size=self.kernel_size,
             padding="same",
             activation=tf.nn.relu)
-
         # # Pool Layer 2 nd reshape images by 2
         pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
         # Dense Layer
@@ -709,6 +664,82 @@ class TFModels():
         """
         # TODO(@gabvaztor) Generate graphs
         pass
+
+    def print_actual_configuration(self):
+        """
+        Print all attributes to console
+        """
+        pt('first_label_neurons', self.first_label_neurons)
+        pt('second_label_neurons', self.second_label_neurons)
+        pt('third_label_neurons', self.third_label_neurons)
+        pt('input_size', self.input_size)
+        pt('batch_size', self.batch_size)
+
+    def train_model(self, *args, **kwargs):
+
+        x = kwargs['kwargs']['x_input']
+        y_labels = kwargs['kwargs']['y_labels']
+        keep_probably = kwargs['kwargs']['keep_probably']
+        accuracy = kwargs['kwargs']['accuracy']
+        train_step = kwargs['kwargs']['train_step']
+        cross_entropy = kwargs['kwargs']['cross_entropy']
+        saver = kwargs['kwargs']['saver']
+        sess = kwargs['kwargs']['sess']
+        y_prediction = kwargs['kwargs']['y_prediction']
+
+        x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
+                                                                  inputs_labels=self.test_labels,
+                                                                  shuffle_data=self.shuffle_data,
+                                                                  batch_size=None,
+                                                                  is_test=True,
+                                                                  options=self.options)
+        # TRAIN VARIABLES
+        start_time = time.time()  # Start time
+        feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
+        feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
+        feed_dict_train_50 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: self.train_dropout}
+
+        # START TRAINING
+        for epoch in range(self.epoch_numbers):
+            for i in range(self.trains):
+                # Setting values
+                self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
+                train_step.run(feed_dict_train_50)
+                self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
+                cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
+                if self.should_save():
+                    self.save(saver=saver,session=sess)
+                # TODO Use validation set
+                if self.show_info:
+                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction, feed_dict=feed_dict_train_100)
+                if i % 10 == 0:
+                    percent_advance = str(i * 100 / self.trains)
+                    pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
+                    pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' +
+                       str(epoch + 1) + ": " + percent_advance + '%')
+                    pt('train_accuracy', self.train_accuracy)
+                    pt('cross_entropy_train', cross_entropy_train)
+                    pt('test_accuracy', self.test_accuracy)
+                    pt('self.index_buffer_data', self.index_buffer_data)
+                # Update num_trains_count
+                self.num_trains_count += 1
+                # Update batches values
+                self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
+                                                                                inputs_labels=self.input_labels,
+                                                                                shuffle_data=self.shuffle_data,
+                                                                                batch_size=self.batch_size,
+                                                                                is_test=False,
+                                                                                options=self.options)
+
+        pt('END TRAINING ')
+
+    def get_batches(self):
+        self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
+                                       inputs_labels=self.input_labels,
+                                       shuffle_data=self.shuffle_data,
+                                       batch_size=self.batch_size,
+                                       is_test=False,
+                                       options=self.options)
 
 
 """
