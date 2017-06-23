@@ -394,7 +394,7 @@ class TFModels():
         saver = tf.train.Saver()  # Saver
         # To restore model
         if self.restore_model:
-            self.create_path_and_restore_model(sess)
+            self.load_and_restore_model(sess)
         self.train_model(kwargs=locals())
         self.show_statistics()
 
@@ -532,7 +532,7 @@ class TFModels():
         pt("Model configuration has been saved")
 
 
-    def create_path_and_restore_model(self, session):
+    def load_and_restore_model(self, session):
         """
         Restore a tensorflow model from a model_path checking if model_path exists and create if not.
         :param session: Tensorflow session
