@@ -14,8 +14,12 @@ https://google.github.io/styleguide/pyguide.html
 
 TensorFlow Boost works as follows: 
 
-![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/CSV%20Diagram.png)
+![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/CSV_Diagram.png)
 
 In future, this project contains a graph visualization BEFORE TensorFlow generates his graphs.
+
+An example of code: Step by step structure
+
+![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Example_Code.png)
 
 "TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc."
