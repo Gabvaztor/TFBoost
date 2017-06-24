@@ -4,7 +4,7 @@ StartDate: 04/03/2017
 
 This file contains samples and overrides deep learning algorithms.
 
-Style: "Google Python Style Guide"
+Style: "Google Python Style Guide" 
 https://google.github.io/styleguide/pyguide.html
 
 """
@@ -33,8 +33,9 @@ To upgrade TensorFlow to last version:
 *GPU: pip3 install --upgrade tensorflow-gpu
 '''
 import tensorflow as tf
-
 print("TensorFlow: " + tf.__version__)
+
+
 
 ''' Numpy is an extension to the Python programming language, adding support for large,
 multi-dimensional arrays and matrices, along with a large library of high-level
@@ -57,7 +58,6 @@ import tflearn
 '''"Best image library"
 pip install opencv-python'''
 import cv2
-
 sys.modules['cv2'] = cv2
 
 """Python libraries"""
@@ -66,20 +66,17 @@ import random
 
 """ Time """
 import time
-
 """ To serialize object"""
 import json
-
 
 class TFModels():
     """
     Long Docs ...
     """
-
     # TODO Docs
-    def __init__(self, input, test, input_labels, test_labels, number_of_classes, setting_object,
-                 option_problem=None,
-                 type=None, validation=None, validation_labels=None, load_model_configuration=False):
+    def __init__(self,input, test, input_labels, test_labels, number_of_classes, setting_object,
+                 option_problem=None,type=None, validation=None, validation_labels=None,
+                 load_model_configuration=False):
         # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
         # TODO (@gabvaztor) Add all methods using 'self' like class methods
         self._input = input
@@ -88,6 +85,8 @@ class TFModels():
         self._test_labels = test_labels
         self._number_of_classes = number_of_classes
         self._settings_object = setting_object  # Setting object represent a kaggle configuration
+        self._input_batch = None
+        self._label_batch = None
         # CONFIGURATION VARIABLES
         self._restore_model = True  # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
@@ -116,43 +115,59 @@ class TFModels():
         # TODO(@gabvaztor) add validation_accuracy
         self._train_accuracy = None
         self._test_accuracy = None
+        # OPTIONS
+        # TODO (@gabvaztor) Make "string_option" a class attribute
+        # Options represent a list with this structure:
+        #               - First position: "string_option" --> unique string to represent problem in question
+        #               - Others positions: all variables you need to process each input and label elements
+        self._options = [option_problem, cv2.IMREAD_GRAYSCALE,
+                   self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
         # SAVE AND LOAD MODEL
-        # TODO(@gabvaztor) Finish load_model_configuration function
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
             pt("Loading model configuration", self.settings_object.configuration_path)
             self._load_model_configuration(
                 self.settings_object.load_model_configuration(self.settings_object.configuration_path))
-        # TODO(@gabvaztor) Finish _save_model_configuration function
         if self._save_model_configuration:
             # Save model configuration in a json file
             self._save_model_configuration_to_json(self.settings_object.configuration_path,
                                                    Constant.attributes_to_delete_configuration)
-            pt("Model configuration has been saved")
 
     @property
-    def show_info(self):
-        return self._show_info
+    def options(self): return self._options
+
+    @options.setter
+    def options(self, value): self._options = value
+
+    @property
+    def input_batch(self): return self._input_batch
+
+    @input_batch.setter
+    def input_batch(self, value): self._input_batch = value
+
+    @property
+    def label_batch(self): return self._label_batch
+
+    @label_batch.setter
+    def label_batch(self, value): self._label_batch = value
+
+    @property
+    def show_info(self): return self._show_info
 
     @show_info.setter
-    def show_info(self, value):
-        self._show_info = value
+    def show_info(self, value): self._show_info = value
 
     @property
-    def save_model_information(self):
-        return self._save_model_information
+    def save_model_information(self): return self._save_model_information
 
     @save_model_information.setter
-    def save_model_information(self, value):
-        self._save_model_information = value
+    def save_model_information(self, value): self._save_model_information = value
 
     @property
-    def save_model_configuration(self):
-        return self._save_model_configuration
+    def save_model_configuration(self): return self._save_model_configuration
 
     @save_model_configuration.setter
-    def save_model_configuration(self, value):
-        self._save_model_configuration = value
+    def save_model_configuration(self, value):  self._save_model_configuration = value
 
     @property
     def ask_to_save_model_information(self):
@@ -162,232 +177,175 @@ class TFModels():
             return False
 
     @ask_to_save_model_information.setter
-    def ask_to_save_model_information(self, value):
-        self._ask_to_save_model_information = value
+    def ask_to_save_model_information(self, value): self._ask_to_save_model_information = value
 
     @property
-    def restore_model(self):
-        return self._restore_model
+    def restore_model(self): return self._restore_model
 
     @restore_model.setter
-    def restore_model(self, value):
-        self._restore_model = value
+    def restore_model(self, value): self._restore_model = value
 
     @property
-    def train_accuracy(self):
-        return self._train_accuracy
+    def train_accuracy(self): return self._train_accuracy
 
     @train_accuracy.setter
-    def train_accuracy(self, value):
-        self._train_accuracy = value
+    def train_accuracy(self, value): self._train_accuracy = value
 
     @property
-    def test_accuracy(self):
-        return self._test_accuracy
+    def test_accuracy(self): return self._test_accuracy
 
     @test_accuracy.setter
-    def test_accuracy(self, value):
-        self._test_accuracy = value
+    def test_accuracy(self, value): self._test_accuracy = value
 
     @property
-    def settings_object(self):
-        return self._settings_object
+    def settings_object(self): return self._settings_object
 
     @settings_object.setter
-    def settings_object(self, value):
-        self._settings_object = value
+    def settings_object(self, value): self._settings_object = value
 
     @property
-    def learning_rate(self):
-        return self._learning_rate
+    def learning_rate(self): return self._learning_rate
 
     @learning_rate.setter
-    def learning_rate(self, value):
-        self._learning_rate = value
+    def learning_rate(self, value): self._learning_rate = value
 
     @property
-    def show_images(self):
-        return self._show_images
+    def show_images(self): return self._show_images
 
     @show_images.setter
-    def show_images(self, value):
-        self._show_images = value
+    def show_images(self, value): self._show_images = value
 
     @property
-    def shuffle_data(self):
-        return self._shuffle_data
+    def shuffle_data(self): return self._shuffle_data
 
     @shuffle_data.setter
-    def shuffle_data(self, value):
-        self._shuffle_data = value
+    def shuffle_data(self, value): self._shuffle_data = value
 
     @property
-    def input_rows_numbers(self):
-        return self._input_rows_numbers
+    def input_rows_numbers(self): return self._input_rows_numbers
 
     @input_rows_numbers.setter
-    def input_rows_numbers(self, value):
-        self._input_rows_numbers = value
+    def input_rows_numbers(self, value): self._input_rows_numbers = value
 
     @property
-    def input_columns_numbers(self):
-        return self._input_columns_numbers
+    def input_columns_numbers(self): return self._input_columns_numbers
 
     @input_columns_numbers.setter
-    def input_columns_numbers(self, value):
-        self._input_columns_numbers = value
+    def input_columns_numbers(self, value): self._input_columns_numbers = value
 
     @property
-    def input_columns_after_reshape(self):
-        return self.input_rows_numbers * self.input_columns_numbers
+    def input_columns_after_reshape(self): return self.input_rows_numbers * self.input_columns_numbers
 
     @input_columns_after_reshape.setter
-    def input_columns_after_reshape(self, value):
-        self.input_columns_after_reshape = value
+    def input_columns_after_reshape(self, value): self.input_columns_after_reshape = value
 
     @property
-    def input_rows_columns_array(self):
-        return [self.input_rows_numbers, self.input_columns_numbers]
+    def input_rows_columns_array(self): return [self.input_rows_numbers, self.input_columns_numbers]
 
     @input_rows_columns_array.setter
-    def input_rows_columns_array(self, value):
-        self.input_rows_columns_array = value
+    def input_rows_columns_array(self, value): self.input_rows_columns_array = value
 
     @property
-    def kernel_size(self):
-        return self._kernel_size
+    def kernel_size(self): return self._kernel_size
 
     @kernel_size.setter
-    def kernel_size(self, value):
-        self._kernel_size = value
+    def kernel_size(self, value): self._kernel_size = value
 
     @property
-    def input_size(self):
-        return self._input_size
+    def input_size(self): return self._input_size
 
     @input_size.setter
-    def input_size(self, value):
-        self._input_size = value
+    def input_size(self, value): self._input_size = value
 
     @property
-    def test_size(self):
-        return self._test_size
+    def test_size(self): return self._test_size
 
     @test_size.setter
-    def test_size(self, value):
-        self._test_size = value
+    def test_size(self, value): self._test_size = value
 
     @property
-    def batch_size(self):
-        return self._batch_size
+    def batch_size(self): return self._batch_size
 
     @batch_size.setter
-    def batch_size(self, value):
-        self._batch_size = value
+    def batch_size(self, value): self._batch_size = value
 
     @property
-    def train_dropout(self):
-        return self._train_dropout
+    def train_dropout(self): return self._train_dropout
 
     @train_dropout.setter
-    def train_dropout(self, value):
-        self._train_dropout = value
+    def train_dropout(self, value): self._train_dropout = value
 
     @property
-    def index_buffer_data(self):
-        return self._index_buffer_data
+    def index_buffer_data(self): return self._index_buffer_data
 
     @index_buffer_data.setter
-    def index_buffer_data(self, value):
-        self._index_buffer_data = value
+    def index_buffer_data(self, value): self._index_buffer_data = value
 
     @property
-    def first_label_neurons(self):
-        return self._first_label_neurons
+    def first_label_neurons(self): return self._first_label_neurons
 
     @first_label_neurons.setter
-    def first_label_neurons(self, value):
-        self._first_label_neurons = value
+    def first_label_neurons(self, value): self._first_label_neurons = value
 
     @property
-    def second_label_neurons(self):
-        return self._second_label_neurons
+    def second_label_neurons(self): return self._second_label_neurons
 
     @second_label_neurons.setter
-    def second_label_neurons(self, value):
-        self._second_label_neurons = value
+    def second_label_neurons(self, value): self._second_label_neurons = value
 
     @property
-    def third_label_neurons(self):
-        return self._third_label_neurons
+    def third_label_neurons(self): return self._third_label_neurons
 
     @third_label_neurons.setter
-    def third_label_neurons(self, value):
-        self._third_label_neurons = value
+    def third_label_neurons(self, value): self._third_label_neurons = value
 
     @property
-    def trains(self):
-        return self._trains
+    def trains(self): return self._trains
 
     @trains.setter
-    def trains(self, value):
-        self._trains = value
+    def trains(self, value): self._trains = value
 
     @property
-    def num_trains_count(self):
-        return self._num_trains_count
+    def num_trains_count(self): return self._num_trains_count
 
     @num_trains_count.setter
-    def num_trains_count(self, value):
-        self._num_trains_count = value
+    def num_trains_count(self, value): self._num_trains_count = value
 
     @property
-    def number_of_classes(self):
-        return self._number_of_classes
+    def number_of_classes(self): return self._number_of_classes
 
     @number_of_classes.setter
-    def number_of_classes(self, value):
-        self._number_of_classes = value
+    def number_of_classes(self, value): self._number_of_classes = value
 
     @property
-    def input_labels(self):
-        return self._input_labels
+    def input_labels(self): return self._input_labels
 
     @input_labels.setter
-    def input_labels(self, value):
-        self._input_labels = value
+    def input_labels(self, value): self._input_labels = value
 
     @property
-    def test_labels(self):
-        return self._test_labels
+    def test_labels(self): return self._test_labels
 
     @test_labels.setter
-    def test_labels(self, value):
-        self._test_labels = value
+    def test_labels(self, value): self._test_labels = value
 
     @property
-    def epoch_numbers(self):
-        return self._epoch_numbers
+    def epoch_numbers(self): return self._epoch_numbers
 
     @epoch_numbers.setter
-    def epoch_numbers(self, value):
-        self._epoch_numbers = value
+    def epoch_numbers(self, value): self._epoch_numbers = value
 
     @property
-    def input(self):
-        return self._input
+    def input(self): return self._input
 
     @input.setter
-    def input(self, value):
-        self._input = value
+    def input(self, value): self._input = value
 
     @property
-    def test(self):
-        return self._test
+    def test(self): return self._test
 
     @test.setter
-    def test(self, value):
-        self._test = value
+    def test(self, value): self._test = value
 
     def properties(self, attributes_to_delete=None):
         """
@@ -417,96 +375,27 @@ class TFModels():
         Generic convolutional model
         """
         # Print actual configuration
-        pt('first_label_neurons', self.first_label_neurons)
-        pt('second_label_neurons', self.second_label_neurons)
-        pt('third_label_neurons', self.third_label_neurons)
-        pt('input_size', self.input_size)
-        pt('batch_size', self.batch_size)
+        self.print_actual_configuration()
         # TODO Try python EVAL method to do multiple variable neurons
-
         # Placeholders
-        x, y_labels, keep_probably = self.placeholders(args=None, kwargs=None)
-
+        x_input, y_labels, keep_probably = self.placeholders(args=None, kwargs=None)
         # Reshape x placeholder into a specific tensor
-        x_reshape = tf.reshape(x, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
-
+        x_reshape = tf.reshape(x_input, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
         # Network structure
-        network_kwargs = {'keep_probably': keep_probably}
+        network_kwargs= {'keep_probably': keep_probably}
         y_prediction = self.network_structure(x_reshape, args=None, kwargs=network_kwargs)
-
         cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
-                                                                                        y_prediction=y_prediction,
-                                                                                        args=None,
-                                                                                        kwargs=None)
-
-        # TODO (@gabvaztor) Make "string_option" a class attribute
-        # Options represent a list with this structure:
-        #               - First position: "string_option" --> unique string to represent problem in question
-        #               - Others positions: all variables you need to pass to process each input and label elements
-        options = [Dictionary.string_option_signals_images_problem, cv2.IMREAD_GRAYSCALE,
-                   self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
+                                                                                        y_prediction=y_prediction)
         # Batching values and labels from input and labels (with batch size)
-        x_batch_feed, label_batch_feed = self.data_buffer_generic_class(inputs=self.input,
-                                                                        inputs_labels=self.input_labels,
-                                                                        shuffle_data=self.shuffle_data,
-                                                                        batch_size=self.batch_size,
-                                                                        is_test=False,
-                                                                        options=options)
-        x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
-                                                                  inputs_labels=self.test_labels,
-                                                                  shuffle_data=self.shuffle_data,
-                                                                  batch_size=None,
-                                                                  is_test=True,
-                                                                  options=options)
+        self.get_batches()
         # Session
         sess = initialize_session()
-
         # Saver session
         saver = tf.train.Saver()  # Saver
-
-        # TRAIN VARIABLES
-        start_time = time.time()  # Start time
-        feed_dict_train_100 = {x: x_batch_feed, y_labels: label_batch_feed, keep_probably: 1}
-        feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
-        feed_dict_train_50 = {x: x_batch_feed, y_labels: label_batch_feed, keep_probably: self.train_dropout}
-
         # To restore model
         if self.restore_model:
-            self.create_path_and_restore_model(sess)
-
-        # START TRAINING
-        for epoch in range(self.epoch_numbers):
-            for i in range(self.trains):
-                # Setting values
-                self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
-                train_step.run(feed_dict_train_50)
-                self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
-                cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
-                if self.should_save():
-                    self.save(saver=saver, session=sess)
-                # TODO Use validation set
-                if self.show_info:
-                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
-                                                   feed_dict=feed_dict_train_100)
-                if i % 10 == 0:
-                    percent_advance = str(i * 100 / self.trains)
-                    pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
-                    pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' +
-                       str(epoch + 1) + ": " + percent_advance + '%')
-                    pt('train_accuracy', self.train_accuracy)
-                    pt('cross_entropy_train', cross_entropy_train)
-                    pt('test_accuracy', self.test_accuracy)
-                    pt('self.index_buffer_data', self.index_buffer_data)
-                # Update num_trains_count
-                self.num_trains_count += 1
-                # Update batches values
-                x_batch_feed, label_batch_feed = self.data_buffer_generic_class(inputs=self.input,
-                                                                                inputs_labels=self.input_labels,
-                                                                                shuffle_data=self.shuffle_data,
-                                                                                batch_size=self.batch_size,
-                                                                                is_test=False,
-                                                                                options=options)
-        pt('END TRAINING ')
+            self.load_and_restore_model(sess)
+        self.train_model(kwargs=locals())
         self.show_statistics()
 
     def update_inputs_and_labels_shuffling(self, inputs, inputs_labels):
@@ -526,19 +415,19 @@ class TFModels():
         :param inputs: Inputs
         :param inputs_labels: Inputs labels
         :param shuffle_data: If it is necessary shuffle data.
-        :param batch_size: The batch size .
+        :param batch_size: The batch size.
         :param is_test: if the inputs are the test set.
-        :param options: options
+        :param options: options       
         :return: Two numpy arrays (x_batch and y_batch) with input data and input labels data batch_size like shape.
         """
         # TODO Add this method like class method
         x_batch = []
         y_batch = []
         if is_test:
-            x_batch, y_batch = process_test_set(inputs, inputs_labels, options)
+            x_batch, y_batch = process_test_set(inputs,inputs_labels,options)
         else:
             if shuffle_data and self.index_buffer_data == 0:
-                self.input, self.input_labels = get_inputs_and_labels_shuffled(self.input, self.input_labels)
+                self.input, self.input_labels = get_inputs_and_labels_shuffled(self.input,self.input_labels)
             else:
                 self.input, self.input_labels = self.input, self.input_labels  # To modify if is out class
             batch_size, out_range = self.get_out_range_and_batch()  # out_range will be True if
@@ -574,8 +463,8 @@ class TFModels():
     def should_save(self):
         """
         Get last configuration from path
-
-        :return: if should save
+        
+        :return: if should save 
         """
         should_save = False
         if self.save_model_information:
@@ -605,9 +494,9 @@ class TFModels():
     def _load_model_configuration(self, configuration):
         """
         Load previous configuration to class Model (self).
-
+        
         This will update all class' attributes with the configuration in a json file.
-        :param configuration: the json class
+        :param configuration: the json class 
         """
         # TODO Add to docs WHEN it is necessary to add more attributes
         self._restore_model = configuration._restore_model
@@ -640,8 +529,10 @@ class TFModels():
         pt("Saving model...")
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
+        pt("Model configuration has been saved")
 
-    def create_path_and_restore_model(self, session):
+
+    def load_and_restore_model(self, session):
         """
         Restore a tensorflow model from a model_path checking if model_path exists and create if not.
         :param session: Tensorflow session
@@ -669,18 +560,27 @@ class TFModels():
                 input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
 
     def placeholders(self, *args, **kwargs):
+        """
+        This method will contains all TensorFlow code about placeholders (variables which will be modified during 
+        process)
+        :return: Inputs, labels and others placeholders
+        """
         # Placeholders
         x = tf.placeholder(tf.float32, shape=[None, self.input_columns_after_reshape])  # All images will be 24*24 = 574
         y_ = tf.placeholder(tf.float32, shape=[None, self.number_of_classes])  # Number of labels
         keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
         return x, y_, keep_probably
 
-    def network_structure(self, x_reshape, *args, **kwargs):
-        pt('kwargs', kwargs['kwargs']['keep_probably'])
+    def network_structure(self, input, *args, **kwargs):
+        """
+        This method will contains all TensorFlow code about your network structure. 
+        :param input: inputs 
+        :return: The prediction (network output)
+        """
         keep_dropout = kwargs['kwargs']['keep_probably']
         # First Convolutional Layer
         convolution_1 = tf.layers.conv2d(
-            inputs=x_reshape,
+            inputs=input,
             filters=self.third_label_neurons,
             kernel_size=self.kernel_size,
             padding="same",
@@ -694,7 +594,6 @@ class TFModels():
             kernel_size=self.kernel_size,
             padding="same",
             activation=tf.nn.relu)
-
         # # Pool Layer 2 nd reshape images by 2
         pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
         # Dense Layer
@@ -710,6 +609,12 @@ class TFModels():
         return y_convolution
 
     def model_evaluation(self, y_labels, y_prediction, *args, **kwargs):
+        """
+        This methods will contains all TensorFlow about model evaluation. 
+        :param y_labels: Labels
+        :param y_prediction: The prediction
+        :return: The output must contains all necessaries variables that it used during training
+        """
         # Evaluate model
         cross_entropy = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits(labels=y_labels,
@@ -760,6 +665,82 @@ class TFModels():
         # TODO(@gabvaztor) Generate graphs
         pass
 
+    def print_actual_configuration(self):
+        """
+        Print all attributes to console
+        """
+        pt('first_label_neurons', self.first_label_neurons)
+        pt('second_label_neurons', self.second_label_neurons)
+        pt('third_label_neurons', self.third_label_neurons)
+        pt('input_size', self.input_size)
+        pt('batch_size', self.batch_size)
+
+    def train_model(self, *args, **kwargs):
+
+        x = kwargs['kwargs']['x_input']
+        y_labels = kwargs['kwargs']['y_labels']
+        keep_probably = kwargs['kwargs']['keep_probably']
+        accuracy = kwargs['kwargs']['accuracy']
+        train_step = kwargs['kwargs']['train_step']
+        cross_entropy = kwargs['kwargs']['cross_entropy']
+        saver = kwargs['kwargs']['saver']
+        sess = kwargs['kwargs']['sess']
+        y_prediction = kwargs['kwargs']['y_prediction']
+
+        x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
+                                                                  inputs_labels=self.test_labels,
+                                                                  shuffle_data=self.shuffle_data,
+                                                                  batch_size=None,
+                                                                  is_test=True,
+                                                                  options=self.options)
+        # TRAIN VARIABLES
+        start_time = time.time()  # Start time
+        feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
+        feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
+        feed_dict_train_50 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: self.train_dropout}
+
+        # START TRAINING
+        for epoch in range(self.epoch_numbers):
+            for i in range(self.trains):
+                # Setting values
+                self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
+                train_step.run(feed_dict_train_50)
+                self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
+                cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
+                if self.should_save():
+                    self.save(saver=saver,session=sess)
+                # TODO Use validation set
+                if self.show_info:
+                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction, feed_dict=feed_dict_train_100)
+                if i % 10 == 0:
+                    percent_advance = str(i * 100 / self.trains)
+                    pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
+                    pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' +
+                       str(epoch + 1) + ": " + percent_advance + '%')
+                    pt('train_accuracy', self.train_accuracy)
+                    pt('cross_entropy_train', cross_entropy_train)
+                    pt('test_accuracy', self.test_accuracy)
+                    pt('self.index_buffer_data', self.index_buffer_data)
+                # Update num_trains_count
+                self.num_trains_count += 1
+                # Update batches values
+                self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
+                                                                                inputs_labels=self.input_labels,
+                                                                                shuffle_data=self.shuffle_data,
+                                                                                batch_size=self.batch_size,
+                                                                                is_test=False,
+                                                                                options=self.options)
+
+        pt('END TRAINING ')
+
+    def get_batches(self):
+        self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
+                                       inputs_labels=self.input_labels,
+                                       shuffle_data=self.shuffle_data,
+                                       batch_size=self.batch_size,
+                                       is_test=False,
+                                       options=self.options)
+
 
 """
 STATIC METHODS: Not need "self" :argument
@@ -784,7 +765,7 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
     Generic method that process input and label across a if else statement witch contains a string that represent
     the option (option = how process data)
     :param x_input: A single input
-    :param y_label: A single input label
+    :param y_label: A single input label 
     :param options: All attributes to process data. First position must to be the option.
     :param is_test: Sometimes you don't want to do some operation to test set.
     :return: x_input and y_label processed
@@ -808,7 +789,7 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
     :param height: image height
     :param width: image width
     :param is_test: flag with True if image is in test set
-    :return:
+    :return: 
     """
     # 1- Get image in GrayScale
     # 2- Modify intensity and contrast
@@ -845,7 +826,7 @@ def process_test_set(test, test_labels, options):
     x_test = []
     y_test = []
     for i in range(len(test)):
-        x, y = process_input_unity_generic(test[i], test_labels[i], options, is_test=True)
+        x, y = process_input_unity_generic(test[i],test_labels[i],options,is_test=True)
         x_test.append(x)
         y_test.append(y)
     x_test = np.asarray(x_test)

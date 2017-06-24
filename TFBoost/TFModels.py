@@ -88,7 +88,7 @@ class TFModels():
         self._input_batch = None
         self._label_batch = None
         # CONFIGURATION VARIABLES
-        self._restore_model = True  # Labels and logits info.
+        self._restore_model = False  # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
         self._show_info = False  # Labels and logits info.
@@ -100,7 +100,7 @@ class TFModels():
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
         self._epoch_numbers = 100  # Epochs number
-        self._batch_size = 2  # Batch size
+        self._batch_size = 64  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
@@ -116,7 +116,6 @@ class TFModels():
         self._train_accuracy = None
         self._test_accuracy = None
         # OPTIONS
-        # TODO (@gabvaztor) Make "string_option" a class attribute
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
         #               - Others positions: all variables you need to process each input and label elements
@@ -395,6 +394,7 @@ class TFModels():
         # To restore model
         if self.restore_model:
             self.load_and_restore_model(sess)
+        # TODO (@gabvaztor) WHY NOW NOT TRAIN NICE
         self.train_model(kwargs=locals())
         self.show_statistics()
 
@@ -527,6 +527,10 @@ class TFModels():
         :param attributes_to_delete: represent witch attributes set must not be save in json file.
         """
         pt("Saving model...")
+        # TODO Fix when save
+        write_string_to_pathfile(self.to_json(attributes_to_delete),
+                                 fullpath)
+        fullpath = create_historic_folder(fullpath)
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
         pt("Model configuration has been saved")
@@ -711,7 +715,8 @@ class TFModels():
                     self.save(saver=saver,session=sess)
                 # TODO Use validation set
                 if self.show_info:
-                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction, feed_dict=feed_dict_train_100)
+                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
+                                                   feed_dict=feed_dict_train_100)
                 if i % 10 == 0:
                     percent_advance = str(i * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
