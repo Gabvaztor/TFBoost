@@ -130,7 +130,8 @@ class TFModels():
         if self._save_model_configuration:
             # Save model configuration in a json file
             self._save_model_configuration_to_json(self.settings_object.configuration_path,
-                                                   Constant.attributes_to_delete_configuration)
+                                                   Constant.attributes_to_delete_configuration,
+                                                   type_file="Configuration")
 
     @property
     def options(self): return self._options
@@ -381,8 +382,7 @@ class TFModels():
         # Reshape x placeholder into a specific tensor
         x_reshape = tf.reshape(x_input, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
         # Network structure
-        network_kwargs= {'keep_probably': keep_probably}
-        y_prediction = self.network_structure(x_reshape, args=None, kwargs=network_kwargs)
+        y_prediction = self.network_structure(x_reshape, args=None, keep_probably=keep_probably)
         cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
                                                                                         y_prediction=y_prediction)
         # Batching values and labels from input and labels (with batch size)
@@ -395,7 +395,7 @@ class TFModels():
         if self.restore_model:
             self.load_and_restore_model(sess)
         # TODO (@gabvaztor) WHY NOW NOT TRAIN NICE
-        self.train_model(kwargs=locals())
+        self.train_model(args=None, kwargs=locals())
         self.show_statistics()
 
     def update_inputs_and_labels_shuffling(self, inputs, inputs_labels):
@@ -521,16 +521,17 @@ class TFModels():
         self._trains = configuration._trains
         pt("Loaded model configuration")
 
-    def _save_model_configuration_to_json(self, fullpath, attributes_to_delete=None):
+    def _save_model_configuration_to_json(self, fullpath, attributes_to_delete=None, *args, **kwargs):
         """
         Save actual model configuration (with some attributes) in a json file.
         :param attributes_to_delete: represent witch attributes set must not be save in json file.
         """
         pt("Saving model...")
+        type_file = kwargs["type_file"]
         # TODO Fix when save
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
-        fullpath = create_historic_folder(fullpath)
+        fullpath = create_historic_folder(fullpath, type_file)
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
         pt("Model configuration has been saved")
@@ -581,7 +582,7 @@ class TFModels():
         :param input: inputs 
         :return: The prediction (network output)
         """
-        keep_dropout = kwargs['kwargs']['keep_probably']
+        keep_dropout = kwargs['keep_probably']
         # First Convolutional Layer
         convolution_1 = tf.layers.conv2d(
             inputs=input,
@@ -655,7 +656,8 @@ class TFModels():
                 # TODO (@gabvaztor) Save a historic file if file exists to have an historic information
                 self._save_model_configuration_to_json(
                     fullpath=self.settings_object.information_path,
-                    attributes_to_delete=Constant.attributes_to_delete_information)
+                    attributes_to_delete=Constant.attributes_to_delete_information,
+                    type_file="Information")
                 pt("Model information has been saved")
             except Exception as e:
                 pt(Errors.error, e)

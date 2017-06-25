@@ -154,6 +154,3 @@ models = models.TFModels(input=train_set[0],test=test_set[0],
                          number_of_classes=number_of_classes, setting_object=setting_object,
                          option_problem=option_problem)
 models.convolution_model_image()
-
-
-# TODO Make TFModels heritable and with capability to return section of tensorflow code

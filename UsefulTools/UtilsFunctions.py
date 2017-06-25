@@ -149,15 +149,16 @@ def create_file_from_fullpath(fullpath):
         file = open(fullpath, 'w+')
         file.close()
 
-def create_historic_folder(filepath):
+def create_historic_folder(filepath, type_file):
     """
     Used when filepath exists to create a folder with actual_time to historicize
     :param filepath: file to save  
+    :param type_file: Type of file (Information or Configuration)
     """
     actual_time = str(time.strftime("%Y-%m-%d_%Hh%Mm%Ss", time.gmtime(time.time())))
     directory = os.path.dirname(filepath)
     filename = actual_time + "_" + os.path.basename(filepath)
-    information_folder = "\\history_information\\"
+    information_folder = "\\history_information\\" + type_file + "\\"
     folder = directory+information_folder
     create_directory_from_fullpath(folder)
     return folder+filename
