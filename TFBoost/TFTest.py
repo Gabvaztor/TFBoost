@@ -80,7 +80,8 @@ import matplotlib.pyplot as plt
 
 ''' TFLearn library. License MIT.
 Git Clone : https://github.com/tflearn/tflearn.git
-To install: pip install tflearn'''
+To install: pip install tflearn
+If, when you update tf, you have a problem with this module you must to reinstall it'''
 import tflearn
 
 """

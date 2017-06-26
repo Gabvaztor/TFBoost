@@ -99,11 +99,11 @@ class TFModels():
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
         self._epoch_numbers = 100  # Epochs number
-        self._batch_size = 64  # Batch size
+        self._batch_size = 2  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
-        self._first_label_neurons = 50
+        self._first_label_neurons = 20
         self._second_label_neurons = 55
         self._third_label_neurons = 50
         self._learning_rate = 1e-3  # Learning rate
