@@ -33,9 +33,8 @@ To upgrade TensorFlow to last version:
 *GPU: pip3 install --upgrade tensorflow-gpu
 '''
 import tensorflow as tf
+# noinspection PyUnresolvedReferences
 print("TensorFlow: " + tf.__version__)
-
-
 
 ''' Numpy is an extension to the Python programming language, adding support for large,
 multi-dimensional arrays and matrices, along with a large library of high-level
@@ -48,7 +47,6 @@ import numpy as np
 
 ''' Matlab URL: http://matplotlib.org/users/installing.html'''
 import matplotlib.pyplot as plt
-from pylab import *
 
 ''' TFLearn library. License MIT.
 Git Clone : https://github.com/tflearn/tflearn.git
@@ -58,12 +56,10 @@ import tflearn
 '''"Best image library"
 pip install opencv-python'''
 import cv2
-sys.modules['cv2'] = cv2
 
 """Python libraries"""
 """ Random to shuffle lists """
 import random
-
 """ Time """
 import time
 """ To serialize object"""
@@ -118,6 +114,7 @@ class TFModels():
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
         #               - Others positions: all variables you need to process each input and label elements
+        # noinspection PyUnresolvedReferences
         self._options = [option_problem, cv2.IMREAD_GRAYSCALE,
                    self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
         # SAVE AND LOAD MODEL
@@ -663,12 +660,37 @@ class TFModels():
         else:
             pt(Errors.error, Errors.model_path_bad_configuration)
 
-    def show_statistics(self):
+    def show_statistics(self, accuracies_train, accuracies_validation=None, accuracies_test=None,
+                        loss_train=None, loss_validation=None, loss_test=None,
+                        folder_to_save=None):
         """
         Show all necessary visual and text information.
         """
-        # TODO(@gabvaztor) Generate graphs
-        pass
+        accuracy_plot = plt.figure(0)
+        plt.title(str(self.options[0]))
+        plt.xlabel("ITERATIONS")
+        plt.ylabel("ACCURACY (BLUE = Train | RED = Validation | GREEN = Test)")
+        plt.plot(accuracies_train, 'b')
+        if accuracies_validation:
+            plt.plot(accuracies_validation, 'r')
+        if accuracies_test:
+            plt.plot(accuracies_test, 'g')
+        plt.savefig(""+'.png')
+        if accuracies_train or accuracies_validation or accuracies_test:
+            accuracy_plot.show()
+
+        loss_plot = plt.figure(1)
+        plt.title("LOSS")
+        plt.xlabel("ITERATIONS ")
+        plt.ylabel("LOSS (BLUE = Train | RED = Validation | GREEN = Test)")
+        plt.plot(loss_train, 'b')
+        if loss_validation:
+            plt.plot(loss_validation, 'r')
+        if loss_test:
+            plt.plot(loss_test, 'g')
+        if loss_train or loss_validation or loss_test:
+            loss_plot.show()
+        plt.savefig("" + '.png')
 
     def print_actual_configuration(self):
         """
