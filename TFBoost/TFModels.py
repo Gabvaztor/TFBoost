@@ -91,10 +91,10 @@ class TFModels():
         self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path
         # TRAIN MODEL VARIABLES
         self._shuffle_data = True
-        self._input_rows_numbers = 60
-        self._input_columns_numbers = 60
+        self._input_rows_numbers = 25
+        self._input_columns_numbers = 25
         self._kernel_size = [5, 5]  # Kernel patch size
-        self._epoch_numbers = 100  # Epochs number
+        self._epoch_numbers = 1  # Epochs number
         self._batch_size = 2  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
@@ -382,7 +382,7 @@ class TFModels():
         cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
                                                                                         y_prediction=y_prediction)
         # Batching values and labels from input and labels (with batch size)
-        self.get_batches()
+        self.update_batch()
         # Session
         sess = initialize_session()
         # Saver session
@@ -392,7 +392,6 @@ class TFModels():
             self.load_and_restore_model(sess)
         # TODO (@gabvaztor) WHY NOW NOT TRAIN NICE
         self.train_model(args=None, kwargs=locals())
-        self.show_statistics()
 
     def update_inputs_and_labels_shuffling(self, inputs, inputs_labels):
         """
@@ -649,7 +648,6 @@ class TFModels():
         if self.settings_object.model_path:
             try:
                 saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
-                # TODO (@gabvaztor) Save a historic file if file exists to have an historic information
                 self._save_model_configuration_to_json(
                     fullpath=self.settings_object.information_path,
                     attributes_to_delete=Constant.attributes_to_delete_information,
@@ -666,6 +664,7 @@ class TFModels():
         """
         Show all necessary visual and text information.
         """
+        # TODO Think about how save the file with information and configuration files.
         accuracy_plot = plt.figure(0)
         plt.title(str(self.options[0]))
         plt.xlabel("ITERATIONS")
@@ -702,6 +701,14 @@ class TFModels():
         pt('input_size', self.input_size)
         pt('batch_size', self.batch_size)
 
+    def update_batch(self):
+        self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
+                                       inputs_labels=self.input_labels,
+                                       shuffle_data=self.shuffle_data,
+                                       batch_size=self.batch_size,
+                                       is_test=False,
+                                       options=self.options)
+
     def train_model(self, *args, **kwargs):
 
         x = kwargs['kwargs']['x_input']
@@ -726,6 +733,14 @@ class TFModels():
         feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
         feed_dict_train_50 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: self.train_dropout}
 
+        # TO STATISTICS
+        accuracies_train = []
+        accuracies_validation = []
+        accuracies_test = []
+        loss_train = []
+        loss_validation = []
+        loss_test = []
+
         # START TRAINING
         for epoch in range(self.epoch_numbers):
             for i in range(self.trains):
@@ -734,6 +749,14 @@ class TFModels():
                 train_step.run(feed_dict_train_50)
                 self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
+                cross_entropy_test = cross_entropy.eval(feed_dict_test_100)
+
+                # To generate statistics
+                accuracies_train.append(self.train_accuracy)
+                accuracies_test.append(self.test_accuracy)
+                loss_train.append(cross_entropy_train)
+                loss_test.append(cross_entropy_test)
+
                 if self.should_save():
                     self.save(saver=saver,session=sess)
                 # TODO Use validation set
@@ -752,23 +775,13 @@ class TFModels():
                 # Update num_trains_count
                 self.num_trains_count += 1
                 # Update batches values
-                self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
-                                                                                inputs_labels=self.input_labels,
-                                                                                shuffle_data=self.shuffle_data,
-                                                                                batch_size=self.batch_size,
-                                                                                is_test=False,
-                                                                                options=self.options)
+                self.update_batch()
+                if self.num_trains_count == 10:
+                    break
 
         pt('END TRAINING ')
-
-    def get_batches(self):
-        self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
-                                       inputs_labels=self.input_labels,
-                                       shuffle_data=self.shuffle_data,
-                                       batch_size=self.batch_size,
-                                       is_test=False,
-                                       options=self.options)
-
+        self.show_statistics(accuracies_train=accuracies_train,accuracies_test=accuracies_test,
+                             loss_train=loss_train,loss_test=loss_test)
 
 """
 STATIC METHODS: Not need "self" :argument
