@@ -158,7 +158,10 @@ def create_historic_folder(filepath, type_file, test_accuracy=""):
     actual_time = str(time.strftime("%Y-%m-%d_%Hh%Mm%Ss", time.gmtime(time.time())))
     directory = os.path.dirname(filepath)
     filename = actual_time + "_" + os.path.basename(filepath)
-    information_folder = "\\history_information\\" + type_file + "\\" + str(test_accuracy) + "_" + actual_time + "\\"
+    low_stripe = ""
+    if test_accuracy and test_accuracy is not "":
+        low_stripe = "_"
+    information_folder = "\\history_information\\" + type_file + "\\" + str(test_accuracy) + low_stripe + actual_time + "\\"
     folder = directory+information_folder
     create_directory_from_fullpath(folder)
     return folder+filename
