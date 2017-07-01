@@ -110,8 +110,9 @@ class TFModels():
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for batches during training
         self._num_trains_count = 0
-        # TODO(@gabvaztor) add validation_accuracy
+        # TODO(@gabvaztor) add validation_accuracy to training
         self._train_accuracy = None
+        self._validation_accuracy = None
         self._test_accuracy = None
         # OPTIONS
         # Options represent a list with this structure:
@@ -195,6 +196,12 @@ class TFModels():
 
     @test_accuracy.setter
     def test_accuracy(self, value): self._test_accuracy = value
+
+    @property
+    def validation_accuracy(self): return self._validation_accuracy
+
+    @validation_accuracy.setter
+    def validation_accuracy(self, value): self._validation_accuracy = value
 
     @property
     def settings_object(self): return self._settings_object
