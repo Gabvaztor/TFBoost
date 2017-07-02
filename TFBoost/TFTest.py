@@ -153,5 +153,5 @@ option_problem = Dictionary.string_option_signals_images_problem
 models = models.TFModels(input=train_set[0],test=test_set[0],
                          input_labels=train_set[1],test_labels=test_set[1],
                          number_of_classes=number_of_classes, setting_object=setting_object,
-                         option_problem=option_problem)
+                         option_problem=option_problem, load_model_configuration=True)
 models.convolution_model_image()

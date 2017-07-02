@@ -86,7 +86,7 @@ class TFModels():
         self._input_batch = None
         self._label_batch = None
         # CONFIGURATION VARIABLES
-        self._restore_model = True  # Labels and logits info.
+        self._restore_model = 0  # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
         self._show_info = False  # Labels and logits info.
@@ -108,8 +108,9 @@ class TFModels():
         self._learning_rate = 1e-3  # Learning rate
         self._trains = int(self.input_size / self.batch_size) + 1
         # INFORMATION VARIABLES
-        self._index_buffer_data = 0  # The index for batches during training
+        self._index_buffer_data = 0  # The index for mini_batches during training
         self._num_trains_count = 0
+        self._num_epochs_count = 0
         # TODO(@gabvaztor) add validation_accuracy to training
         self._train_accuracy = None
         self._validation_accuracy = None
@@ -126,12 +127,16 @@ class TFModels():
         if load_model_configuration:
             pt("Loading model configuration", self.settings_object.configuration_path)
             self._load_model_configuration(
-                self.settings_object.load_model_configuration(self.settings_object.configuration_path))
+                self.settings_object.load_actual_configuration())
         if self._save_model_configuration:
             # Save model configuration in a json file
-            self._save_model_configuration_to_json(self.settings_object.configuration_path,
-                                                   Constant.attributes_to_delete_configuration,
-                                                   type_file="Configuration")
+            self._save_json_configuration(Constant.attributes_to_delete_configuration)
+
+    @property
+    def num_epochs_count(self): return self._num_epochs_count
+
+    @num_epochs_count.setter
+    def num_epochs_count(self, value): self._num_epochs_count = value
 
     @property
     def options(self): return self._options
@@ -505,8 +510,8 @@ class TFModels():
         """
         # TODO Add to docs WHEN it is necessary to add more attributes
         self._restore_model = configuration._restore_model
-        self._save_model = configuration._save_model
-        self._ask_to_save_model = configuration._ask_to_save_model
+        self._save_model = configuration._save_model_information
+        self._ask_to_save_model = configuration._ask_to_save_model_information
         self._show_info = configuration._show_info
         self._show_images = configuration._show_images
         self._save_model_configuration = configuration._save_model_configuration
@@ -524,6 +529,8 @@ class TFModels():
         self._third_label_neurons = configuration._third_label_neurons
         self._learning_rate = configuration._learning_rate
         self._trains = configuration._trains
+        self._num_trains_count = configuration._num_trains_count
+        self._num_epochs_count = configuration._num_epochs_count
         pt("Loaded model configuration")
 
     def _save_model_configuration_to_json(self, fullpath, attributes_to_delete=None, *args, **kwargs):
@@ -544,8 +551,6 @@ class TFModels():
                                  filepath)
         pt("Model configuration has been saved")
         return filepath
-
-
 
     def load_and_restore_model(self, session):
         """
@@ -569,7 +574,7 @@ class TFModels():
                     pt("Model restored without problems")
                 else:
                     pt(Errors.error, Errors.can_not_restore_model_because_path_not_exists)
-                    input("Press enter to continue")
+                    input("Reset the execution")
             except Exception as e:
                 pt(Errors.error, e)
                 input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
@@ -768,9 +773,14 @@ class TFModels():
         loss_test = []
         # Folders and file where information and configuration files will be saved.
         filepath_save = None
-        # START TRAINING
-        for epoch in range(self.epoch_numbers):
-            for i in range(self.trains):
+        pt("1",self.num_epochs_count)
+        pt("2",self.epoch_numbers)
+        pt("3",self.num_trains_count)
+        pt("4",self.trains)
+        asd
+        # START  TRAINING
+        for epoch in range(self.num_epochs_count, self.epoch_numbers, 1):  # Start with load value o r 0
+            for num_train in range(self.num_trains_count, self.trains, 1):  # Start with load value or 0
                 # Update feeds
                 feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
                 feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
@@ -795,8 +805,8 @@ class TFModels():
                 if self.show_info:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
-                if i % 10 == 0:
-                    percent_advance = str(i * 100 / self.trains)
+                if num_train % 10 == 0:
+                    percent_advance = str(num_train * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' +
                        str(epoch + 1) + ": " + percent_advance + '%')
@@ -804,16 +814,29 @@ class TFModels():
                     pt('cross_entropy_train', cross_entropy_train)
                     pt('test_accuracy', self.test_accuracy)
                     pt('self.index_buffer_data', self.index_buffer_data)
-                # Update num_trains_count
+                # Update num_trains_count and num_epoch_count
                 self.num_trains_count += 1
+                self.num_epochs_count = epoch
+                pt("1", self.num_epochs_count)
+                pt("2", self.epoch_numbers)
+                pt("3", self.num_trains_count)
+                pt("4", self.trains)
                 # Update batches values
                 self.update_batch()
                 if self.epoch_numbers % 50 == 0:
                     self.learning_rate = self.learning_rate / 10
 
+                self._save_json_configuration(Constant.attributes_to_delete_configuration)
+
         pt('END TRAINING ')
         self.show_statistics(accuracies_train=accuracies_train,accuracies_test=accuracies_test,
                              loss_train=loss_train,loss_test=loss_test, folder_to_save=filepath_save)
+
+    def _save_json_configuration(self,attributes_to_delete_configuration):
+        self._save_model_configuration_to_json(self.settings_object.configuration_path,
+                                               attributes_to_delete_configuration,
+                                               type_file="Configuration")
+
 
 """
 STATIC METHODS: Not need "self" :argument

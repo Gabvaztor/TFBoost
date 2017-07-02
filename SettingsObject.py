@@ -90,7 +90,6 @@ class Settings():
 
     def load_actual_information(self):
         """
-
         :return:
         """
         # TODO (@gabvaztor) DOCs
@@ -101,6 +100,23 @@ class Settings():
             with open(self.information_path) as json_configuration:
                 dict = json.load(json_configuration)
                 configuration = Configuration(dict)
+        return configuration
+
+    def load_actual_configuration(self):
+
+        """
+        :return:
+        """
+        # TODO (@gabvaztor) DOCS
+        configuration = None
+        create_directory_from_fullpath(self.configuration_path)
+        create_file_from_fullpath(self.configuration_path)
+        if os.stat(self.configuration_path).st_size != 0:
+            with open(self.configuration_path) as json_configuration:
+                dict = json.load(json_configuration)
+                configuration = Configuration(dict)
+        else:
+            pt("Configuration problem", "Configuration has nothing")
         return configuration
 
 class Configuration():
