@@ -103,20 +103,22 @@ class Settings():
         return configuration
 
     def load_actual_configuration(self):
-
         """
-        :return:
+        :return: configuration
         """
         # TODO (@gabvaztor) DOCS
         configuration = None
         create_directory_from_fullpath(self.configuration_path)
         create_file_from_fullpath(self.configuration_path)
-        if os.stat(self.configuration_path).st_size != 0:
-            with open(self.configuration_path) as json_configuration:
-                dict = json.load(json_configuration)
-                configuration = Configuration(dict)
-        else:
-            pt("Configuration problem", "Configuration has nothing")
+        try:
+            if os.stat(self.configuration_path).st_size != 0:
+                with open(self.configuration_path) as json_configuration:
+                    dict = json.load(json_configuration)
+                    configuration = Configuration(dict)
+        except Exception:
+            input("Configuration problem: There is not a Configuration json file or this has nothing. Press Ok to"
+                  "continue the execution and the file will be created automatically or stop the program and create for"
+                  "your own")
         return configuration
 
 class Configuration():

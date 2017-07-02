@@ -130,7 +130,9 @@ class TFModels():
                 self.settings_object.load_actual_configuration())
         if self._save_model_configuration:
             # Save model configuration in a json file
+            pt("Saving model configuration...")
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
+            pt("Model configuration has been saved")
 
     @property
     def num_epochs_count(self): return self._num_epochs_count
@@ -506,39 +508,41 @@ class TFModels():
         Load previous configuration to class Model (self).
         
         This will update all class' attributes with the configuration in a json file.
+        
+        If configuration is None, the file will be created after this method if save_configuration attribute is True
         :param configuration: the json class 
         """
-        # TODO Add to docs WHEN it is necessary to add more attributes
-        self._restore_model = configuration._restore_model
-        self._save_model = configuration._save_model_information
-        self._ask_to_save_model = configuration._ask_to_save_model_information
-        self._show_info = configuration._show_info
-        self._show_images = configuration._show_images
-        self._save_model_configuration = configuration._save_model_configuration
-        self._shuffle_data = configuration._shuffle_data
-        self._input_rows_numbers = configuration._input_rows_numbers
-        self._input_columns_numbers = configuration._input_columns_numbers
-        self._kernel_size = configuration._kernel_size
-        self._epoch_numbers = configuration._epoch_numbers
-        self._batch_size = configuration._batch_size
-        self._input_size = configuration._input_size
-        self._test_size = configuration._test_size
-        self._train_dropout = configuration._train_dropout
-        self._first_label_neurons = configuration._first_label_neurons
-        self._second_label_neurons = configuration._second_label_neurons
-        self._third_label_neurons = configuration._third_label_neurons
-        self._learning_rate = configuration._learning_rate
-        self._trains = configuration._trains
-        self._num_trains_count = configuration._num_trains_count
-        self._num_epochs_count = configuration._num_epochs_count
-        pt("Loaded model configuration")
+        if configuration:
+            # TODO Add to docs WHEN it is necessary to add more attributes
+            self._restore_model = configuration._restore_model
+            self._save_model = configuration._save_model_information
+            self._ask_to_save_model = configuration._ask_to_save_model_information
+            self._show_info = configuration._show_info
+            self._show_images = configuration._show_images
+            self._save_model_configuration = configuration._save_model_configuration
+            self._shuffle_data = configuration._shuffle_data
+            self._input_rows_numbers = configuration._input_rows_numbers
+            self._input_columns_numbers = configuration._input_columns_numbers
+            self._kernel_size = configuration._kernel_size
+            self._epoch_numbers = configuration._epoch_numbers
+            self._batch_size = configuration._batch_size
+            self._input_size = configuration._input_size
+            self._test_size = configuration._test_size
+            self._train_dropout = configuration._train_dropout
+            self._first_label_neurons = configuration._first_label_neurons
+            self._second_label_neurons = configuration._second_label_neurons
+            self._third_label_neurons = configuration._third_label_neurons
+            self._learning_rate = configuration._learning_rate
+            self._trains = configuration._trains
+            self._num_trains_count = configuration._num_trains_count
+            self._num_epochs_count = configuration._num_epochs_count
+            pt("Loaded model configuration")
 
     def _save_model_configuration_to_json(self, fullpath, attributes_to_delete=None, *args, **kwargs):
         """
         Save actual model configuration (with some attributes) in a json file.
         :param attributes_to_delete: represent witch attributes set must not be save in json file.
         """
-        pt("Saving model...")
         type_file = kwargs["type_file"]
         test_accuracy = ""
         if "test_accuracy" in kwargs:
@@ -549,7 +553,6 @@ class TFModels():
         filepath = create_historic_folder(fullpath, type_file, test_accuracy)
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  filepath)
-        pt("Model configuration has been saved")
         return filepath
 
     def load_and_restore_model(self, session):
@@ -668,6 +671,7 @@ class TFModels():
         if self.settings_object.model_path:
             try:
                 saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
+                pt("Saving model information...")
                 filepath = self._save_model_configuration_to_json(
                     fullpath=self.settings_object.information_path,
                     attributes_to_delete=Constant.attributes_to_delete_information,
@@ -777,13 +781,21 @@ class TFModels():
         pt("2",self.epoch_numbers)
         pt("3",self.num_trains_count)
         pt("4",self.trains)
-        asd
+
+        # Update test feeds ( will be not modified during training)
+        feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
+        # Update real num_train:
+        # TODO (@gabvaztor) Define well how much is num_train_start
+        num_train_start = int(self.num_trains_count % self.trains)
+        if num_train_start == self.trains:
+            num_train_start = 0
+        pt("num_train_start", num_train_start)
+        asf
         # START  TRAINING
-        for epoch in range(self.num_epochs_count, self.epoch_numbers, 1):  # Start with load value o r 0
-            for num_train in range(self.num_trains_count, self.trains, 1):  # Start with load value or 0
+        for epoch in range(self.num_epochs_count, self.epoch_numbers):  # Start with load value or 0
+            for num_train in range(num_train_start, self.trains):  # Start with load value or 0
                 # Update feeds
                 feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
-                feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
                 feed_dict_train_50 = {x: self.input_batch, y_labels: self.label_batch,
                                       keep_probably: self.train_dropout}
                 # Setting values
@@ -816,16 +828,15 @@ class TFModels():
                     pt('self.index_buffer_data', self.index_buffer_data)
                 # Update num_trains_count and num_epoch_count
                 self.num_trains_count += 1
-                self.num_epochs_count = epoch
-                pt("1", self.num_epochs_count)
-                pt("2", self.epoch_numbers)
-                pt("3", self.num_trains_count)
-                pt("4", self.trains)
+                pt("num_train", num_train)
+                pt("trains", self.trains)
+                if num_train+1 == self.trains: # +1 because start in 0
+                    self.num_epochs_count+=1
                 # Update batches values
                 self.update_batch()
-                if self.epoch_numbers % 50 == 0:
+                if self.num_epochs_count % 25 == 0 and self.num_epochs_count != 0:
+                    # To decrement learning rate during training
                     self.learning_rate = self.learning_rate / 10
-
                 self._save_json_configuration(Constant.attributes_to_delete_configuration)
 
         pt('END TRAINING ')
