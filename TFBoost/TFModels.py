@@ -86,32 +86,32 @@ class TFModels():
         self._input_batch = None
         self._label_batch = None
         # CONFIGURATION VARIABLES
-        self._restore_model = 0  # Labels and logits info.
+        self._restore_model = True  # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
-        self._show_info = False  # Labels and logits info.
+        self._show_advanced_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
-        self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path
-        self._shuffle_data = True
+        self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path.
+        self._shuffle_data = True  # If True, then the train and validation data will be shuffled separately.
+        self._save_graphs_images = True #  If True, then save graphs images from statistical values.
         # TRAIN MODEL VARIABLES
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
-        self._epoch_numbers = 150  # Epochs number
-        self._batch_size = 64  # Batch size
+        self._epoch_numbers = 30 # Epochs number
+        self._batch_size = 100  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
-        self._train_dropout = 0.4  # Keep probably to dropout to avoid overfitting
-        self._first_label_neurons = 35
+        self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
+        self._first_label_neurons = 50
         self._second_label_neurons = 55
         self._third_label_neurons = 50
         self._learning_rate = 1e-3  # Learning rate
         self._trains = int(self.input_size / self.batch_size) + 1
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training
-        self._num_trains_count = 0
-        self._num_epochs_count = 0
-        # TODO(@gabvaztor) add validation_accuracy to training
+        self._num_trains_count = 1
+        self._num_epochs_count = 1
         self._train_accuracy = None
         self._validation_accuracy = None
         self._test_accuracy = None
@@ -125,9 +125,12 @@ class TFModels():
         # SAVE AND LOAD MODEL
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
-            pt("Loading model configuration", self.settings_object.configuration_path)
-            self._load_model_configuration(
-                self.settings_object.load_actual_configuration())
+            # TODO (@gabvaztor) Ask if you want to continuous if you will don't restore tensorflow model
+            # And restore time too.
+            if self.restore_model:
+                # input("You will load model configuration but no restore the tensorflow model, do you want to continue?")
+                pt("Loading model configuration", self.settings_object.configuration_path)
+                self._load_model_configuration(self.settings_object.load_actual_configuration())
         if self._save_model_configuration:
             # Save model configuration in a json file
             pt("Saving model configuration...")
@@ -159,10 +162,10 @@ class TFModels():
     def label_batch(self, value): self._label_batch = value
 
     @property
-    def show_info(self): return self._show_info
+    def show_advanced_info(self): return self._show_advanced_info
 
-    @show_info.setter
-    def show_info(self, value): self._show_info = value
+    @show_advanced_info.setter
+    def show_advanced_info(self, value): self._show_advanced_info = value
 
     @property
     def save_model_information(self): return self._save_model_information
@@ -517,7 +520,7 @@ class TFModels():
             self._restore_model = configuration._restore_model
             self._save_model = configuration._save_model_information
             self._ask_to_save_model = configuration._ask_to_save_model_information
-            self._show_info = configuration._show_info
+            self._show_info = configuration._show_advanced_info
             self._show_images = configuration._show_images
             self._save_model_configuration = configuration._save_model_configuration
             self._shuffle_data = configuration._shuffle_data
@@ -534,8 +537,11 @@ class TFModels():
             self._third_label_neurons = configuration._third_label_neurons
             self._learning_rate = configuration._learning_rate
             self._trains = configuration._trains
-            self._num_trains_count = configuration._num_trains_count
-            self._num_epochs_count = configuration._num_epochs_count
+            # If you don't restore model then you won't load train number and epochs number
+            if self.restore_model:
+                self._num_trains_count = configuration._num_trains_count
+                self._num_epochs_count = configuration._num_epochs_count
+                self._index_buffer_data = configuration._index_buffer_data
             pt("Loaded model configuration")
 
     def _save_model_configuration_to_json(self, fullpath, attributes_to_delete=None, *args, **kwargs):
@@ -576,11 +582,12 @@ class TFModels():
                     saver.restore(session, model_possible_1)
                     pt("Model restored without problems")
                 else:
-                    pt(Errors.error, Errors.can_not_restore_model_because_path_not_exists)
-                    input("Reset the execution")
+                    response = recurrent_ask_to_continue_without_load_model()
+                    if not response:
+                        raise Exception()
             except Exception as e:
                 pt(Errors.error, e)
-                input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
+                raise Exception(Errors.error + " " + Errors.can_not_restore_model)
 
     def placeholders(self, *args, **kwargs):
         """
@@ -789,18 +796,17 @@ class TFModels():
         num_train_start = int(self.num_trains_count % self.trains)
         if num_train_start == self.trains:
             num_train_start = 0
-        pt("num_train_start", num_train_start)
-        asf
         # START  TRAINING
         for epoch in range(self.num_epochs_count, self.epoch_numbers):  # Start with load value or 0
             for num_train in range(num_train_start, self.trains):  # Start with load value or 0
                 # Update feeds
                 feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
-                feed_dict_train_50 = {x: self.input_batch, y_labels: self.label_batch,
+                feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
                                       keep_probably: self.train_dropout}
                 # Setting values
+                # TODO(@gabvaztor) Add validation_accuracy to training
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
-                train_step.run(feed_dict_train_50)
+                train_step.run(feed_dict_train_dropout)
                 self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
                 cross_entropy_test = cross_entropy.eval(feed_dict_test_100)
@@ -811,34 +817,36 @@ class TFModels():
                 loss_train.append(cross_entropy_train)
                 loss_test.append(cross_entropy_test)
 
-                if self.should_save():
-                    filepath_save = self.save(saver=saver,session=sess)
-                # TODO Use validation set
-                if self.show_info:
-                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
-                                                   feed_dict=feed_dict_train_100)
                 if num_train % 10 == 0:
                     percent_advance = str(num_train * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
-                    pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' +
-                       str(epoch + 1) + ": " + percent_advance + '%')
+                    pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
+                       str(epoch) + ": " + percent_advance + '%')
                     pt('train_accuracy', self.train_accuracy)
                     pt('cross_entropy_train', cross_entropy_train)
                     pt('test_accuracy', self.test_accuracy)
                     pt('self.index_buffer_data', self.index_buffer_data)
+
+                # Update indexes
+                # Update num_epochs_counts
+                if num_train +1 == self.trains:  # +1 because start in 0
+                    self.num_epochs_count += 1
+                # To decrement learning rate during training
+                if self.num_epochs_count % 2 == 0 and self.num_epochs_count != 1 and self.index_buffer_data == 0:
+                    self.learning_rate = self.learning_rate / 10
+
+                if self.should_save():
+                    filepath_save = self.save(saver=saver, session=sess)
+                if self.show_advanced_info:
+                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
+                                                   feed_dict=feed_dict_train_100)
+
                 # Update num_trains_count and num_epoch_count
                 self.num_trains_count += 1
-                pt("num_train", num_train)
-                pt("trains", self.trains)
-                if num_train+1 == self.trains: # +1 because start in 0
-                    self.num_epochs_count+=1
                 # Update batches values
                 self.update_batch()
-                if self.num_epochs_count % 25 == 0 and self.num_epochs_count != 0:
-                    # To decrement learning rate during training
-                    self.learning_rate = self.learning_rate / 10
+                # Save configuration to that results
                 self._save_json_configuration(Constant.attributes_to_delete_configuration)
-
         pt('END TRAINING ')
         self.show_statistics(accuracies_train=accuracies_train,accuracies_test=accuracies_test,
                              loss_train=loss_train,loss_test=loss_test, folder_to_save=filepath_save)

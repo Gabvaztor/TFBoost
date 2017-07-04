@@ -69,7 +69,12 @@ class Dictionary(object):
     # Gray scale
     string_gray_scale = 'gray_scale'
     # Want to save model
-    string_want_to_save = "Do you want to save the model? Press 'Y' to Yes or 'N' to No: \n Answer:"
+    string_want_to_save = "Do you want to save the model?"
+    #
+    string_want_to_continue_without_load = "You select 'restore model' but model doesn't exist," \
+                                           " do you want to continue without loading a model?"
+    # Answer
+    string_get_response = "Press 'Y' to Yes or 'N' to No:"
     # Char Y
     string_char_Y = "Y"
     # Char N
@@ -144,12 +149,12 @@ class Constant(object):
     # TODO (@gabvaztor) Delete all not necessaries attributes. Document
     # attributes_to_delete: represent witch attributes set must not be save in json file when save information.
     attributes_to_delete_information = ["_input", "_test", "_input_labels", "_test_labels",
-                                        "_index_buffer_data", "_settings_object", "_save_model_configuration",
-                                        "_show_images","_show_info", "_save_model_information",
+                                        "_settings_object", "_save_model_configuration",
+                                        "_show_images","_show_advanced_info", "_save_model_information",
                                         "_ask_to_save_model_information", "_input_batch", "_label_batch"]
     # attributes_to_delete: represent witch attributes set must not be save in json file when save configuration.
     attributes_to_delete_configuration = ["_input", "_test", "_input_labels", "_test_labels",
-                                          "_index_buffer_data", "_settings_object", "_test_accuracy",
+                                          "_settings_object", "_test_accuracy",
                                           "_train_accuracy", "_input_batch", "_label_batch"]
 
 

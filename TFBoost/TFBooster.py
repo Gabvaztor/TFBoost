@@ -98,13 +98,6 @@ import pandas as pd
 # --------------------------------------------------------------------------
 """
 
-isAnUniqueCSV = True  # If this variable is true, then only one CSV file will be passed and it will be treated like trainSet, validationSet and testSet
-knownDataType = ''  # Contains the type of data if the data file contains an unique type of data. Examples: Number or Chars.
-
-trainSetCSV = ''
-validationSetCSV = ''
-testSetCSV = ''
-
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -126,19 +119,10 @@ testSetCSV = ''
 """
 Creating Reader Features
 """
-csvList = []
-csvList.append(Dictionary.path_Breast_Cancer_Wisconsin)  # Example
-percentagesSets = [0.5,0.3,0.2]  # Example
-labelsSet = [Dictionary.label_column_name_Breast_Cancer_Wisconsin]
-
-tfReaderFeatures = tfr.ReaderFeatures(set_data_files = csvList,number_of_classes = 2,labels_set = labelsSet,
-                                      is_unique_csv = isAnUniqueCSV,known_data_type = knownDataType,
-                                      percentages_sets = percentagesSets)
 
 """
 Creating Reader from ReaderFeatures
 """
-tfReader = tfr.Reader(reader_features = tfReaderFeatures)  # Reader Object with all information
 
 """
 # --------------------------------------------------------------------------
@@ -162,17 +146,3 @@ tfReader = tfd.DataMining(tfReader,chooses)
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 """
-
-"""
-Getting train, validation (if necessary) and test set.
-"""
-
-trainSet = tfReader.trainSet  # Train Set
-validationSet = tfReader.validationSet  # Validation Set
-testSet = tfReader.testSet  # Test Set
-
-init = tf.global_variables_initializer()
-sess = tf.InteractiveSession()
-sess.run(init)
-
-# TODO Make TFModels heritable and with capability to return section of tensorflow code
