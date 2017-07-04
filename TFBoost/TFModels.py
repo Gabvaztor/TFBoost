@@ -74,9 +74,7 @@ class TFModels():
                  option_problem=None,type=None, validation=None, validation_labels=None,
                  load_model_configuration=False):
         # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
-        # TODO(@gabvaztor) Ask if want save graphs images (attribute)
         # TODO(@gabvaztor) Ask if want print in console when save information (attribute)
-        # TODO(@gabvaztor) Save in information file the train number and percent epoch X (attribute)
         self._input = input
         self._test = test
         self._input_labels = input_labels
@@ -149,6 +147,12 @@ class TFModels():
 
     @num_epochs_count.setter
     def num_epochs_count(self, value): self._num_epochs_count = value
+
+    @property
+    def save_graphs_images(self): return self._save_graphs_images
+
+    @save_graphs_images.setter
+    def save_graphs_images(self, value): self._save_graphs_images = value
 
     @property
     def options(self): return self._options
@@ -718,7 +722,8 @@ class TFModels():
             folder = get_directory_from_filepath(folder_to_save)
             filename = get_filename_from_filepath(folder_to_save)
             complete_name = folder+filename+"_graph_accuracy"+Dictionary.string_extension_png
-            plt.savefig(complete_name)
+            if self.save_graphs_images:
+                plt.savefig(complete_name)
         if accuracies_train or accuracies_validation or accuracies_test:
             accuracy_plot.show()
 
@@ -737,7 +742,8 @@ class TFModels():
             folder = get_directory_from_filepath(folder_to_save)
             filename = get_filename_from_filepath(folder_to_save)
             complete_name = folder+filename+"_graph_loss"+Dictionary.string_extension_png
-            plt.savefig(complete_name)
+            if self.save_graphs_images:
+                plt.savefig(complete_name)
     def print_actual_configuration(self):
         """
         Print all attributes to console
