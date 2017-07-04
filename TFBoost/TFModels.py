@@ -75,6 +75,7 @@ class TFModels():
                  load_model_configuration=False):
         # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
         # TODO(@gabvaztor) Ask if want print in console when save information (attribute)
+        # TODO(@gabvaztor) Show and save graphs during all training asking before
         self._input = input
         self._test = test
         self._input_labels = input_labels
