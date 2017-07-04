@@ -107,6 +107,7 @@ class TFModels():
         self._second_label_neurons = 55
         self._third_label_neurons = 50
         self._learning_rate = 1e-3  # Learning rate
+        self._number_epoch_to_change_learning_rate = 2
         self._trains = int(self.input_size / self.batch_size) + 1
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training
@@ -136,6 +137,12 @@ class TFModels():
             pt("Saving model configuration...")
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
             pt("Model configuration has been saved")
+
+    @property
+    def number_epoch_to_change_learning_rate(self): return self._number_epoch_to_change_learning_rate
+
+    @number_epoch_to_change_learning_rate.setter
+    def number_epoch_to_change_learning_rate(self, value): self._number_epoch_to_change_learning_rate = value
 
     @property
     def num_epochs_count(self): return self._num_epochs_count
@@ -220,7 +227,7 @@ class TFModels():
     def settings_object(self, value): self._settings_object = value
 
     @property
-    def learning_rate(self): return self._learning_rate
+    def learning_rate(self): return float("{0:.5f}".format(self._learning_rate))
 
     @learning_rate.setter
     def learning_rate(self, value): self._learning_rate = value
@@ -537,6 +544,7 @@ class TFModels():
             self._third_label_neurons = configuration._third_label_neurons
             self._learning_rate = configuration._learning_rate
             self._trains = configuration._trains
+            self._number_epoch_to_change_learning_rate = configuration._number_epoch_to_change_learning_rate
             # If you don't restore model then you won't load train number and epochs number
             if self.restore_model:
                 self._num_trains_count = configuration._num_trains_count
@@ -832,8 +840,9 @@ class TFModels():
                 if num_train +1 == self.trains:  # +1 because start in 0
                     self.num_epochs_count += 1
                 # To decrement learning rate during training
-                if self.num_epochs_count % 2 == 0 and self.num_epochs_count != 1 and self.index_buffer_data == 0:
-                    self.learning_rate = self.learning_rate / 10
+                if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
+                        and self.num_epochs_count != 1 and self.index_buffer_data == 0:
+                    self.learning_rate = float(self.learning_rate / 10.)
 
                 if self.should_save():
                     filepath_save = self.save(saver=saver, session=sess)
