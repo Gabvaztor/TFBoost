@@ -48,10 +48,6 @@ class Dictionary(object):
     string_path_Breast_Cancer_Wisconsin = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
     # Data.csv Label Column name
     string_label_column_name_Breast_Cancer_Wisconsin = 'diagnosis'
-    # Signal University path train
-    string_path_signals_university_signal_train = 'D:\\UniversityResearching\\DITS-classification\\classification_train\\'
-    # Signal University path test
-    string_path_signals_university_signal_test = 'D:\\UniversityResearching\\DITS-classification\\classification_test\\'
     # Hierarchy option
     string_labels_type_option_hierarchy = 'hierarchy'
     # Format png
@@ -60,6 +56,10 @@ class Dictionary(object):
     string_ckpt_extension = '.ckpt'
     # Format meta
     string_meta_extension = '.meta'
+    # Format npy (numpy)
+    string_npy_extension = '.npy'
+    # Format zip
+    string_zip_extension = '.zip'
     # Train String
     string_train = 'train'
     # Test String
@@ -79,6 +79,7 @@ class Dictionary(object):
     string_char_Y = "Y"
     # Char N
     string_char_N = "N"
+
     """
     STRINGS PROBLEMS
     
@@ -89,6 +90,15 @@ class Dictionary(object):
     string_settings_sberbank_russian_houssing_market_path = "../Settings/Sberbank_Russian_Houssing_Market/SETTINGS.json"
 
     string_settings_german_signal_path = "../Settings/German_Signal/SETTINGS.json"
+
+    """
+    STRING FILENAMES
+    """
+    """ NUMPY"""
+    filename_train_accuracies = "train_accuracies"
+    filename_validation_accuracies = "validation_accuracies"
+    filename_train_losses = "train_losses"
+    filename_validation_losses = "validation_losses"
 
     """
     STRINGS OPTIONS

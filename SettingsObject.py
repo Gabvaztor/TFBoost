@@ -3,8 +3,6 @@ This class is used in kaggle competitions
 """
 
 import json
-import os
-from TFBoost.TFEncoder import Dictionary
 from UsefulTools.UtilsFunctions import *
 
 class Settings():
@@ -14,6 +12,9 @@ class Settings():
     _submission_path = "D:\\"
     _configuration_path = "D:\\"
     _information_path= "D:\\"
+    _accuracies_losses_path= ""
+    _history_information_path = ""
+    _history_configuration_path = ""
     _path = "SETTINGS.json"
     string_train_path = "TRAIN_DATA_PATH"
     string_test_path = "TEST_DATA_PATH"
@@ -21,7 +22,11 @@ class Settings():
     string_submission_path = "SUBMISSION_PATH"
     string_configuration_path = "CONFIGURATION_PATH"
     string_information_path = "INFORMATION_PATH"
+    string_accuracies_losses_path = "ACCURACIES_LOSSES_PATH"
+    string_history_information_path = "HISTORY_INFORMATION_PATH"
+    string_history_configuration_path = "HISTORY_CONFIGURATION_PATH"
 
+    # TODO (@gabvaztor) Configure with new paths
     @property
     def train_path(self): return self._train_path
 
@@ -64,6 +69,24 @@ class Settings():
     @path.setter
     def path(self, value): self._path = value
 
+    @property
+    def accuracies_losses_path(self): return self._accuracies_losses_path
+
+    @accuracies_losses_path.setter
+    def accuracies_losses_path(self, value): self._accuracies_losses_path=value
+
+    @property
+    def history_information_path(self): return self._history_information_path
+
+    @history_information_path.setter
+    def history_information_path(self, value): self._history_information_path=value
+
+    @property
+    def history_configuration_path(self): return self._history_configuration_path
+
+    @history_configuration_path.setter
+    def history_configuration_path(self, value): self._history_configuration_path=value
+
     def __init__(self, path):
         self._path = path
         self._load_settings()
@@ -87,6 +110,9 @@ class Settings():
             self.submission_path=settings[self.string_submission_path]
             self.configuration_path=settings[self.string_configuration_path]
             self.information_path=settings[self.string_information_path]
+            self.accuracies_losses_path=settings[self.string_accuracies_losses_path]
+            self.history_information_path=settings[self.string_history_information_path]
+            self.history_configuration_path=settings[self.string_history_configuration_path]
 
     def load_actual_information(self):
         """

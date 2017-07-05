@@ -76,6 +76,8 @@ class TFModels():
         # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
         # TODO(@gabvaztor) Ask if want print in console when save information (attribute)
         # TODO(@gabvaztor) Show and save graphs during all training asking before
+        # NOTE: IF YOU LOAD_MODEL_CONFIGURATION AND CHANGE SOME TENSORFLOW ATTRIBUTE AS NEURONS, THE TRAIN ACCURACY
+        # WILL START AGAIN
         self._input = input
         self._test = test
         self._input_labels = input_labels
@@ -101,8 +103,8 @@ class TFModels():
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
-        self._epoch_numbers = 30 # Epochs number
-        self._batch_size = 100  # Batch size
+        self._epoch_numbers = 130 # Epochs number
+        self._batch_size = 10  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
@@ -110,7 +112,7 @@ class TFModels():
         self._second_label_neurons = 55
         self._third_label_neurons = 50
         self._learning_rate = 1e-3  # Learning rate
-        self._number_epoch_to_change_learning_rate = 6
+        self._number_epoch_to_change_learning_rate = 15
         self._trains = int(self.input_size / self.batch_size) + 1 # Total number of trains for epoch
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training
@@ -119,6 +121,12 @@ class TFModels():
         self._train_accuracy = None
         self._validation_accuracy = None
         self._test_accuracy = None
+        # RESTART TRAINING
+        self._save_and_restart = True  # All history and metadata will be saved in a different folder and the execution
+        # will be restarted
+
+        if self.save_and_restart:
+            save_and_restart(self.settings_object.model_path)
         # OPTIONS
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
@@ -129,7 +137,6 @@ class TFModels():
         # SAVE AND LOAD MODEL
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
-            # TODO (@gabvaztor) Ask if you want to continuous if you will don't restore tensorflow model
             # And restore time too.
             if self.restore_model:
                 # input("You will load model configuration but no restore the tensorflow model, do you want to continue?")
@@ -153,6 +160,12 @@ class TFModels():
 
     @number_epoch_to_change_learning_rate.setter
     def number_epoch_to_change_learning_rate(self, value): self._number_epoch_to_change_learning_rate = value
+
+    @property
+    def save_and_restart(self): return self._save_and_restart
+
+    @save_and_restart.setter
+    def save_and_restart(self, value): self._save_and_restart = value
 
     @property
     def num_epochs_count(self): return self._num_epochs_count
@@ -544,7 +557,7 @@ class TFModels():
         :param configuration: the json class 
         """
         if configuration:
-            # TODO Add to docs WHEN it is necessary to add more attributes
+            # TODO Add to docs WHEN it is necessary to add more attributes = Do documentation
             self._restore_model = configuration._restore_model
             self._save_model = configuration._save_model_information
             self._ask_to_save_model = configuration._ask_to_save_model_information
@@ -569,6 +582,7 @@ class TFModels():
             self._save_graphs_images = configuration._save_graphs_images
             self._ask_to_continue_creating_model_without_exist = \
                 configuration._ask_to_continue_creating_model_without_exist
+            self._ask_to_save_model_information = configuration._ask_to_save_model_information
             # If you don't restore model then you won't load train number and epochs number
             if self.restore_model:
                 self._num_trains_count = configuration._num_trains_count
@@ -732,13 +746,13 @@ class TFModels():
         """
         Show all necessary visual and text information.
         """
+        if is_new_epoch_flag:
+            accuracies_train, accuracies_validation, accuracies_test, \
+            loss_train, loss_validation, loss_test = preprocess_lists([accuracies_train, accuracies_validation,
+                                                                       accuracies_test, loss_train, loss_validation,
+                                                                       loss_test], index_to_eliminate=2)
 
-        accuracies_train, accuracies_validation, accuracies_test, \
-        loss_train, loss_validation, loss_test = preprocess_lists([accuracies_train, accuracies_validation,
-                                                                   accuracies_test, loss_train, loss_validation,
-                                                                   loss_test], index_to_eliminate=2)
-
-        # TODO Think about how save the file with information and configuration files.
+        # TODO How save the file with information and configuration files.
         accuracy_plot = plt.figure(0)
         plt.title(str(self.options[0]))
         plt.xlabel("ITERATIONS | Batch Size=" + str(self.batch_size) + " | Trains for epoch: " + str(self.trains))
@@ -790,7 +804,7 @@ class TFModels():
                                                                                 batch_size=self.batch_size,
                                                                                 is_test=False,
                                                                                 options=self.options)
-        else:
+        elif is_test:
             x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
                                                                   inputs_labels=self.test_labels,
                                                                   shuffle_data=self.shuffle_data,
@@ -819,17 +833,18 @@ class TFModels():
 
         # TO STATISTICS
         accuracies_train = []
-        accuracies_validation = []
         accuracies_test = []
         loss_train = []
-        loss_validation = []
         loss_test = []
+
+        # To load accuracies and losses
+        if self.restore_model:
+            # TODO (@gabvaztor) Finish this when finish Setting object with new paths
+            accuracies_train, accuracies_test, loss_train, loss_test = load_accuracies_and_losses(
+                self.settings_object.accuracies_losses_path)
+
         # Folders and file where information and configuration files will be saved.
-        filepath_save = self
-        pt("1",self.num_epochs_count)
-        pt("2",self.epoch_numbers)
-        pt("3",self.num_trains_count)
-        pt("4",self.trains)
+        filepath_save = None
 
         # Update test feeds ( will be not modified during training)
         feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
@@ -855,11 +870,18 @@ class TFModels():
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
                 cross_entropy_test = cross_entropy.eval(feed_dict_test_100)
 
+                # TODO All accuracies and losses must be saved and loaded when restore_model for graphs
                 # To generate statistics
                 accuracies_train.append(self.train_accuracy)
                 accuracies_test.append(self.test_accuracy)
                 loss_train.append(cross_entropy_train)
                 loss_test.append(cross_entropy_test)
+                with tf.device('/cpu:1'):
+                    save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
+                                                        train_accuracies=accuracies_train,
+                                                        validation_accuracies=accuracies_test,
+                                                        train_losses=loss_train,
+                                                        validation_losses=loss_test)
 
                 if num_train % 10 == 0:
                     percent_advance = str(num_train * 100 / self.trains)

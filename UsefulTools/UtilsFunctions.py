@@ -18,6 +18,12 @@ import time
 '''OS'''
 import os
 
+"""Numpy"""
+import numpy as np
+
+""" Shutil for copy and moves files"""
+from shutil import *
+
 def pt(title=None, text=None):
     """
     Use the print function to print a title and an object coverted to string
@@ -157,6 +163,7 @@ def create_directory_from_fullpath(fullpath):
     directory = os.path.dirname(fullpath)
     if not os.path.exists(directory):
         os.makedirs(directory)
+    return directory
 
 def create_file_from_fullpath(fullpath):
     """
@@ -179,7 +186,8 @@ def create_historic_folder(filepath, type_file, test_accuracy=""):
     low_stripe = ""
     if test_accuracy and test_accuracy is not "":
         low_stripe = "_"
-    information_folder = "\\history_information\\" + type_file + "\\" + str(test_accuracy) + low_stripe + actual_time + "\\"
+    information_folder = "\\History_Information\\" + type_file + "\\" + str(test_accuracy) + low_stripe + \
+                         actual_time + "\\"
     folder = directory+information_folder
     create_directory_from_fullpath(folder)
     return folder+filename
@@ -207,4 +215,63 @@ def preprocess_lists(lists, index_to_eliminate=2):
             processed_lists.append(list_to_process)
     return processed_lists
 
+def save_accuracies_and_losses_training(folder_to_save, train_accuracies, validation_accuracies, train_losses,
+                                        validation_losses):
+    """
+    Save the accuracies and losses into a type_file folder
+    :param folder_to_save: 
+    :param train_accuracies: 
+    :param validation_accuracies: 
+    :param train_losses: 
+    :param validation_losses:
+    :param type_file: folder to save
+    """
+    # TODO (@gabvaztor) finish DOcs
 
+    filename_train_accuracies = Dictionary.filename_train_accuracies
+    filename_validation_accuracies = Dictionary.filename_validation_accuracies
+    filename_train_losses = Dictionary.filename_train_losses
+    filename_validation_losses = Dictionary.filename_validation_losses
+    create_directory_from_fullpath(folder_to_save)
+    np.save(folder_to_save + filename_train_accuracies, train_accuracies)
+    np.save(folder_to_save + filename_validation_accuracies, validation_accuracies)
+    np.save(folder_to_save + filename_train_losses, train_losses)
+    np.save(folder_to_save + filename_validation_losses, validation_losses)
+
+def load_accuracies_and_losses(path_to_load):
+    """
+    
+    :param path_to_load: path to load the numpy accuracies and losses
+    :return: accuracies_train, accuracies_validation, loss_train, loss_validation
+    """
+    # TODO (@gabvaztor) Docs
+
+    npy_extension = Dictionary.string_npy_extension
+    filename_train_accuracies = Dictionary.filename_train_accuracies+npy_extension
+    filename_validation_accuracies = Dictionary.filename_validation_accuracies+npy_extension
+    filename_train_losses = Dictionary.filename_train_losses+npy_extension
+    filename_validation_losses = Dictionary.filename_validation_losses+npy_extension
+
+    accuracies_train = list(np.load(path_to_load+filename_train_accuracies))
+    accuracies_validation = list(np.load(path_to_load+filename_validation_accuracies))
+    loss_train = list(np.load(path_to_load+filename_train_losses))
+    loss_validation = list(np.load(path_to_load+filename_validation_losses))
+
+    return accuracies_train, accuracies_validation, loss_train, loss_validation
+
+def save_and_restart(path_to_backup):
+    """
+    Save and restart all progress
+    :param path_to_backup: Path to do a backup and save it in a different folder
+    """
+    actual_time = str(time.strftime("%Y-%m-%d_%Hh%Mm%Ss", time.gmtime(time.time())))
+    to_copy = get_directory_from_filepath(path_to_backup) + "\\"
+    to_paste = get_directory_from_filepath(get_directory_from_filepath(to_copy)) + "\\" + "Models_Backup(" + actual_time + ")"
+    pt("Doing Models backup ...")
+    # Do backup
+    make_archive(to_paste, 'zip',  to_copy)
+    pt("Backup done successfully")
+    # Do remove
+    pt("Removing Models folder...")
+    rmtree(to_copy)
+    pt("Models removed successfully")
