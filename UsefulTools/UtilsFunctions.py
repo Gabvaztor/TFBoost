@@ -190,8 +190,21 @@ def get_directory_from_filepath(filepath):
 def get_filename_from_filepath(filepath):
     return os.path.basename(filepath)
 
-
-
-
+def preprocess_lists(lists, index_to_eliminate=2):
+    """
+    Preprocess each list reducing between x(=2 by defect) the number of samples 
+    :param lists: Amount of lists to be reduced
+    :param index_to_eliminate: represent which index module must be deleted to the graph. For example, if 
+    list len is 60 and 'index_to_eliminate' is 2, then all element with a pair index will be eliminated, remaining 30.
+    :return: Process_lists
+    """
+    processed_lists = []
+    for list_to_process in lists:
+        if list_to_process and len(list_to_process)>index_to_eliminate:
+            process_list = [i for i in list_to_process if list_to_process.index(i) % index_to_eliminate == 0]
+            processed_lists.append(process_list)
+        else:
+            processed_lists.append(list_to_process)
+    return processed_lists
 
 

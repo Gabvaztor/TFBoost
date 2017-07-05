@@ -88,11 +88,15 @@ class TFModels():
         self._restore_model = True  # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
+        self._ask_to_continue_creating_model_without_exist = False  # If True and 'restore_model' is True,
+        # ask to continus save model at first if there isn't a model to restore
         self._show_advanced_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
         self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path.
         self._shuffle_data = True  # If True, then the train and validation data will be shuffled separately.
-        self._save_graphs_images = True #  If True, then save graphs images from statistical values.
+        self._save_graphs_images = False #  If True, then save graphs images from statistical values. NOTE that this will
+        # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
+        # the framework will save a graph
         # TRAIN MODEL VARIABLES
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
@@ -106,8 +110,8 @@ class TFModels():
         self._second_label_neurons = 55
         self._third_label_neurons = 50
         self._learning_rate = 1e-3  # Learning rate
-        self._number_epoch_to_change_learning_rate = 2
-        self._trains = int(self.input_size / self.batch_size) + 1
+        self._number_epoch_to_change_learning_rate = 6
+        self._trains = int(self.input_size / self.batch_size) + 1 # Total number of trains for epoch
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training
         self._num_trains_count = 1
@@ -136,6 +140,13 @@ class TFModels():
             pt("Saving model configuration...")
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
             pt("Model configuration has been saved")
+
+    @property
+    def ask_to_continue_creating_model_without_exist(self): return self._ask_to_continue_creating_model_without_exist
+
+    @ask_to_continue_creating_model_without_exist.setter
+    def ask_to_continue_creating_model_without_exist(self, value):
+        self._ask_to_continue_creating_model_without_exist = value
 
     @property
     def number_epoch_to_change_learning_rate(self): return self._number_epoch_to_change_learning_rate
@@ -232,7 +243,7 @@ class TFModels():
     def settings_object(self, value): self._settings_object = value
 
     @property
-    def learning_rate(self): return float("{0:.5f}".format(self._learning_rate))
+    def learning_rate(self): return float("{0:.64f}".format(self._learning_rate))
 
     @learning_rate.setter
     def learning_rate(self, value): self._learning_rate = value
@@ -374,6 +385,11 @@ class TFModels():
 
     @test.setter
     def test(self, value): self._test = value
+
+    def _save_json_configuration(self,attributes_to_delete_configuration):
+        self._save_model_configuration_to_json(self.settings_object.configuration_path,
+                                               attributes_to_delete_configuration,
+                                               type_file="Configuration")
 
     def properties(self, attributes_to_delete=None):
         """
@@ -550,6 +566,9 @@ class TFModels():
             self._learning_rate = configuration._learning_rate
             self._trains = configuration._trains
             self._number_epoch_to_change_learning_rate = configuration._number_epoch_to_change_learning_rate
+            self._save_graphs_images = configuration._save_graphs_images
+            self._ask_to_continue_creating_model_without_exist = \
+                configuration._ask_to_continue_creating_model_without_exist
             # If you don't restore model then you won't load train number and epochs number
             if self.restore_model:
                 self._num_trains_count = configuration._num_trains_count
@@ -595,9 +614,13 @@ class TFModels():
                     saver.restore(session, model_possible_1)
                     pt("Model restored without problems")
                 else:
-                    response = recurrent_ask_to_continue_without_load_model()
-                    if not response:
-                        raise Exception()
+                    if self.ask_to_continue_creating_model_without_exist:
+                        response = recurrent_ask_to_continue_without_load_model()
+                        if not response:
+                            raise Exception()
+                    else:
+                        pt("The model won't load because it doesn't exist",
+                           "You chose 'continue_creating_model_without_exist")
             except Exception as e:
                 pt(Errors.error, e)
                 raise Exception(Errors.error + " " + Errors.can_not_restore_model)
@@ -703,16 +726,22 @@ class TFModels():
         else:
             pt(Errors.error, Errors.model_path_bad_configuration)
 
-    def show_statistics(self, accuracies_train, accuracies_validation=None, accuracies_test=None,
+    def show_save_statistics(self, accuracies_train, accuracies_validation=None, accuracies_test=None,
                         loss_train=None, loss_validation=None, loss_test=None,
-                        folder_to_save=None):
+                        folder_to_save=None, show_graphs=None, is_new_epoch_flag=False):
         """
         Show all necessary visual and text information.
         """
+
+        accuracies_train, accuracies_validation, accuracies_test, \
+        loss_train, loss_validation, loss_test = preprocess_lists([accuracies_train, accuracies_validation,
+                                                                   accuracies_test, loss_train, loss_validation,
+                                                                   loss_test], index_to_eliminate=2)
+
         # TODO Think about how save the file with information and configuration files.
         accuracy_plot = plt.figure(0)
         plt.title(str(self.options[0]))
-        plt.xlabel("ITERATIONS")
+        plt.xlabel("ITERATIONS | Batch Size=" + str(self.batch_size) + " | Trains for epoch: " + str(self.trains))
         plt.ylabel("ACCURACY (BLUE = Train | RED = Validation | GREEN = Test)")
         plt.plot(accuracies_train, 'b')
         if accuracies_validation:
@@ -721,29 +750,27 @@ class TFModels():
             plt.plot(accuracies_test, 'g')
         if folder_to_save:
             folder = get_directory_from_filepath(folder_to_save)
-            filename = get_filename_from_filepath(folder_to_save)
-            complete_name = folder+filename+"_graph_accuracy"+Dictionary.string_extension_png
-            if self.save_graphs_images:
+            complete_name = folder+"\\graph_accuracy"+Dictionary.string_extension_png
+            if self.save_graphs_images or is_new_epoch_flag:
                 plt.savefig(complete_name)
-        if accuracies_train or accuracies_validation or accuracies_test:
+        if (accuracies_train or accuracies_validation or accuracies_test) and show_graphs:
             accuracy_plot.show()
 
         loss_plot = plt.figure(1)
         plt.title("LOSS")
-        plt.xlabel("ITERATIONS ")
+        plt.xlabel("ITERATIONS | Batch Size=" + str(self.batch_size) + " | Trains for epoch: " + str(self.trains))
         plt.ylabel("LOSS (BLUE = Train | RED = Validation | GREEN = Test)")
         plt.plot(loss_train, 'b')
         if loss_validation:
             plt.plot(loss_validation, 'r')
         if loss_test:
             plt.plot(loss_test, 'g')
-        if loss_train or loss_validation or loss_test:
+        if (loss_train or loss_validation or loss_test) and show_graphs:
             loss_plot.show()
         if folder_to_save:
             folder = get_directory_from_filepath(folder_to_save)
-            filename = get_filename_from_filepath(folder_to_save)
-            complete_name = folder+filename+"_graph_loss"+Dictionary.string_extension_png
-            if self.save_graphs_images:
+            complete_name = folder+"\\graph_loss"+Dictionary.string_extension_png
+            if self.save_graphs_images or is_new_epoch_flag:
                 plt.savefig(complete_name)
     def print_actual_configuration(self):
         """
@@ -798,7 +825,7 @@ class TFModels():
         loss_validation = []
         loss_test = []
         # Folders and file where information and configuration files will be saved.
-        filepath_save = None
+        filepath_save = self
         pt("1",self.num_epochs_count)
         pt("2",self.epoch_numbers)
         pt("3",self.num_trains_count)
@@ -811,6 +838,8 @@ class TFModels():
         num_train_start = int(self.num_trains_count % self.trains)
         if num_train_start == self.trains:
             num_train_start = 0
+        is_new_epoch_flag = False  # Represent if training come into a new epoch. With this, a graph will be saved each
+        # new epoch
         # START  TRAINING
         for epoch in range(self.num_epochs_count, self.epoch_numbers):  # Start with load value or 0
             for num_train in range(num_train_start, self.trains):  # Start with load value or 0
@@ -846,16 +875,23 @@ class TFModels():
                 # Update num_epochs_counts
                 if num_train +1 == self.trains:  # +1 because start in 0
                     self.num_epochs_count += 1
+                    is_new_epoch_flag = True
                 # To decrement learning rate during training
                 if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
                         and self.num_epochs_count != 1 and self.index_buffer_data == 0:
                     self.learning_rate = float(self.learning_rate / 10.)
-
                 if self.should_save():
                     filepath_save = self.save(saver=saver, session=sess)
                 if self.show_advanced_info:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
+                with tf.device('/cpu:0'):
+                    if (self.save_graphs_images and filepath_save) or (is_new_epoch_flag and filepath_save):
+                        self.show_save_statistics(accuracies_train=accuracies_train, accuracies_test=accuracies_test,
+                                                  loss_train=loss_train, loss_test=loss_test,
+                                                  folder_to_save=filepath_save, show_graphs=False,
+                                                  is_new_epoch_flag=is_new_epoch_flag)
+                        is_new_epoch_flag = False
 
                 # Update num_trains_count and num_epoch_count
                 self.num_trains_count += 1
@@ -864,13 +900,15 @@ class TFModels():
                 # Save configuration to that results
                 self._save_json_configuration(Constant.attributes_to_delete_configuration)
         pt('END TRAINING ')
-        self.show_statistics(accuracies_train=accuracies_train,accuracies_test=accuracies_test,
+        self.show_save_statistics(accuracies_train=accuracies_train,accuracies_test=accuracies_test,
                              loss_train=loss_train,loss_test=loss_test, folder_to_save=filepath_save)
+        self.make_predictions()
 
-    def _save_json_configuration(self,attributes_to_delete_configuration):
-        self._save_model_configuration_to_json(self.settings_object.configuration_path,
-                                               attributes_to_delete_configuration,
-                                               type_file="Configuration")
+
+
+    def make_predictions(self):
+        pass
+
 
 
 """
