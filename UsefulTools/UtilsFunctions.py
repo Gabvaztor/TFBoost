@@ -180,6 +180,8 @@ def create_historic_folder(filepath, type_file, test_accuracy=""):
     :param filepath: file to save  
     :param type_file: Type of file (Information or Configuration)
     """
+
+    # TODO (gabvaztor) Using new SettingObject path
     actual_time = str(time.strftime("%Y-%m-%d_%Hh%Mm%Ss", time.gmtime(time.time())))
     directory = os.path.dirname(filepath)
     filename = actual_time + "_" + os.path.basename(filepath)

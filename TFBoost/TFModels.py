@@ -73,8 +73,6 @@ class TFModels():
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, setting_object,
                  option_problem=None,type=None, validation=None, validation_labels=None,
                  load_model_configuration=False):
-        # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
-        # TODO(@gabvaztor) Ask if want print in console when save information (attribute)
         # TODO(@gabvaztor) Show and save graphs during all training asking before
         # NOTE: IF YOU LOAD_MODEL_CONFIGURATION AND CHANGE SOME TENSORFLOW ATTRIBUTE AS NEURONS, THE TRAIN ACCURACY
         # WILL START AGAIN
@@ -89,7 +87,10 @@ class TFModels():
         # CONFIGURATION VARIABLES
         self._restore_model = True  # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
-        self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
+        self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
+        # 'should_save'
+        self._show_when_save_information = True #  If True then you will see printed in console when during training
+        # the information.json has been saved.
         self._ask_to_continue_creating_model_without_exist = False  # If True and 'restore_model' is True,
         # ask to continus save model at first if there isn't a model to restore
         self._show_advanced_info = False  # Labels and logits info.
@@ -147,6 +148,12 @@ class TFModels():
             pt("Saving model configuration...")
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
             pt("Model configuration has been saved")
+
+    @property
+    def show_when_save_information(self): return self._show_when_save_information
+
+    @show_when_save_information.setter
+    def show_when_save_information(self, value): self._show_when_save_information = value
 
     @property
     def ask_to_continue_creating_model_without_exist(self): return self._ask_to_continue_creating_model_without_exist
@@ -451,7 +458,6 @@ class TFModels():
         # To restore model
         if self.restore_model:
             self.load_and_restore_model(sess)
-        # TODO (@gabvaztor) WHY NOW NOT TRAIN NICE
         self.train_model(args=None, kwargs=locals())
 
     def update_inputs_and_labels_shuffling(self, inputs, inputs_labels):
@@ -476,7 +482,6 @@ class TFModels():
         :param options: options       
         :return: Two numpy arrays (x_batch and y_batch) with input data and input labels data batch_size like shape.
         """
-        # TODO Add this method like class method
         x_batch = []
         y_batch = []
         if is_test:
@@ -583,6 +588,7 @@ class TFModels():
             self._ask_to_continue_creating_model_without_exist = \
                 configuration._ask_to_continue_creating_model_without_exist
             self._ask_to_save_model_information = configuration._ask_to_save_model_information
+            self._show_when_save_information =configuration._show_when_save_information
             # If you don't restore model then you won't load train number and epochs number
             if self.restore_model:
                 self._num_trains_count = configuration._num_trains_count
@@ -599,9 +605,9 @@ class TFModels():
         test_accuracy = ""
         if "test_accuracy" in kwargs:
             test_accuracy = kwargs["test_accuracy"]
-        # TODO Fix when save
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
+        # TODO (gabvaztor) Using new SettingObject path
         filepath = create_historic_folder(fullpath, type_file, test_accuracy)
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  filepath)
@@ -728,12 +734,14 @@ class TFModels():
         if self.settings_object.model_path:
             try:
                 saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
-                pt("Saving model information...")
+                if self.show_when_save_information:
+                    pt("Saving model information...")
                 filepath = self._save_model_configuration_to_json(
                     fullpath=self.settings_object.information_path,
                     attributes_to_delete=Constant.attributes_to_delete_information,
                     type_file="Information", test_accuracy=self.test_accuracy)
-                pt("Model information has been saved")
+                if self.show_when_save_information:
+                    pt("Model information has been saved")
                 return filepath
             except Exception as e:
                 pt(Errors.error, e)
@@ -752,7 +760,6 @@ class TFModels():
                                                                        accuracies_test, loss_train, loss_validation,
                                                                        loss_test], index_to_eliminate=2)
 
-        # TODO How save the file with information and configuration files.
         accuracy_plot = plt.figure(0)
         plt.title(str(self.options[0]))
         plt.xlabel("ITERATIONS | Batch Size=" + str(self.batch_size) + " | Trains for epoch: " + str(self.trains))
@@ -839,7 +846,6 @@ class TFModels():
 
         # To load accuracies and losses
         if self.restore_model:
-            # TODO (@gabvaztor) Finish this when finish Setting object with new paths
             accuracies_train, accuracies_test, loss_train, loss_test = load_accuracies_and_losses(
                 self.settings_object.accuracies_losses_path)
 
@@ -849,7 +855,6 @@ class TFModels():
         # Update test feeds ( will be not modified during training)
         feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
         # Update real num_train:
-        # TODO (@gabvaztor) Define well how much is num_train_start
         num_train_start = int(self.num_trains_count % self.trains)
         if num_train_start == self.trains:
             num_train_start = 0
@@ -870,7 +875,6 @@ class TFModels():
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
                 cross_entropy_test = cross_entropy.eval(feed_dict_test_100)
 
-                # TODO All accuracies and losses must be saved and loaded when restore_model for graphs
                 # To generate statistics
                 accuracies_train.append(self.train_accuracy)
                 accuracies_test.append(self.test_accuracy)
