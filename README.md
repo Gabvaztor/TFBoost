@@ -38,8 +38,19 @@ TensorFlow Boost works as follows:
 ![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/CSV_Diagram.png)
 
 
+An example of 'information.json':
 
-An example of code: Step by step structure
+![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Information_Example.png)
+
+An example of a Accuracy Graph:
+
+![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Graph_Accuracy.png)
+
+An example of a Loss Graph:
+
+![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Graph_Loss.png)
+
+An example of code: Step by step structure (Python-Tensorflow Code)
 
 ![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Example_Code.png)
 
