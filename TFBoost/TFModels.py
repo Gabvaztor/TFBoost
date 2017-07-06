@@ -89,7 +89,7 @@ class TFModels():
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
         # 'should_save'
-        self._show_when_save_information = True #  If True then you will see printed in console when during training
+        self._show_when_save_information = False #  If True then you will see printed in console when during training
         # the information.json has been saved.
         self._ask_to_continue_creating_model_without_exist = False  # If True and 'restore_model' is True,
         # ask to continus save model at first if there isn't a model to restore
@@ -105,7 +105,7 @@ class TFModels():
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
         self._epoch_numbers = 130 # Epochs number
-        self._batch_size = 10  # Batch size
+        self._batch_size = 100  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
@@ -123,7 +123,7 @@ class TFModels():
         self._validation_accuracy = None
         self._test_accuracy = None
         # RESTART TRAINING
-        self._save_and_restart = True  # All history and metadata will be saved in a different folder and the execution
+        self._save_and_restart = False  # All history and metadata will be saved in a different folder and the execution
         # will be restarted
 
         if self.save_and_restart:
@@ -406,7 +406,7 @@ class TFModels():
     @test.setter
     def test(self, value): self._test = value
 
-    def _save_json_configuration(self,attributes_to_delete_configuration):
+    def _save_json_configuration(self, attributes_to_delete_configuration):
         self._save_model_configuration_to_json(self.settings_object.configuration_path,
                                                attributes_to_delete_configuration,
                                                type_file="Configuration")
@@ -839,15 +839,9 @@ class TFModels():
         start_time = time.time()  # Start time
 
         # TO STATISTICS
-        accuracies_train = []
-        accuracies_test = []
-        loss_train = []
-        loss_test = []
-
         # To load accuracies and losses
-        if self.restore_model:
-            accuracies_train, accuracies_test, loss_train, loss_test = load_accuracies_and_losses(
-                self.settings_object.accuracies_losses_path)
+        accuracies_train, accuracies_test, loss_train, loss_test = load_accuracies_and_losses(
+                self.settings_object.accuracies_losses_path, self.restore_model)
 
         # Folders and file where information and configuration files will be saved.
         filepath_save = None
@@ -926,16 +920,12 @@ class TFModels():
                 # Save configuration to that results
                 self._save_json_configuration(Constant.attributes_to_delete_configuration)
         pt('END TRAINING ')
-        self.show_save_statistics(accuracies_train=accuracies_train,accuracies_test=accuracies_test,
-                             loss_train=loss_train,loss_test=loss_test, folder_to_save=filepath_save)
+        self.show_save_statistics(accuracies_train=accuracies_train, accuracies_test=accuracies_test,
+                             loss_train=loss_train, loss_test=loss_test, folder_to_save=filepath_save)
         self.make_predictions()
-
-
 
     def make_predictions(self):
         pass
-
-
 
 """
 STATIC METHODS: Not need "self" :argument

@@ -240,24 +240,25 @@ def save_accuracies_and_losses_training(folder_to_save, train_accuracies, valida
     np.save(folder_to_save + filename_train_losses, train_losses)
     np.save(folder_to_save + filename_validation_losses, validation_losses)
 
-def load_accuracies_and_losses(path_to_load):
+def load_accuracies_and_losses(path_to_load, flag_restore_model=False):
     """
     
     :param path_to_load: path to load the numpy accuracies and losses
     :return: accuracies_train, accuracies_validation, loss_train, loss_validation
     """
     # TODO (@gabvaztor) Docs
-
-    npy_extension = Dictionary.string_npy_extension
-    filename_train_accuracies = Dictionary.filename_train_accuracies+npy_extension
-    filename_validation_accuracies = Dictionary.filename_validation_accuracies+npy_extension
-    filename_train_losses = Dictionary.filename_train_losses+npy_extension
-    filename_validation_losses = Dictionary.filename_validation_losses+npy_extension
-
-    accuracies_train = list(np.load(path_to_load+filename_train_accuracies))
-    accuracies_validation = list(np.load(path_to_load+filename_validation_accuracies))
-    loss_train = list(np.load(path_to_load+filename_train_losses))
-    loss_validation = list(np.load(path_to_load+filename_validation_losses))
+    accuracies_train, accuracies_validation, loss_train, loss_validation = [], [], [], []
+    if flag_restore_model:
+        npy_extension = Dictionary.string_npy_extension
+        filename_train_accuracies = Dictionary.filename_train_accuracies+npy_extension
+        filename_validation_accuracies = Dictionary.filename_validation_accuracies+npy_extension
+        filename_train_losses = Dictionary.filename_train_losses+npy_extension
+        filename_validation_losses = Dictionary.filename_validation_losses+npy_extension
+        if file_exists_in_path_or_create_path(path_to_load+filename_train_accuracies):
+            accuracies_train = list(np.load(path_to_load+filename_train_accuracies))
+            accuracies_validation = list(np.load(path_to_load+filename_validation_accuracies))
+            loss_train = list(np.load(path_to_load+filename_train_losses))
+            loss_validation = list(np.load(path_to_load+filename_validation_losses))
 
     return accuracies_train, accuracies_validation, loss_train, loss_validation
 

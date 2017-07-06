@@ -33,9 +33,8 @@ To upgrade TensorFlow to last version:
 *GPU: pip3 install --upgrade tensorflow-gpu
 '''
 import tensorflow as tf
+# noinspection PyUnresolvedReferences
 print("TensorFlow: " + tf.__version__)
-
-
 
 ''' Numpy is an extension to the Python programming language, adding support for large,
 multi-dimensional arrays and matrices, along with a large library of high-level
@@ -48,22 +47,19 @@ import numpy as np
 
 ''' Matlab URL: http://matplotlib.org/users/installing.html'''
 import matplotlib.pyplot as plt
-from pylab import *
 
 ''' TFLearn library. License MIT.
 Git Clone : https://github.com/tflearn/tflearn.git
-To install: pip install tflearn'''
+To install: pip3 install tflearn'''
 import tflearn
 
 '''"Best image library"
 pip install opencv-python'''
 import cv2
-sys.modules['cv2'] = cv2
 
 """Python libraries"""
 """ Random to shuffle lists """
 import random
-
 """ Time """
 import time
 """ To serialize object"""
@@ -77,8 +73,9 @@ class TFModels():
     def __init__(self,input, test, input_labels, test_labels, number_of_classes, setting_object,
                  option_problem=None,type=None, validation=None, validation_labels=None,
                  load_model_configuration=False):
-        # TODO(@gabvaztor) Load configuration by problem from json file in Settings folder
-        # TODO (@gabvaztor) Add all methods using 'self' like class methods
+        # TODO(@gabvaztor) Show and save graphs during all training asking before
+        # NOTE: IF YOU LOAD_MODEL_CONFIGURATION AND CHANGE SOME TENSORFLOW ATTRIBUTE AS NEURONS, THE TRAIN ACCURACY
+        # WILL START AGAIN
         self._input = input
         self._test = test
         self._input_labels = input_labels
@@ -90,17 +87,25 @@ class TFModels():
         # CONFIGURATION VARIABLES
         self._restore_model = True  # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
-        self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time 'should_save'
-        self._show_info = False  # Labels and logits info.
+        self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
+        # 'should_save'
+        self._show_when_save_information = False #  If True then you will see printed in console when during training
+        # the information.json has been saved.
+        self._ask_to_continue_creating_model_without_exist = False  # If True and 'restore_model' is True,
+        # ask to continus save model at first if there isn't a model to restore
+        self._show_advanced_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
-        self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path
+        self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path.
+        self._shuffle_data = True  # If True, then the train and validation data will be shuffled separately.
+        self._save_graphs_images = False #  If True, then save graphs images from statistical values. NOTE that this will
+        # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
+        # the framework will save a graph
         # TRAIN MODEL VARIABLES
-        self._shuffle_data = True
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
-        self._epoch_numbers = 100  # Epochs number
-        self._batch_size = 2  # Batch size
+        self._epoch_numbers = 130 # Epochs number
+        self._batch_size = 100  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
@@ -108,30 +113,78 @@ class TFModels():
         self._second_label_neurons = 55
         self._third_label_neurons = 50
         self._learning_rate = 1e-3  # Learning rate
-        self._trains = int(self.input_size / self.batch_size) + 1
+        self._number_epoch_to_change_learning_rate = 15
+        self._trains = int(self.input_size / self.batch_size) + 1 # Total number of trains for epoch
         # INFORMATION VARIABLES
-        self._index_buffer_data = 0  # The index for batches during training
-        self._num_trains_count = 0
-        # TODO(@gabvaztor) add validation_accuracy
+        self._index_buffer_data = 0  # The index for mini_batches during training
+        self._num_trains_count = 1
+        self._num_epochs_count = 1
         self._train_accuracy = None
+        self._validation_accuracy = None
         self._test_accuracy = None
+        # RESTART TRAINING
+        self._save_and_restart = False  # All history and metadata will be saved in a different folder and the execution
+        # will be restarted
+
+        if self.save_and_restart:
+            save_and_restart(self.settings_object.model_path)
         # OPTIONS
-        # TODO (@gabvaztor) Make "string_option" a class attribute
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
         #               - Others positions: all variables you need to process each input and label elements
+        # noinspection PyUnresolvedReferences
         self._options = [option_problem, cv2.IMREAD_GRAYSCALE,
                    self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
         # SAVE AND LOAD MODEL
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
-            pt("Loading model configuration", self.settings_object.configuration_path)
-            self._load_model_configuration(
-                self.settings_object.load_model_configuration(self.settings_object.configuration_path))
+            # And restore time too.
+            if self.restore_model:
+                # input("You will load model configuration but no restore the tensorflow model, do you want to continue?")
+                pt("Loading model configuration", self.settings_object.configuration_path)
+                self._load_model_configuration(self.settings_object.load_actual_configuration())
         if self._save_model_configuration:
             # Save model configuration in a json file
-            self._save_model_configuration_to_json(self.settings_object.configuration_path,
-                                                   Constant.attributes_to_delete_configuration)
+            pt("Saving model configuration...")
+            self._save_json_configuration(Constant.attributes_to_delete_configuration)
+            pt("Model configuration has been saved")
+
+    @property
+    def show_when_save_information(self): return self._show_when_save_information
+
+    @show_when_save_information.setter
+    def show_when_save_information(self, value): self._show_when_save_information = value
+
+    @property
+    def ask_to_continue_creating_model_without_exist(self): return self._ask_to_continue_creating_model_without_exist
+
+    @ask_to_continue_creating_model_without_exist.setter
+    def ask_to_continue_creating_model_without_exist(self, value):
+        self._ask_to_continue_creating_model_without_exist = value
+
+    @property
+    def number_epoch_to_change_learning_rate(self): return self._number_epoch_to_change_learning_rate
+
+    @number_epoch_to_change_learning_rate.setter
+    def number_epoch_to_change_learning_rate(self, value): self._number_epoch_to_change_learning_rate = value
+
+    @property
+    def save_and_restart(self): return self._save_and_restart
+
+    @save_and_restart.setter
+    def save_and_restart(self, value): self._save_and_restart = value
+
+    @property
+    def num_epochs_count(self): return self._num_epochs_count
+
+    @num_epochs_count.setter
+    def num_epochs_count(self, value): self._num_epochs_count = value
+
+    @property
+    def save_graphs_images(self): return self._save_graphs_images
+
+    @save_graphs_images.setter
+    def save_graphs_images(self, value): self._save_graphs_images = value
 
     @property
     def options(self): return self._options
@@ -152,10 +205,10 @@ class TFModels():
     def label_batch(self, value): self._label_batch = value
 
     @property
-    def show_info(self): return self._show_info
+    def show_advanced_info(self): return self._show_advanced_info
 
-    @show_info.setter
-    def show_info(self, value): self._show_info = value
+    @show_advanced_info.setter
+    def show_advanced_info(self, value): self._show_advanced_info = value
 
     @property
     def save_model_information(self): return self._save_model_information
@@ -198,13 +251,19 @@ class TFModels():
     def test_accuracy(self, value): self._test_accuracy = value
 
     @property
+    def validation_accuracy(self): return self._validation_accuracy
+
+    @validation_accuracy.setter
+    def validation_accuracy(self, value): self._validation_accuracy = value
+
+    @property
     def settings_object(self): return self._settings_object
 
     @settings_object.setter
     def settings_object(self, value): self._settings_object = value
 
     @property
-    def learning_rate(self): return self._learning_rate
+    def learning_rate(self): return float("{0:.64f}".format(self._learning_rate))
 
     @learning_rate.setter
     def learning_rate(self, value): self._learning_rate = value
@@ -347,6 +406,11 @@ class TFModels():
     @test.setter
     def test(self, value): self._test = value
 
+    def _save_json_configuration(self, attributes_to_delete_configuration):
+        self._save_model_configuration_to_json(self.settings_object.configuration_path,
+                                               attributes_to_delete_configuration,
+                                               type_file="Configuration")
+
     def properties(self, attributes_to_delete=None):
         """
         Return a string with actual features without not necessaries
@@ -382,12 +446,11 @@ class TFModels():
         # Reshape x placeholder into a specific tensor
         x_reshape = tf.reshape(x_input, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
         # Network structure
-        network_kwargs= {'keep_probably': keep_probably}
-        y_prediction = self.network_structure(x_reshape, args=None, kwargs=network_kwargs)
+        y_prediction = self.network_structure(x_reshape, args=None, keep_probably=keep_probably)
         cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
                                                                                         y_prediction=y_prediction)
         # Batching values and labels from input and labels (with batch size)
-        self.get_batches()
+        self.update_batch()
         # Session
         sess = initialize_session()
         # Saver session
@@ -395,8 +458,7 @@ class TFModels():
         # To restore model
         if self.restore_model:
             self.load_and_restore_model(sess)
-        self.train_model(kwargs=locals())
-        self.show_statistics()
+        self.train_model(args=None, kwargs=locals())
 
     def update_inputs_and_labels_shuffling(self, inputs, inputs_labels):
         """
@@ -420,7 +482,6 @@ class TFModels():
         :param options: options       
         :return: Two numpy arrays (x_batch and y_batch) with input data and input labels data batch_size like shape.
         """
-        # TODO Add this method like class method
         x_batch = []
         y_batch = []
         if is_test:
@@ -496,41 +557,61 @@ class TFModels():
         Load previous configuration to class Model (self).
         
         This will update all class' attributes with the configuration in a json file.
+        
+        If configuration is None, the file will be created after this method if save_configuration attribute is True
         :param configuration: the json class 
         """
-        # TODO Add to docs WHEN it is necessary to add more attributes
-        self._restore_model = configuration._restore_model
-        self._save_model = configuration._save_model
-        self._ask_to_save_model = configuration._ask_to_save_model
-        self._show_info = configuration._show_info
-        self._show_images = configuration._show_images
-        self._save_model_configuration = configuration._save_model_configuration
-        self._shuffle_data = configuration._shuffle_data
-        self._input_rows_numbers = configuration._input_rows_numbers
-        self._input_columns_numbers = configuration._input_columns_numbers
-        self._kernel_size = configuration._kernel_size
-        self._epoch_numbers = configuration._epoch_numbers
-        self._batch_size = configuration._batch_size
-        self._input_size = configuration._input_size
-        self._test_size = configuration._test_size
-        self._train_dropout = configuration._train_dropout
-        self._first_label_neurons = configuration._first_label_neurons
-        self._second_label_neurons = configuration._second_label_neurons
-        self._third_label_neurons = configuration._third_label_neurons
-        self._learning_rate = configuration._learning_rate
-        self._trains = configuration._trains
-        pt("Loaded model configuration")
+        if configuration:
+            # TODO Add to docs WHEN it is necessary to add more attributes = Do documentation
+            self._restore_model = configuration._restore_model
+            self._save_model = configuration._save_model_information
+            self._ask_to_save_model = configuration._ask_to_save_model_information
+            self._show_info = configuration._show_advanced_info
+            self._show_images = configuration._show_images
+            self._save_model_configuration = configuration._save_model_configuration
+            self._shuffle_data = configuration._shuffle_data
+            self._input_rows_numbers = configuration._input_rows_numbers
+            self._input_columns_numbers = configuration._input_columns_numbers
+            self._kernel_size = configuration._kernel_size
+            self._epoch_numbers = configuration._epoch_numbers
+            self._batch_size = configuration._batch_size
+            self._input_size = configuration._input_size
+            self._test_size = configuration._test_size
+            self._train_dropout = configuration._train_dropout
+            self._first_label_neurons = configuration._first_label_neurons
+            self._second_label_neurons = configuration._second_label_neurons
+            self._third_label_neurons = configuration._third_label_neurons
+            self._learning_rate = configuration._learning_rate
+            self._trains = configuration._trains
+            self._number_epoch_to_change_learning_rate = configuration._number_epoch_to_change_learning_rate
+            self._save_graphs_images = configuration._save_graphs_images
+            self._ask_to_continue_creating_model_without_exist = \
+                configuration._ask_to_continue_creating_model_without_exist
+            self._ask_to_save_model_information = configuration._ask_to_save_model_information
+            self._show_when_save_information =configuration._show_when_save_information
+            # If you don't restore model then you won't load train number and epochs number
+            if self.restore_model:
+                self._num_trains_count = configuration._num_trains_count
+                self._num_epochs_count = configuration._num_epochs_count
+                self._index_buffer_data = configuration._index_buffer_data
+            pt("Loaded model configuration")
 
-    def _save_model_configuration_to_json(self, fullpath, attributes_to_delete=None):
+    def _save_model_configuration_to_json(self, fullpath, attributes_to_delete=None, *args, **kwargs):
         """
         Save actual model configuration (with some attributes) in a json file.
         :param attributes_to_delete: represent witch attributes set must not be save in json file.
         """
-        pt("Saving model...")
+        type_file = kwargs["type_file"]
+        test_accuracy = ""
+        if "test_accuracy" in kwargs:
+            test_accuracy = kwargs["test_accuracy"]
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
-        pt("Model configuration has been saved")
-
+        # TODO (gabvaztor) Using new SettingObject path
+        filepath = create_historic_folder(fullpath, type_file, test_accuracy)
+        write_string_to_pathfile(self.to_json(attributes_to_delete),
+                                 filepath)
+        return filepath
 
     def load_and_restore_model(self, session):
         """
@@ -553,11 +634,16 @@ class TFModels():
                     saver.restore(session, model_possible_1)
                     pt("Model restored without problems")
                 else:
-                    pt(Errors.error, Errors.can_not_restore_model_because_path_not_exists)
-                    input("Press enter to continue")
+                    if self.ask_to_continue_creating_model_without_exist:
+                        response = recurrent_ask_to_continue_without_load_model()
+                        if not response:
+                            raise Exception()
+                    else:
+                        pt("The model won't load because it doesn't exist",
+                           "You chose 'continue_creating_model_without_exist")
             except Exception as e:
                 pt(Errors.error, e)
-                input(Errors.error + " " + Errors.can_not_restore_model + " Press enter to continue")
+                raise Exception(Errors.error + " " + Errors.can_not_restore_model)
 
     def placeholders(self, *args, **kwargs):
         """
@@ -577,7 +663,7 @@ class TFModels():
         :param input: inputs 
         :return: The prediction (network output)
         """
-        keep_dropout = kwargs['kwargs']['keep_probably']
+        keep_dropout = kwargs['keep_probably']
         # First Convolutional Layer
         convolution_1 = tf.layers.conv2d(
             inputs=input,
@@ -648,23 +734,65 @@ class TFModels():
         if self.settings_object.model_path:
             try:
                 saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
-                # TODO (@gabvaztor) Save a historic file if file exists to have an historic information
-                self._save_model_configuration_to_json(
+                if self.show_when_save_information:
+                    pt("Saving model information...")
+                filepath = self._save_model_configuration_to_json(
                     fullpath=self.settings_object.information_path,
-                    attributes_to_delete=Constant.attributes_to_delete_information)
-                pt("Model information has been saved")
+                    attributes_to_delete=Constant.attributes_to_delete_information,
+                    type_file="Information", test_accuracy=self.test_accuracy)
+                if self.show_when_save_information:
+                    pt("Model information has been saved")
+                return filepath
             except Exception as e:
                 pt(Errors.error, e)
         else:
             pt(Errors.error, Errors.model_path_bad_configuration)
 
-    def show_statistics(self):
+    def show_save_statistics(self, accuracies_train, accuracies_validation=None, accuracies_test=None,
+                        loss_train=None, loss_validation=None, loss_test=None,
+                        folder_to_save=None, show_graphs=None, is_new_epoch_flag=False):
         """
         Show all necessary visual and text information.
         """
-        # TODO(@gabvaztor) Generate graphs
-        pass
+        if is_new_epoch_flag:
+            accuracies_train, accuracies_validation, accuracies_test, \
+            loss_train, loss_validation, loss_test = preprocess_lists([accuracies_train, accuracies_validation,
+                                                                       accuracies_test, loss_train, loss_validation,
+                                                                       loss_test], index_to_eliminate=2)
 
+        accuracy_plot = plt.figure(0)
+        plt.title(str(self.options[0]))
+        plt.xlabel("ITERATIONS | Batch Size=" + str(self.batch_size) + " | Trains for epoch: " + str(self.trains))
+        plt.ylabel("ACCURACY (BLUE = Train | RED = Validation | GREEN = Test)")
+        plt.plot(accuracies_train, 'b')
+        if accuracies_validation:
+            plt.plot(accuracies_validation, 'r')
+        if accuracies_test:
+            plt.plot(accuracies_test, 'g')
+        if folder_to_save:
+            folder = get_directory_from_filepath(folder_to_save)
+            complete_name = folder+"\\graph_accuracy"+Dictionary.string_extension_png
+            if self.save_graphs_images or is_new_epoch_flag:
+                plt.savefig(complete_name)
+        if (accuracies_train or accuracies_validation or accuracies_test) and show_graphs:
+            accuracy_plot.show()
+
+        loss_plot = plt.figure(1)
+        plt.title("LOSS")
+        plt.xlabel("ITERATIONS | Batch Size=" + str(self.batch_size) + " | Trains for epoch: " + str(self.trains))
+        plt.ylabel("LOSS (BLUE = Train | RED = Validation | GREEN = Test)")
+        plt.plot(loss_train, 'b')
+        if loss_validation:
+            plt.plot(loss_validation, 'r')
+        if loss_test:
+            plt.plot(loss_test, 'g')
+        if (loss_train or loss_validation or loss_test) and show_graphs:
+            loss_plot.show()
+        if folder_to_save:
+            folder = get_directory_from_filepath(folder_to_save)
+            complete_name = folder+"\\graph_loss"+Dictionary.string_extension_png
+            if self.save_graphs_images or is_new_epoch_flag:
+                plt.savefig(complete_name)
     def print_actual_configuration(self):
         """
         Print all attributes to console
@@ -674,6 +802,24 @@ class TFModels():
         pt('third_label_neurons', self.third_label_neurons)
         pt('input_size', self.input_size)
         pt('batch_size', self.batch_size)
+
+    def update_batch(self, is_test=False):
+        if not is_test:
+            self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
+                                                                                inputs_labels=self.input_labels,
+                                                                                shuffle_data=self.shuffle_data,
+                                                                                batch_size=self.batch_size,
+                                                                                is_test=False,
+                                                                                options=self.options)
+        elif is_test:
+            x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
+                                                                  inputs_labels=self.test_labels,
+                                                                  shuffle_data=self.shuffle_data,
+                                                                  batch_size=None,
+                                                                  is_test=True,
+                                                                  options=self.options)
+            return x_test_feed, y_test_feed
+
 
     def train_model(self, *args, **kwargs):
 
@@ -687,60 +833,99 @@ class TFModels():
         sess = kwargs['kwargs']['sess']
         y_prediction = kwargs['kwargs']['y_prediction']
 
-        x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
-                                                                  inputs_labels=self.test_labels,
-                                                                  shuffle_data=self.shuffle_data,
-                                                                  batch_size=None,
-                                                                  is_test=True,
-                                                                  options=self.options)
+        x_test_feed, y_test_feed = self.update_batch(is_test=True)
+
         # TRAIN VARIABLES
         start_time = time.time()  # Start time
-        feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
-        feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
-        feed_dict_train_50 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: self.train_dropout}
 
-        # START TRAINING
-        for epoch in range(self.epoch_numbers):
-            for i in range(self.trains):
+        # TO STATISTICS
+        # To load accuracies and losses
+        accuracies_train, accuracies_test, loss_train, loss_test = load_accuracies_and_losses(
+                self.settings_object.accuracies_losses_path, self.restore_model)
+
+        # Folders and file where information and configuration files will be saved.
+        filepath_save = None
+
+        # Update test feeds ( will be not modified during training)
+        feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
+        # Update real num_train:
+        num_train_start = int(self.num_trains_count % self.trains)
+        if num_train_start == self.trains:
+            num_train_start = 0
+        is_new_epoch_flag = False  # Represent if training come into a new epoch. With this, a graph will be saved each
+        # new epoch
+        # START  TRAINING
+        for epoch in range(self.num_epochs_count, self.epoch_numbers):  # Start with load value or 0
+            for num_train in range(num_train_start, self.trains):  # Start with load value or 0
+                # Update feeds
+                feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
+                feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
+                                      keep_probably: self.train_dropout}
                 # Setting values
+                # TODO(@gabvaztor) Add validation_accuracy to training
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
-                train_step.run(feed_dict_train_50)
+                train_step.run(feed_dict_train_dropout)
                 self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
-                if self.should_save():
-                    self.save(saver=saver,session=sess)
-                # TODO Use validation set
-                if self.show_info:
-                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction, feed_dict=feed_dict_train_100)
-                if i % 10 == 0:
-                    percent_advance = str(i * 100 / self.trains)
+                cross_entropy_test = cross_entropy.eval(feed_dict_test_100)
+
+                # To generate statistics
+                accuracies_train.append(self.train_accuracy)
+                accuracies_test.append(self.test_accuracy)
+                loss_train.append(cross_entropy_train)
+                loss_test.append(cross_entropy_test)
+                with tf.device('/cpu:1'):
+                    save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
+                                                        train_accuracies=accuracies_train,
+                                                        validation_accuracies=accuracies_test,
+                                                        train_losses=loss_train,
+                                                        validation_losses=loss_test)
+
+                if num_train % 10 == 0:
+                    percent_advance = str(num_train * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
-                    pt('TRAIN NUMBER: ' + str(self.num_trains_count + 1) + ' | Percent Epoch ' +
-                       str(epoch + 1) + ": " + percent_advance + '%')
+                    pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
+                       str(epoch) + ": " + percent_advance + '%')
                     pt('train_accuracy', self.train_accuracy)
                     pt('cross_entropy_train', cross_entropy_train)
                     pt('test_accuracy', self.test_accuracy)
                     pt('self.index_buffer_data', self.index_buffer_data)
-                # Update num_trains_count
+
+                # Update indexes
+                # Update num_epochs_counts
+                if num_train +1 == self.trains:  # +1 because start in 0
+                    self.num_epochs_count += 1
+                    is_new_epoch_flag = True
+                # To decrement learning rate during training
+                if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
+                        and self.num_epochs_count != 1 and self.index_buffer_data == 0:
+                    self.learning_rate = float(self.learning_rate / 10.)
+                if self.should_save():
+                    filepath_save = self.save(saver=saver, session=sess)
+                if self.show_advanced_info:
+                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
+                                                   feed_dict=feed_dict_train_100)
+                with tf.device('/cpu:0'):
+                    if (self.save_graphs_images and filepath_save) or (is_new_epoch_flag and filepath_save):
+                        self.show_save_statistics(accuracies_train=accuracies_train, accuracies_test=accuracies_test,
+                                                  loss_train=loss_train, loss_test=loss_test,
+                                                  folder_to_save=filepath_save, show_graphs=False,
+                                                  is_new_epoch_flag=is_new_epoch_flag)
+                        is_new_epoch_flag = False
+
+                # Update num_trains_count and num_epoch_count
                 self.num_trains_count += 1
                 # Update batches values
-                self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
-                                                                                inputs_labels=self.input_labels,
-                                                                                shuffle_data=self.shuffle_data,
-                                                                                batch_size=self.batch_size,
-                                                                                is_test=False,
-                                                                                options=self.options)
-
+                self.update_batch()
+                # Save configuration to that results
+                self._save_json_configuration(Constant.attributes_to_delete_configuration)
         pt('END TRAINING ')
+        self.show_save_statistics(accuracies_train=accuracies_train, accuracies_test=accuracies_test,
+                             loss_train=loss_train, loss_test=loss_test, folder_to_save=filepath_save)
+        self.make_predictions()
 
-    def get_batches(self):
-        self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
-                                       inputs_labels=self.input_labels,
-                                       shuffle_data=self.shuffle_data,
-                                       batch_size=self.batch_size,
-                                       is_test=False,
-                                       options=self.options)
-
+    def make_predictions(self):
+        pass
 
 """
 STATIC METHODS: Not need "self" :argument
