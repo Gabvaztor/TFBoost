@@ -264,7 +264,7 @@ def load_accuracies_and_losses(path_to_load, flag_restore_model=False):
 
 def save_and_restart(path_to_backup):
     """
-    Save and restart all progress
+    Save and restart all progress. Create a "Zip" file from "Models" folder and, after that, remove it. 
     :param path_to_backup: Path to do a backup and save it in a different folder
     """
     actual_time = str(time.strftime("%Y-%m-%d_%Hh%Mm%Ss", time.gmtime(time.time())))
