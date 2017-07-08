@@ -3,8 +3,7 @@
 
 | **`Windows CPU`** | **`Windows GPU`** |
 |-------------------|-------------------|
-|![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png)
-|[![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png)
+|![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png) | [![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png)
 
 Through project, we are creating a framework thanks to which you can read any kind of tag labeled data (like Kaggle problems, CSV and images); create train, validation and test set from them; choose the best machine learning algorithm for your data, and, besides, change the algorithm features.
 
