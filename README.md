@@ -3,7 +3,7 @@
 
 | **`Windows CPU`** | **`Windows GPU`** |
 |-------------------|-------------------|
-|![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png) | [![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png)
+|<img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png"> | <img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png">
 
 Through project, we are creating a framework thanks to which you can read any kind of tag labeled data (like Kaggle problems, CSV and images); create train, validation and test set from them; choose the best machine learning algorithm for your data, and, besides, change the algorithm features.
 
@@ -38,31 +38,31 @@ https://google.github.io/styleguide/pyguide.html
 TensorFlow Boost works as follows: 
 
 <div align="center">
-![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/CSV_Diagram.png)
+<img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/CSV_Diagram.png"><br><br>
 </div>
-
 
 An example of 'information.json':
 
-![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Information_Example.png)
-
+<div align="center">
+<img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Information_Example.png"><br><br>
+</div>
 
 An example of a Accuracy Graph:
 
 <div align="center">
-![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Graph_Accuracy.png)
+<img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Graph_Accuracy.png"><br><br>
 </div>
 
 An example of a Loss Graph:
 
 <div align="center">
-![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Graph_Loss.png)
+<img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Graph_Loss.png"><br><br>
 </div>
 
 An example of code: Step by step structure (Python-Tensorflow Code)
 
 <div align="center">
-![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Example_Code.png)
+<img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Example_Code.png"><br><br>
 </div>
 
 "TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc."
