@@ -1,5 +1,10 @@
 # TensorFlow Boost
-TensorFlow Boost's Repository
+**TensorFlow Boost's Repository**
+
+| **`Windows CPU`** | **`Windows GPU`** |
+|-------------------|-------------------|
+| [![Build Status]![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png) |
+[![Build Status](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png)
 
 Through project, we are creating a framework thanks to which you can read any kind of tag labeled data (like Kaggle problems, CSV and images); create train, validation and test set from them; choose the best machine learning algorithm for your data, and, besides, change the algorithm features.
 
@@ -33,23 +38,33 @@ https://google.github.io/styleguide/pyguide.html
 
 TensorFlow Boost works as follows: 
 
+<div align="center">
 ![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/CSV_Diagram.png)
+</div>
 
 
 An example of 'information.json':
 
+<div align="center">
 ![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Information_Example.png)
+</div>
 
 An example of a Accuracy Graph:
 
+<div align="center">
 ![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Graph_Accuracy.png)
+</div>
 
 An example of a Loss Graph:
 
+<div align="center">
 ![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Graph_Loss.png)
+</div>
 
 An example of code: Step by step structure (Python-Tensorflow Code)
 
+<div align="center">
 ![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Example_Code.png)
+</div>
 
 "TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc."
