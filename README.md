@@ -44,9 +44,8 @@ TensorFlow Boost works as follows:
 
 An example of 'information.json':
 
-<div align="center">
 ![alt tag](https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Information_Example.png)
-</div>
+
 
 An example of a Accuracy Graph:
 
