@@ -35,31 +35,31 @@ Future Versions:
 All project use "Google Python Style Guide":
 https://google.github.io/styleguide/pyguide.html
 
-TensorFlow Boost works as follows: 
+**TensorFlow Boost works as follows:**
 
 <div align="center">
 <img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/CSV_Diagram.png"><br><br>
 </div>
 
-An example of 'information.json':
+**An example of 'information.json':**
 
 <div align="center">
 <img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Information_Example.png"><br><br>
 </div>
 
-An example of a Accuracy Graph:
+**An example of a Accuracy Graph:**
 
 <div align="center">
 <img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Graph_Accuracy.png"><br><br>
 </div>
 
-An example of a Loss Graph:
+**An example of a Loss Graph:**
 
 <div align="center">
 <img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Graph_Loss.png"><br><br>
 </div>
 
-An example of code: Step by step structure (Python-Tensorflow Code)
+**An example of code: Step by step structure (Python-Tensorflow Code)**
 
 <div align="center">
 <img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Example_Code.png"><br><br>
