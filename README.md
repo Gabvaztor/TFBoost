@@ -20,12 +20,12 @@ Update Version 0.1:
   - Yoy have a "Setting.json" file for each problem where you only have to put the paths where you want to process your problem.
   - You can see loss and accuracies in graphs and printed in the console.
   - You can easily change the epochs and batch sizes.
-  - You have an example of CNN treating a signal problem.
+  - You have a **CNN example** treating a signal problem.
   
 Next Version:
 
   - You will be able to do all this with a simple and beautiful user interface (in curse).
-  - You will have an example of a LSTM project (in curse) 
+  - You will have an example of **a LSTM project** (in curse)
   
 Future Versions:
 
