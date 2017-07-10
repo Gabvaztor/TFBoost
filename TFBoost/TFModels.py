@@ -79,8 +79,8 @@ class TFModels():
                  option_problem=None, type=None, validation=None, validation_labels=None,
                  load_model_configuration=False):
         # TODO(@gabvaztor) Show and save graphs during all training asking before
-        # NOTE: IF YOU LOAD_MODEL_CONFIGURATION AND CHANGE SOME TENSORFLOW ATTRIBUTE AS NEURONS, THE TRAIN ACCURACY
-        # WILL START AGAIN
+        # NOTE: IF YOU LOAD_MODEL_CONFIGURATION AND CHANGE SOME TENSORFLOW ATTRIBUTE AS NEURONS, THE TRAIN WILL START
+        # AGAIN
         self._input = input
         self._test = test
         self._input_labels = input_labels
