@@ -33,6 +33,7 @@ To upgrade TensorFlow to last version:
 *GPU: pip3 install --upgrade tensorflow-gpu
 '''
 import tensorflow as tf
+
 # noinspection PyUnresolvedReferences
 print("TensorFlow: " + tf.__version__)
 
@@ -60,18 +61,22 @@ import cv2
 """Python libraries"""
 """ Random to shuffle lists """
 import random
+
 """ Time """
 import time
+
 """ To serialize object"""
 import json
+
 
 class TFModels():
     """
     Long Docs ...
     """
+
     # TODO Docs
-    def __init__(self,input, test, input_labels, test_labels, number_of_classes, setting_object,
-                 option_problem=None,type=None, validation=None, validation_labels=None,
+    def __init__(self, input, test, input_labels, test_labels, number_of_classes, setting_object,
+                 option_problem=None, type=None, validation=None, validation_labels=None,
                  load_model_configuration=False):
         # TODO(@gabvaztor) Show and save graphs during all training asking before
         # NOTE: IF YOU LOAD_MODEL_CONFIGURATION AND CHANGE SOME TENSORFLOW ATTRIBUTE AS NEURONS, THE TRAIN ACCURACY
@@ -89,7 +94,7 @@ class TFModels():
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
         # 'should_save'
-        self._show_when_save_information = False #  If True then you will see printed in console when during training
+        self._show_when_save_information = False  # If True then you will see printed in console when during training
         # the information.json has been saved.
         self._ask_to_continue_creating_model_without_exist = False  # If True and 'restore_model' is True,
         # ask to continus save model at first if there isn't a model to restore
@@ -97,14 +102,14 @@ class TFModels():
         self._show_images = False  # If True show images when show_info is True
         self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path.
         self._shuffle_data = True  # If True, then the train and validation data will be shuffled separately.
-        self._save_graphs_images = False #  If True, then save graphs images from statistical values. NOTE that this will
+        self._save_graphs_images = False  # If True, then save graphs images from statistical values. NOTE that this will
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
         # the framework will save a graph
         # TRAIN MODEL VARIABLES
         self._input_rows_numbers = 60
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
-        self._epoch_numbers = 130 # Epochs number
+        self._epoch_numbers = 130  # Epochs number
         self._batch_size = 100  # Batch size
         self._input_size = len(input)  # Change if necessary
         self._test_size = len(test)  # Change if necessary
@@ -114,7 +119,7 @@ class TFModels():
         self._third_label_neurons = 50
         self._learning_rate = 1e-3  # Learning rate
         self._number_epoch_to_change_learning_rate = 15
-        self._trains = int(self.input_size / self.batch_size) + 1 # Total number of trains for epoch
+        self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training
         self._num_trains_count = 1
@@ -134,7 +139,7 @@ class TFModels():
         #               - Others positions: all variables you need to process each input and label elements
         # noinspection PyUnresolvedReferences
         self._options = [option_problem, cv2.IMREAD_GRAYSCALE,
-                   self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
+                         self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
         # SAVE AND LOAD MODEL
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
@@ -150,77 +155,100 @@ class TFModels():
             pt("Model configuration has been saved")
 
     @property
-    def show_when_save_information(self): return self._show_when_save_information
+    def show_when_save_information(self):
+        return self._show_when_save_information
 
     @show_when_save_information.setter
-    def show_when_save_information(self, value): self._show_when_save_information = value
+    def show_when_save_information(self, value):
+        self._show_when_save_information = value
 
     @property
-    def ask_to_continue_creating_model_without_exist(self): return self._ask_to_continue_creating_model_without_exist
+    def ask_to_continue_creating_model_without_exist(self):
+        return self._ask_to_continue_creating_model_without_exist
 
     @ask_to_continue_creating_model_without_exist.setter
     def ask_to_continue_creating_model_without_exist(self, value):
         self._ask_to_continue_creating_model_without_exist = value
 
     @property
-    def number_epoch_to_change_learning_rate(self): return self._number_epoch_to_change_learning_rate
+    def number_epoch_to_change_learning_rate(self):
+        return self._number_epoch_to_change_learning_rate
 
     @number_epoch_to_change_learning_rate.setter
-    def number_epoch_to_change_learning_rate(self, value): self._number_epoch_to_change_learning_rate = value
+    def number_epoch_to_change_learning_rate(self, value):
+        self._number_epoch_to_change_learning_rate = value
 
     @property
-    def save_and_restart(self): return self._save_and_restart
+    def save_and_restart(self):
+        return self._save_and_restart
 
     @save_and_restart.setter
-    def save_and_restart(self, value): self._save_and_restart = value
+    def save_and_restart(self, value):
+        self._save_and_restart = value
 
     @property
-    def num_epochs_count(self): return self._num_epochs_count
+    def num_epochs_count(self):
+        return self._num_epochs_count
 
     @num_epochs_count.setter
-    def num_epochs_count(self, value): self._num_epochs_count = value
+    def num_epochs_count(self, value):
+        self._num_epochs_count = value
 
     @property
-    def save_graphs_images(self): return self._save_graphs_images
+    def save_graphs_images(self):
+        return self._save_graphs_images
 
     @save_graphs_images.setter
-    def save_graphs_images(self, value): self._save_graphs_images = value
+    def save_graphs_images(self, value):
+        self._save_graphs_images = value
 
     @property
-    def options(self): return self._options
+    def options(self):
+        return self._options
 
     @options.setter
-    def options(self, value): self._options = value
+    def options(self, value):
+        self._options = value
 
     @property
-    def input_batch(self): return self._input_batch
+    def input_batch(self):
+        return self._input_batch
 
     @input_batch.setter
-    def input_batch(self, value): self._input_batch = value
+    def input_batch(self, value):
+        self._input_batch = value
 
     @property
-    def label_batch(self): return self._label_batch
+    def label_batch(self):
+        return self._label_batch
 
     @label_batch.setter
-    def label_batch(self, value): self._label_batch = value
+    def label_batch(self, value):
+        self._label_batch = value
 
     @property
-    def show_advanced_info(self): return self._show_advanced_info
+    def show_advanced_info(self):
+        return self._show_advanced_info
 
     @show_advanced_info.setter
-    def show_advanced_info(self, value): self._show_advanced_info = value
+    def show_advanced_info(self, value):
+        self._show_advanced_info = value
 
     @property
-    def save_model_information(self): return self._save_model_information
+    def save_model_information(self):
+        return self._save_model_information
 
     @save_model_information.setter
-    def save_model_information(self, value): self._save_model_information = value
+    def save_model_information(self, value):
+        self._save_model_information = value
 
     @property
-    def save_model_configuration(self): return self._save_model_configuration
+    def save_model_configuration(self):
+        return self._save_model_configuration
 
     @save_model_configuration.setter
-    def save_model_configuration(self, value):  self._save_model_configuration = value
+    def save_model_configuration(self, value):
+        self._save_model_configuration = value
 
     @property
     def ask_to_save_model_information(self):
@@ -230,181 +258,240 @@ class TFModels():
             return False
 
     @ask_to_save_model_information.setter
-    def ask_to_save_model_information(self, value): self._ask_to_save_model_information = value
+    def ask_to_save_model_information(self, value):
+        self._ask_to_save_model_information = value
 
     @property
-    def restore_model(self): return self._restore_model
+    def restore_model(self):
+        return self._restore_model
 
     @restore_model.setter
-    def restore_model(self, value): self._restore_model = value
+    def restore_model(self, value):
+        self._restore_model = value
 
     @property
-    def train_accuracy(self): return self._train_accuracy
+    def train_accuracy(self):
+        return self._train_accuracy
 
     @train_accuracy.setter
-    def train_accuracy(self, value): self._train_accuracy = value
+    def train_accuracy(self, value):
+        self._train_accuracy = value
 
     @property
-    def test_accuracy(self): return self._test_accuracy
+    def test_accuracy(self):
+        return self._test_accuracy
 
     @test_accuracy.setter
-    def test_accuracy(self, value): self._test_accuracy = value
+    def test_accuracy(self, value):
+        self._test_accuracy = value
 
     @property
-    def validation_accuracy(self): return self._validation_accuracy
+    def validation_accuracy(self):
+        return self._validation_accuracy
 
     @validation_accuracy.setter
-    def validation_accuracy(self, value): self._validation_accuracy = value
+    def validation_accuracy(self, value):
+        self._validation_accuracy = value
 
     @property
-    def settings_object(self): return self._settings_object
+    def settings_object(self):
+        return self._settings_object
 
     @settings_object.setter
-    def settings_object(self, value): self._settings_object = value
+    def settings_object(self, value):
+        self._settings_object = value
 
     @property
-    def learning_rate(self): return float("{0:.64f}".format(self._learning_rate))
+    def learning_rate(self):
+        return float("{0:.64f}".format(self._learning_rate))
 
     @learning_rate.setter
-    def learning_rate(self, value): self._learning_rate = value
+    def learning_rate(self, value):
+        self._learning_rate = value
 
     @property
-    def show_images(self): return self._show_images
+    def show_images(self):
+        return self._show_images
 
     @show_images.setter
-    def show_images(self, value): self._show_images = value
+    def show_images(self, value):
+        self._show_images = value
 
     @property
-    def shuffle_data(self): return self._shuffle_data
+    def shuffle_data(self):
+        return self._shuffle_data
 
     @shuffle_data.setter
-    def shuffle_data(self, value): self._shuffle_data = value
+    def shuffle_data(self, value):
+        self._shuffle_data = value
 
     @property
-    def input_rows_numbers(self): return self._input_rows_numbers
+    def input_rows_numbers(self):
+        return self._input_rows_numbers
 
     @input_rows_numbers.setter
-    def input_rows_numbers(self, value): self._input_rows_numbers = value
+    def input_rows_numbers(self, value):
+        self._input_rows_numbers = value
 
     @property
-    def input_columns_numbers(self): return self._input_columns_numbers
+    def input_columns_numbers(self):
+        return self._input_columns_numbers
 
     @input_columns_numbers.setter
-    def input_columns_numbers(self, value): self._input_columns_numbers = value
+    def input_columns_numbers(self, value):
+        self._input_columns_numbers = value
 
     @property
-    def input_columns_after_reshape(self): return self.input_rows_numbers * self.input_columns_numbers
+    def input_columns_after_reshape(self):
+        return self.input_rows_numbers * self.input_columns_numbers
 
     @input_columns_after_reshape.setter
-    def input_columns_after_reshape(self, value): self.input_columns_after_reshape = value
+    def input_columns_after_reshape(self, value):
+        self.input_columns_after_reshape = value
 
     @property
-    def input_rows_columns_array(self): return [self.input_rows_numbers, self.input_columns_numbers]
+    def input_rows_columns_array(self):
+        return [self.input_rows_numbers, self.input_columns_numbers]
 
     @input_rows_columns_array.setter
-    def input_rows_columns_array(self, value): self.input_rows_columns_array = value
+    def input_rows_columns_array(self, value):
+        self.input_rows_columns_array = value
 
     @property
-    def kernel_size(self): return self._kernel_size
+    def kernel_size(self):
+        return self._kernel_size
 
     @kernel_size.setter
-    def kernel_size(self, value): self._kernel_size = value
+    def kernel_size(self, value):
+        self._kernel_size = value
 
     @property
-    def input_size(self): return self._input_size
+    def input_size(self):
+        return self._input_size
 
     @input_size.setter
-    def input_size(self, value): self._input_size = value
+    def input_size(self, value):
+        self._input_size = value
 
     @property
-    def test_size(self): return self._test_size
+    def test_size(self):
+        return self._test_size
 
     @test_size.setter
-    def test_size(self, value): self._test_size = value
+    def test_size(self, value):
+        self._test_size = value
 
     @property
-    def batch_size(self): return self._batch_size
+    def batch_size(self):
+        return self._batch_size
 
     @batch_size.setter
-    def batch_size(self, value): self._batch_size = value
+    def batch_size(self, value):
+        self._batch_size = value
 
     @property
-    def train_dropout(self): return self._train_dropout
+    def train_dropout(self):
+        return self._train_dropout
 
     @train_dropout.setter
-    def train_dropout(self, value): self._train_dropout = value
+    def train_dropout(self, value):
+        self._train_dropout = value
 
     @property
-    def index_buffer_data(self): return self._index_buffer_data
+    def index_buffer_data(self):
+        return self._index_buffer_data
 
     @index_buffer_data.setter
-    def index_buffer_data(self, value): self._index_buffer_data = value
+    def index_buffer_data(self, value):
+        self._index_buffer_data = value
 
     @property
-    def first_label_neurons(self): return self._first_label_neurons
+    def first_label_neurons(self):
+        return self._first_label_neurons
 
     @first_label_neurons.setter
-    def first_label_neurons(self, value): self._first_label_neurons = value
+    def first_label_neurons(self, value):
+        self._first_label_neurons = value
 
     @property
-    def second_label_neurons(self): return self._second_label_neurons
+    def second_label_neurons(self):
+        return self._second_label_neurons
 
     @second_label_neurons.setter
-    def second_label_neurons(self, value): self._second_label_neurons = value
+    def second_label_neurons(self, value):
+        self._second_label_neurons = value
 
     @property
-    def third_label_neurons(self): return self._third_label_neurons
+    def third_label_neurons(self):
+        return self._third_label_neurons
 
     @third_label_neurons.setter
-    def third_label_neurons(self, value): self._third_label_neurons = value
+    def third_label_neurons(self, value):
+        self._third_label_neurons = value
 
     @property
-    def trains(self): return self._trains
+    def trains(self):
+        return self._trains
 
     @trains.setter
-    def trains(self, value): self._trains = value
+    def trains(self, value):
+        self._trains = value
 
     @property
-    def num_trains_count(self): return self._num_trains_count
+    def num_trains_count(self):
+        return self._num_trains_count
 
     @num_trains_count.setter
-    def num_trains_count(self, value): self._num_trains_count = value
+    def num_trains_count(self, value):
+        self._num_trains_count = value
 
     @property
-    def number_of_classes(self): return self._number_of_classes
+    def number_of_classes(self):
+        return self._number_of_classes
 
     @number_of_classes.setter
-    def number_of_classes(self, value): self._number_of_classes = value
+    def number_of_classes(self, value):
+        self._number_of_classes = value
 
     @property
-    def input_labels(self): return self._input_labels
+    def input_labels(self):
+        return self._input_labels
 
     @input_labels.setter
-    def input_labels(self, value): self._input_labels = value
+    def input_labels(self, value):
+        self._input_labels = value
 
     @property
-    def test_labels(self): return self._test_labels
+    def test_labels(self):
+        return self._test_labels
 
     @test_labels.setter
-    def test_labels(self, value): self._test_labels = value
+    def test_labels(self, value):
+        self._test_labels = value
 
     @property
-    def epoch_numbers(self): return self._epoch_numbers
+    def epoch_numbers(self):
+        return self._epoch_numbers
 
     @epoch_numbers.setter
-    def epoch_numbers(self, value): self._epoch_numbers = value
+    def epoch_numbers(self, value):
+        self._epoch_numbers = value
 
     @property
-    def input(self): return self._input
+    def input(self):
+        return self._input
 
     @input.setter
-    def input(self, value): self._input = value
+    def input(self, value):
+        self._input = value
 
     @property
-    def test(self): return self._test
+    def test(self):
+        return self._test
 
     @test.setter
-    def test(self, value): self._test = value
+    def test(self, value):
+        self._test = value
 
     def _save_json_configuration(self, attributes_to_delete_configuration):
         self._save_model_configuration_to_json(self.settings_object.configuration_path,
@@ -485,10 +572,10 @@ class TFModels():
         x_batch = []
         y_batch = []
         if is_test:
-            x_batch, y_batch = process_test_set(inputs,inputs_labels,options)
+            x_batch, y_batch = process_test_set(inputs, inputs_labels, options)
         else:
             if shuffle_data and self.index_buffer_data == 0:
-                self.input, self.input_labels = get_inputs_and_labels_shuffled(self.input,self.input_labels)
+                self.input, self.input_labels = get_inputs_and_labels_shuffled(self.input, self.input_labels)
             else:
                 self.input, self.input_labels = self.input, self.input_labels  # To modify if is out class
             batch_size, out_range = self.get_out_range_and_batch()  # out_range will be True if
@@ -588,7 +675,7 @@ class TFModels():
             self._ask_to_continue_creating_model_without_exist = \
                 configuration._ask_to_continue_creating_model_without_exist
             self._ask_to_save_model_information = configuration._ask_to_save_model_information
-            self._show_when_save_information =configuration._show_when_save_information
+            self._show_when_save_information = configuration._show_when_save_information
             # If you don't restore model then you won't load train number and epochs number
             if self.restore_model:
                 self._num_trains_count = configuration._num_trains_count
@@ -749,8 +836,8 @@ class TFModels():
             pt(Errors.error, Errors.model_path_bad_configuration)
 
     def show_save_statistics(self, accuracies_train, accuracies_validation=None, accuracies_test=None,
-                        loss_train=None, loss_validation=None, loss_test=None,
-                        folder_to_save=None, show_graphs=None, is_new_epoch_flag=False):
+                             loss_train=None, loss_validation=None, loss_test=None,
+                             folder_to_save=None, show_graphs=None, is_new_epoch_flag=False):
         """
         Show all necessary visual and text information.
         """
@@ -771,7 +858,7 @@ class TFModels():
             plt.plot(accuracies_test, 'g')
         if folder_to_save:
             folder = get_directory_from_filepath(folder_to_save)
-            complete_name = folder+"\\graph_accuracy"+Dictionary.string_extension_png
+            complete_name = folder + "\\graph_accuracy" + Dictionary.string_extension_png
             if self.save_graphs_images or is_new_epoch_flag:
                 plt.savefig(complete_name)
         if (accuracies_train or accuracies_validation or accuracies_test) and show_graphs:
@@ -790,9 +877,10 @@ class TFModels():
             loss_plot.show()
         if folder_to_save:
             folder = get_directory_from_filepath(folder_to_save)
-            complete_name = folder+"\\graph_loss"+Dictionary.string_extension_png
+            complete_name = folder + "\\graph_loss" + Dictionary.string_extension_png
             if self.save_graphs_images or is_new_epoch_flag:
                 plt.savefig(complete_name)
+
     def print_actual_configuration(self):
         """
         Print all attributes to console
@@ -813,13 +901,12 @@ class TFModels():
                                                                                 options=self.options)
         elif is_test:
             x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
-                                                                  inputs_labels=self.test_labels,
-                                                                  shuffle_data=self.shuffle_data,
-                                                                  batch_size=None,
-                                                                  is_test=True,
-                                                                  options=self.options)
+                                                                      inputs_labels=self.test_labels,
+                                                                      shuffle_data=self.shuffle_data,
+                                                                      batch_size=None,
+                                                                      is_test=True,
+                                                                      options=self.options)
             return x_test_feed, y_test_feed
-
 
     def train_model(self, *args, **kwargs):
 
@@ -841,7 +928,7 @@ class TFModels():
         # TO STATISTICS
         # To load accuracies and losses
         accuracies_train, accuracies_test, loss_train, loss_test = load_accuracies_and_losses(
-                self.settings_object.accuracies_losses_path, self.restore_model)
+            self.settings_object.accuracies_losses_path, self.restore_model)
 
         # Folders and file where information and configuration files will be saved.
         filepath_save = None
@@ -860,7 +947,7 @@ class TFModels():
                 # Update feeds
                 feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
                 feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
-                                      keep_probably: self.train_dropout}
+                                           keep_probably: self.train_dropout}
                 # Setting values
                 # TODO(@gabvaztor) Add validation_accuracy to training
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
@@ -893,7 +980,7 @@ class TFModels():
 
                 # Update indexes
                 # Update num_epochs_counts
-                if num_train +1 == self.trains:  # +1 because start in 0
+                if num_train + 1 == self.trains:  # +1 because start in 0
                     self.num_epochs_count += 1
                     is_new_epoch_flag = True
                 # To decrement learning rate during training
@@ -921,11 +1008,12 @@ class TFModels():
                 self._save_json_configuration(Constant.attributes_to_delete_configuration)
         pt('END TRAINING ')
         self.show_save_statistics(accuracies_train=accuracies_train, accuracies_test=accuracies_test,
-                             loss_train=loss_train, loss_test=loss_test, folder_to_save=filepath_save)
+                                  loss_train=loss_train, loss_test=loss_test, folder_to_save=filepath_save)
         self.make_predictions()
 
     def make_predictions(self):
         pass
+
 
 """
 STATIC METHODS: Not need "self" :argument
@@ -1011,7 +1099,7 @@ def process_test_set(test, test_labels, options):
     x_test = []
     y_test = []
     for i in range(len(test)):
-        x, y = process_input_unity_generic(test[i],test_labels[i],options,is_test=True)
+        x, y = process_input_unity_generic(test[i], test_labels[i], options, is_test=True)
         x_test.append(x)
         y_test.append(y)
     x_test = np.asarray(x_test)
