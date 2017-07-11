@@ -122,9 +122,9 @@ class TFModels():
         # represent the number of epochs before be changed.
         self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
         # INFORMATION VARIABLES
-        self._index_buffer_data = 0  # The index for mini_batches during training
-        self._num_trains_count = 1
-        self._num_epochs_count = 1
+        self._index_buffer_data = 0  # The index for mini_batches during training. Start at zero.
+        self._num_trains_count = 1  # Start at one
+        self._num_epochs_count = 1  # Start at one
         self._train_accuracy = None
         self._validation_accuracy = None
         self._test_accuracy = None

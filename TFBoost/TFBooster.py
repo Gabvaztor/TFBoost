@@ -119,9 +119,9 @@ import pandas as pd
 """
 Creating Reader Features
 """
-setting_object = SettingsObject.Settings(Dictionary.string_settings_german_signal_path)
+setting_object_german_signals = SettingsObject.Settings(Dictionary.string_settings_german_signal_path)
 
-path_train_and_test_images = [setting_object.train_path,setting_object.test_path]
+path_train_and_test_images = [setting_object_german_signals.train_path,setting_object_german_signals.test_path]
 number_of_classes = 59 # Start in 0
 percentages_sets = None  # Example
 labels_set = [Dictionary.string_labels_type_option_hierarchy]
@@ -163,11 +163,20 @@ test_set = tf_reader.test_set  # Test Set
 train_set = tf_reader.train_set  # Train Set
 del reader_features
 del tf_reader
-
+'''
 option_problem = Dictionary.string_option_signals_images_problem
+
 
 models = models.TFModels(input=train_set[0],test=test_set[0],
                          input_labels=train_set[1],test_labels=test_set[1],
-                         number_of_classes=number_of_classes, setting_object=setting_object,
+                         number_of_classes=number_of_classes, setting_object=setting_object_german_signals,
                          option_problem=option_problem, load_model_configuration=True)
 models.convolution_model_image()
+'''
+setting_object_zillow_price = SettingsObject.Settings(Dictionary.string_settings_zillow_price)
+option_problem = Dictionary.string_settings_zillow_price_problem
+
+models_zillow_price = models.TFModels(input=train_set[0],test=test_set[0],
+                         input_labels=train_set[1],test_labels=test_set[1],
+                         number_of_classes=number_of_classes, setting_object=setting_object_zillow_price,
+                         option_problem=option_problem, load_model_configuration=True)

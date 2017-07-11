@@ -91,6 +91,7 @@ class Dictionary(object):
 
     string_settings_german_signal_path = "../Settings/German_Signal/SETTINGS.json"
 
+    string_settings_zillow_price = "../Settings/Zillow_Price/SETTINGS.json"
     """
     STRING FILENAMES
     """
@@ -109,6 +110,8 @@ class Dictionary(object):
     string_option_signals_images_problem = 'signals_images_problems'
     # Option german prizes problem
     string_option_german_prizes_problem = 'german_prizes_problem'
+    # Option zillow price problem
+    string_settings_zillow_price_problem = 'zillow_price_problem'
 
 
 class Errors(object):
