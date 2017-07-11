@@ -656,6 +656,7 @@ class TFModels():
             self._show_info = configuration._show_advanced_info
             self._show_images = configuration._show_images
             self._save_model_configuration = configuration._save_model_configuration
+            self._save_model_information = configuration._save_model_information
             self._shuffle_data = configuration._shuffle_data
             self._input_rows_numbers = configuration._input_rows_numbers
             self._input_columns_numbers = configuration._input_columns_numbers
@@ -823,10 +824,13 @@ class TFModels():
                 saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
                 if self.show_when_save_information:
                     pt("Saving model information...")
-                filepath = self._save_model_configuration_to_json(
-                    fullpath=self.settings_object.information_path,
-                    attributes_to_delete=Constant.attributes_to_delete_information,
-                    type_file="Information", test_accuracy=self.test_accuracy)
+                if self.save_model_information:
+                    filepath = self._save_model_configuration_to_json(
+                        fullpath=self.settings_object.information_path,
+                        attributes_to_delete=Constant.attributes_to_delete_information,
+                        type_file="Information", test_accuracy=self.test_accuracy)
+                else:
+                    filepath = self.settings_object.history_information_path
                 if self.show_when_save_information:
                     pt("Model information has been saved")
                 return filepath
@@ -1004,8 +1008,9 @@ class TFModels():
                 self.num_trains_count += 1
                 # Update batches values
                 self.update_batch()
-                # Save configuration to that results
-                self._save_json_configuration(Constant.attributes_to_delete_configuration)
+                if self.save_model_configuration:
+                    # Save configuration to that results
+                    self._save_json_configuration(Constant.attributes_to_delete_configuration)
         pt('END TRAINING ')
         self.show_save_statistics(accuracies_train=accuracies_train, accuracies_test=accuracies_test,
                                   loss_train=loss_train, loss_test=loss_test, folder_to_save=filepath_save)
