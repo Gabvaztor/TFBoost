@@ -118,7 +118,8 @@ class TFModels():
         self._second_label_neurons = 55
         self._third_label_neurons = 50
         self._learning_rate = 1e-3  # Learning rate
-        self._number_epoch_to_change_learning_rate = 15
+        self._number_epoch_to_change_learning_rate = 15  #You can choose a number to change the learning rate. Number
+        # represent the number of epochs before be changed.
         self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training
