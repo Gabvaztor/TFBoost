@@ -139,9 +139,6 @@ reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images
 """
 Creating Reader from ReaderFeatures
 """
-"""
-Creating Reader from ReaderFeatures
-"""
 tf_reader = tfr.Reader(reader_features = reader_features)  # Reader Object with all information
 
 """
@@ -173,10 +170,30 @@ models = models.TFModels(input=train_set[0],test=test_set[0],
                          option_problem=option_problem, load_model_configuration=True)
 models.convolution_model_image()
 '''
+# Setting object
 setting_object_zillow_price = SettingsObject.Settings(Dictionary.string_settings_zillow_price)
-option_problem = Dictionary.string_settings_zillow_price_problem
+# Option problem
+option_problem_zillow_price = Dictionary.string_settings_zillow_price_problem
+# Number of classes
+number_of_classes_zillow_price = 6
+# Path Train
+path_train_validation_test_sets = [setting_object_zillow_price.train_path]
+# Labels_set
+labels_set = None
+"""
+Creating Reader Features
+"""
+reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images,number_of_classes = number_of_classes,
+                                      labels_set = labels_set,
+                                      is_unique_csv = is_an_unique_csv,known_data_type = known_data_type,
+                                      percentages_sets = percentages_sets)
+"""
+Creating Reader from ReaderFeatures
+"""
+tf_reader = tfr.Reader(reader_features = reader_features)  # Reader Object with all information
+
 
 models_zillow_price = models.TFModels(input=train_set[0],test=test_set[0],
                          input_labels=train_set[1],test_labels=test_set[1],
                          number_of_classes=number_of_classes, setting_object=setting_object_zillow_price,
-                         option_problem=option_problem, load_model_configuration=True)
+                         option_problem=option_problem_zillow_price, load_model_configuration=True)

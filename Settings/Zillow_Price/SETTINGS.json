@@ -1,5 +1,5 @@
 {
-  "TRAIN_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\train_2016_v2.csv",
+  "TRAIN_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\properties_2016_without_all_blanks.csv",
   "MODEL_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\Models\\model",
   "TEST_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\test.csv",
   "SUBMISSION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\predictions\\",
