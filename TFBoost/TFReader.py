@@ -187,6 +187,7 @@ class Reader(object):
         return there_is_validation, train_validation_test_percentages
 
     def read_web_traffic_data(self):
+        # TODO READ FILES
         pass
 
     def read_generic_problem(self):

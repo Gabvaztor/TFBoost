@@ -97,7 +97,6 @@ class Dictionary(object):
 
     string_settings_web_traffic = "../Settings/Web_Traffic_Time/SETTINGS.json"
 
-
     """
     STRING FILENAMES
     """
