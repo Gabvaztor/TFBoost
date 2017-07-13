@@ -116,8 +116,10 @@ import pandas as pd
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 
-"""
-Creating Reader Features
+
+# --------------------------------------------------------------------------
+# """ GERMAN SIGNAL PROBLEM """
+# --------------------------------------------------------------------------
 """
 setting_object_german_signals = SettingsObject.Settings(Dictionary.string_settings_german_signal_path)
 
@@ -129,38 +131,19 @@ is_an_unique_csv = False  # If this variable is true, then only one CSV file wil
 # trainSet, validationSet(if necessary) and testSet
 known_data_type = ''  # Contains the type of data if the data file contains an unique type of data. Examples: # Number
 # or Chars.
-"""
-Creating Reader Features
-"""
+
 reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images,number_of_classes = number_of_classes,
                                       labels_set = labels_set,
                                       is_unique_csv = is_an_unique_csv,known_data_type = known_data_type,
                                       percentages_sets = percentages_sets)
-"""
-Creating Reader from ReaderFeatures
-"""
+
 tf_reader = tfr.Reader(reader_features = reader_features)  # Reader Object with all information
 
-"""
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# ---- DATA MINING ----
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-"""
-
-"""
-Manipulate Reader with DataMining and update it.
-"""
-
-"""
-Getting train, validation (if necessary) and test set.
-"""
 test_set = tf_reader.test_set  # Test Set
 train_set = tf_reader.train_set  # Train Set
 del reader_features
 del tf_reader
-'''
+
 option_problem = Dictionary.string_option_signals_images_problem
 
 
@@ -169,7 +152,13 @@ models = models.TFModels(input=train_set[0],test=test_set[0],
                          number_of_classes=number_of_classes, setting_object=setting_object_german_signals,
                          option_problem=option_problem, load_model_configuration=True)
 models.convolution_model_image()
-'''
+"""
+
+# --------------------------------------------------------------------------
+# """ ZILLOW PRICE PROBLEM """
+# --------------------------------------------------------------------------
+
+"""
 # Setting object
 setting_object_zillow_price = SettingsObject.Settings(Dictionary.string_settings_zillow_price)
 # Option problem
@@ -177,23 +166,70 @@ option_problem_zillow_price = Dictionary.string_settings_zillow_price_problem
 # Number of classes
 number_of_classes_zillow_price = 6
 # Path Train
-path_train_validation_test_sets = [setting_object_zillow_price.train_path]
+path_train_validation_test_sets_zillow_price = setting_object_zillow_price.train_path
 # Labels_set
-labels_set = None
-"""
-Creating Reader Features
-"""
-reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images,number_of_classes = number_of_classes,
-                                      labels_set = labels_set,
-                                      is_unique_csv = is_an_unique_csv,known_data_type = known_data_type,
-                                      percentages_sets = percentages_sets)
-"""
-Creating Reader from ReaderFeatures
-"""
-tf_reader = tfr.Reader(reader_features = reader_features)  # Reader Object with all information
+labels_set_zillow_price = None
+# Sets_Percentages
+percentages_sets_zillow_price = None
+# Is unique
+is_an_unique_csv_zillow_price = False  # If this variable is true, then only one CSV file will be passed and it will be treated like
+# trainSet, validationSet(if necessary) and testSet
+known_data_type_zillow_price = None  # Contains the type of data if the data file contains an unique type of data. Examples: # Number
 
+reader_features_zillow_price = tfr.ReaderFeatures(set_data_files=path_train_validation_test_sets_zillow_price,
+                                                  number_of_classes=number_of_classes_zillow_price,
+                                                  labels_set=labels_set_zillow_price,
+                                                  is_unique_csv=is_an_unique_csv_zillow_price,
+                                                  known_data_type=known_data_type_zillow_price,
+                                                  percentages_sets=percentages_sets_zillow_price)
 
-models_zillow_price = models.TFModels(input=train_set[0],test=test_set[0],
-                         input_labels=train_set[1],test_labels=test_set[1],
+tf_reader_zillow_price = tfr.Reader(reader_features = reader_features_zillow_price)  # Reader Object with all information
+test_set_zillow_price = tf_reader_zillow_price.test_set  # Test Set
+train_set_zillow_price = tf_reader_zillow_price.train_set  # Train Set
+del reader_features_zillow_price
+del tf_reader_zillow_price
+
+models_zillow_price = models.TFModels(input=train_set_zillow_price[0],test=test_set_zillow_price[0],
+                         input_labels=train_set_zillow_price[1],test_labels=test_set_zillow_price[1],
                          number_of_classes=number_of_classes, setting_object=setting_object_zillow_price,
                          option_problem=option_problem_zillow_price, load_model_configuration=True)
+
+"""
+
+
+# Setting object
+setting_object_web_traffic = SettingsObject.Settings(Dictionary.string_settings_web_traffic)
+# Option problem
+option_problem_web_traffic = Dictionary.string_settings_web_traffic_problem
+# Number of classes
+number_of_classes_web_traffic = 1
+# Path Train: Must be a list
+path_train_validation_test_sets_web_traffic  = [setting_object_web_traffic.train_path]
+# Labels_set
+labels_set_web_traffic = None
+# Sets_Percentages
+percentages_sets_web_traffic = [0.7,0.2,0.1]
+# Is unique
+is_an_unique_csv_web_traffic = True  # If this variable is true, then only one CSV file will be passed and it will be treated like
+# trainSet, validationSet(if necessary) and testSet
+known_data_type_web_traffic = None  # Contains the type of data if the data file contains an unique type of data. Examples: # Number
+
+
+
+tf_reader_web_traffic = tfr.Reader(delimiter=Dictionary.string_char_comma,
+                                   paths_to_read=path_train_validation_test_sets_web_traffic,
+                                   number_of_classes=number_of_classes_web_traffic,
+                                   labels_set=labels_set_web_traffic,
+                                   is_unique_file=is_an_unique_csv_web_traffic,
+                                   known_data_type=known_data_type_web_traffic,
+                                   percentages_sets=percentages_sets_web_traffic)  # Reader Object with all information
+
+test_set_web_traffic = tf_reader_web_traffic.test_set  # Test Set
+train_set_web_traffic  = tf_reader_web_traffic.train_set  # Train Set
+
+del tf_reader_web_traffic
+
+models_zillow_price = models.TFModels(input=train_set_web_traffic[0],test=test_set_web_traffic[0],
+                         input_labels=train_set_web_traffic[1],test_labels=test_set_web_traffic[1],
+                         number_of_classes=number_of_classes_web_traffic, setting_object=setting_object_web_traffic,
+                         option_problem=option_problem_web_traffic, load_model_configuration=True)

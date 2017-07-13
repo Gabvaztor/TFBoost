@@ -24,6 +24,9 @@ import numpy as np
 """ Shutil for copy and moves files"""
 from shutil import *
 
+""" TO SOLVE sum(list) not exact problem"""
+from decimal import Decimal
+
 def pt(title=None, text=None):
     """
     Use the print function to print a title and an object coverted to string
@@ -278,3 +281,17 @@ def save_and_restart(path_to_backup):
     pt("Removing Models folder...")
     rmtree(to_copy)
     pt("Models removed successfully")
+
+def convert_to_decimal(percentages_sets):
+    """
+    Convert all values from a list to Decimal and return the sum
+    To fix "sum(list)" not exact return problem
+    :param percentages_sets: list of percent (decimal values < 1)
+    :return: list sum
+    """
+    values = []
+    for value in percentages_sets:
+        decimal = Decimal(str(value))
+        values.append(decimal)
+    total_sum = sum(values)
+    return total_sum

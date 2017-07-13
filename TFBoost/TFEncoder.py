@@ -79,6 +79,8 @@ class Dictionary(object):
     string_char_Y = "Y"
     # Char N
     string_char_N = "N"
+    # Char N
+    string_char_comma = ","
 
     """
     STRINGS PROBLEMS
@@ -92,6 +94,10 @@ class Dictionary(object):
     string_settings_german_signal_path = "../Settings/German_Signal/SETTINGS.json"
 
     string_settings_zillow_price = "../Settings/Zillow_Price/SETTINGS.json"
+
+    string_settings_web_traffic = "../Settings/Web_Traffic_Time/SETTINGS.json"
+
+
     """
     STRING FILENAMES
     """
@@ -111,7 +117,11 @@ class Dictionary(object):
     # Option german prizes problem
     string_option_german_prizes_problem = 'german_prizes_problem'
     # Option zillow price problem
-    string_settings_zillow_price_problem = 'zillow_price_problem'
+    string_option_zillow_price_problem = 'zillow_price_problem'
+    # Option zillow price problem
+    string_option_web_traffic_problem = 'web_traffic_problem'
+    # Option Breast Cancer Wisconsin problem
+    string_breast_cancer_wisconsin_problem = 'web_traffic_problem'
 
 
 class Errors(object):
