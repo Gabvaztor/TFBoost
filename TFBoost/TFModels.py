@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Author: @gabvaztor
 StartDate: 04/03/2017
@@ -8,6 +9,7 @@ Style: "Google Python Style Guide"
 https://google.github.io/styleguide/pyguide.html
 
 """
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -75,9 +77,9 @@ class TFModels():
     """
 
     # TODO Docs
-    def __init__(self, input, test, input_labels, test_labels, number_of_classes, setting_object,
-                 option_problem=None, type=None, validation=None, validation_labels=None,
-                 load_model_configuration=False):
+    def __init__(self, setting_object, option_problem, input=None, test=None, input_labels=None, test_labels=None,
+                 number_of_classes=None , type=None, validation=None, validation_labels=None,
+                 load_model_configuration=False, *args , **kwargs):
         # TODO(@gabvaztor) Show and save graphs during all training asking before
         # NOTE: IF YOU LOAD_MODEL_CONFIGURATION AND CHANGE SOME TENSORFLOW ATTRIBUTE AS NEURONS, THE TRAIN WILL START
         # AGAIN
@@ -90,17 +92,17 @@ class TFModels():
         self._input_batch = None
         self._label_batch = None
         # CONFIGURATION VARIABLES
-        self._restore_model = True  # Labels and logits info.
-        self._save_model_information = True  # If must to save model or not
+        self._restore_model = False  # Labels and logits info.
+        self._save_model_information = False  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
         # 'should_save'
         self._show_when_save_information = False  # If True then you will see printed in console when during training
         # the information.json has been saved.
         self._ask_to_continue_creating_model_without_exist = False  # If True and 'restore_model' is True,
-        # ask to continus save model at first if there isn't a model to restore
+        # ask to continues save model at first if there isn't a model to restore
         self._show_advanced_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
-        self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path.
+        self._save_model_configuration = False  # If True, then all attributes will be saved in a settings_object path.
         self._shuffle_data = True  # If True, then the train and validation data will be shuffled separately.
         self._save_graphs_images = False  # If True, then save graphs images from statistical values. NOTE that this will
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
@@ -111,8 +113,11 @@ class TFModels():
         self._kernel_size = [5, 5]  # Kernel patch size
         self._epoch_numbers = 130  # Epochs number
         self._batch_size = 100  # Batch size
-        self._input_size = len(input)  # Change if necessary
-        self._test_size = len(test)  # Change if necessary
+        if input:
+            self._input_size = 145062  # Change if necessary
+            self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
+        if test:
+            self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
         self._first_label_neurons = 50
         self._second_label_neurons = 55
@@ -120,7 +125,6 @@ class TFModels():
         self._learning_rate = 1e-3  # Learning rate
         self._number_epoch_to_change_learning_rate = 15  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
-        self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training. Start at zero.
         self._num_trains_count = 1  # Start at one
@@ -131,7 +135,6 @@ class TFModels():
         # RESTART TRAINING
         self._save_and_restart = False  # All history and metadata will be saved in a different folder and the execution
         # will be restarted
-
         if self.save_and_restart:
             save_and_restart(self.settings_object.model_path)
         # OPTIONS
@@ -139,8 +142,7 @@ class TFModels():
         #               - First position: "string_option" --> unique string to represent problem in question
         #               - Others positions: all variables you need to process each input and label elements
         # noinspection PyUnresolvedReferences
-        self._options = [option_problem, cv2.IMREAD_GRAYSCALE,
-                         self.input_rows_columns_array[0], self.input_rows_columns_array[1]]
+        self._options = [option_problem]
         # SAVE AND LOAD MODEL
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
@@ -523,28 +525,15 @@ class TFModels():
 
 
     @timed
-    def rnn_lstm_web_traffic_time(self):
+    def rnn_lstm_web_traffic_time(self, *args, **kwargs):
         """
         LSTM solve to WEB_TRAFFIC_TIME problem
         """
-        # Placeholders
-        x_input, y_labels, keep_probably = self.placeholders(args=None, kwargs=None)
-        # Reshape x placeholder into a specific tensor
-        x_reshape = tf.reshape(x_input, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
-        # Network structure
-        y_prediction = self.network_structure(x_reshape, args=None, keep_probably=keep_probably)
-        cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
-                                                                                        y_prediction=y_prediction)
-        # Batching values and labels from input and labels (with batch size)
-        self.update_batch()
-        # Session
-        sess = initialize_session()
-        # Saver session
-        saver = tf.train.Saver()  # Saver
-        # To restore model
-        if self.restore_model:
-            self.load_and_restore_model(sess)
-        self.train_model(args=None, kwargs=locals())
+        self.create_input_and_label_data()
+        self.update_batch(is_test=False)
+        # TODO (@gabvaztor) Create Validation Set
+        # TODO After that, create lstm network and feed with batches.
+
 
     @timed
     def convolution_model_image(self):
@@ -1044,6 +1033,44 @@ class TFModels():
 
     def make_predictions(self):
         pass
+
+    def create_input_and_label_data(self):
+        """
+        Create input and label data by problem
+        """
+        if self.options[0] == Dictionary.string_option_web_traffic_problem:
+            path_to_read_trains = self.settings_object.train_path
+            # Read csv trains
+            csv = Dictionary.string_csv_extension
+            csv_files_list = []
+            for number_file in range(1, 10):
+                path_to_read = path_to_read_trains + str(number_file) + csv
+                csv_files_list.append(path_to_read)
+            filename_queue = tf.train.string_input_producer(csv_files_list)
+            line_reader = tf.TextLineReader(skip_header_lines=1)
+            _, csv_row = line_reader.read(filename_queue)
+            # Default values, in case of empty columns. Also specifies the type of the
+            # decoded result.
+            record_defaults = [[""], [3.0]]
+            page_date, visits = tf.decode_csv(csv_row, record_defaults=record_defaults)
+            features = tf.stack(page_date)
+            with tf.device('/gpu:0'):
+                sess = initialize_session()
+                # Start populating the filename queue.
+                coord = tf.train.Coordinator()
+                threads = tf.train.start_queue_runners(coord=coord)
+                self.input = []
+                self.input_labels = []
+                for i in range(self.input_size):
+                    # Retrieve a single instance:
+                    input, label = sess.run([features, visits])
+                    self.input.append(input)
+                    self.input_labels.append(label)
+                self.input = np.asarray(self.input)
+                self.input_labels = np.asarray(self.input_labels)
+            coord.request_stop()
+            coord.join(threads)
+
 
 
 """

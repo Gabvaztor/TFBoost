@@ -82,12 +82,6 @@ class Reader(object):
     DOCS...
     """
     # TODO
-    types = set()
-    data = []
-    train_set_csv = ''
-    validation_set_csv = ''
-    test_set_csv = ''
-    train_validation_set = []
     train_set = []
     validation_set = []
     test_set = []
@@ -155,16 +149,19 @@ class Reader(object):
             features = self.reader_features
             tf_search = Searcher(features=features)
             tf_search.find_train_and_test_sets_from_path_signals()
+            self.load_sets(test=True)
         elif type_problem == Dictionary.string_option_web_traffic_problem:
-            self.read_web_traffic_data_and_create_files(is_necessary=False)
-        self.load_sets()
-
-    def load_sets(self):
+            self.read_web_traffic_data_and_create_files(is_necessary_create_files=False)
+            self.create_web_traffic_data_inputs_from_train_path()
+    def load_sets(self, validation=False, test=False):
         self.train_set.append(np.asarray(self.x_train))
         self.train_set.append(np.asarray(self.y_train))
-        self.test_set.append(np.asarray(self.x_test))
-        self.test_set.append(np.asarray(self.y_test))
-
+        if test:
+            self.test_set.append(np.asarray(self.x_test))
+            self.test_set.append(np.asarray(self.y_test))
+        if validation:
+            self.validation_set.append(np.asarray(self.x_validation))
+            self.validation_set.append(np.asarray(self.y_validation))
     def calculate_percentages(self, percentages_sets):
         """
         
@@ -195,17 +192,18 @@ class Reader(object):
         return there_is_validation, train_validation_test_percentages
 
     @timed
-    def read_web_traffic_data_and_create_files(self, is_necessary=False):
+    def read_web_traffic_data_and_create_files(self, is_necessary_create_files=False):
         """
         Create 9 csv files each one with "Page_Date,Visits" as header. 
         Note: The train_1.csv file must have 145063 rows with header 
-        It useful one time. If you have created the files, then you have not use it.
+        It useful one time. If you have created the files, then is_necessary_create_files need to be false.
         Attributes: 
             
-            is_necessary: If True, then use this method. Else it is because you have created files before.
+            is_necessary_create_files: If True, then use this method to create files. Else it is because you have 
+            created files before.
             
         """
-        if is_necessary:
+        if is_necessary_create_files:
             pt('Reading data from ...')
             key_1 = pd.read_csv(self.paths_to_read[1], encoding="utf-8")
             train_1 = pd.read_csv(self.paths_to_read[0], encoding="utf-8")
@@ -241,7 +239,8 @@ class Reader(object):
                         pt("index_page", index_page)
             path_to_save = to_save + str(part) + csv
             save_submission_to_csv(path_to_save, pages_with_date_and_label)
-            pt("END")
+            pt("END Creating files ")
+
     def read_generic_problem(self):
         # TODO When the csv has only a type is much better use numpy. Use known_data_type
         # self.data = np.fromfile(dataFile,dtype = np.float64)
@@ -284,6 +283,22 @@ class Reader(object):
             # TODO If there is not train and test set with optional validation then Reader will do nothing
         self.load_sets()
 
+    def create_web_traffic_data_inputs_from_train_path(self):
+        """
+        for number_file in range(1, 9):
+            path_to_read = trains_path + str(number_file) + csv
+            pt("Reading...", path_to_read)
+            train_labels = pd.read_csv(path_to_read, encoding='utf-8')
+            if number_file <= 7:
+                self.y_train = np.asarray([train_labels.pop("Visits")], dtype=np.float32)
+                self.x_train = np.asarray([train_labels.pop("Pages_Date")], dtype=np.str)
+                self.load_sets(validation=False, test=False)
+            else:
+                pt("number_file", number_file)
+                self.y_validation = np.asarray([train_labels.pop("Visits")], dtype=np.float32)
+                self.x_validation = np.asarray([train_labels.pop("Pages_Date")], dtype=np.str)
+                self.load_sets(validation=True, test=False)
+        """
 
 class ReaderFeatures():
     """ ReaderFeatures Class
@@ -319,7 +334,6 @@ class ReaderFeatures():
         self.known_data_type = known_data_type
         self.labels_sets =  labels_set
 
-        # TODO Fix this
         if percentages_sets :  # If it is not None
             percentages_sets_sum = convert_to_decimal(percentages_sets)
             if type(percentages_sets) is type([])\
@@ -353,7 +367,6 @@ class Searcher(Reader):
         """
         :return: Paths list from train and test path
         """
-        # TODO check nulls
         for path in self.path_to_read:
             for root, dirs, files in os.walk(path):
                 for file_name in files:

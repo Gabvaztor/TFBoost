@@ -63,7 +63,6 @@ def timed(method):
 
     return inner
 
-
 def clear_console():
     os.system('cls')
 

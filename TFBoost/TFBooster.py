@@ -217,8 +217,6 @@ is_an_unique_csv_web_traffic = False  # If this variable is true, then only one 
 # trainSet, validationSet(if necessary) and testSet
 known_data_type_web_traffic = None  # Contains the type of data if the data file contains an unique type of data. Examples: # Number
 
-
-
 tf_reader_web_traffic = tfr.Reader(delimiter=Dictionary.string_char_comma,
                                    paths_to_read=path_train_validation_test_sets_web_traffic,
                                    number_of_classes=number_of_classes_web_traffic,
@@ -228,12 +226,14 @@ tf_reader_web_traffic = tfr.Reader(delimiter=Dictionary.string_char_comma,
                                    percentages_sets=percentages_sets_web_traffic,
                                    type_problem=option_problem_web_traffic)  # Reader Object with all information
 
-test_set_web_traffic = tf_reader_web_traffic.test_set  # Test Set
+validation_set_web_traffic = tf_reader_web_traffic.validation_set  # Test Set
 train_set_web_traffic  = tf_reader_web_traffic.train_set  # Train Set
 
 del tf_reader_web_traffic
 
-models_zillow_price = models.TFModels(input=train_set_web_traffic[0],test=test_set_web_traffic[0],
-                         input_labels=train_set_web_traffic[1],test_labels=test_set_web_traffic[1],
-                         number_of_classes=number_of_classes_web_traffic, setting_object=setting_object_web_traffic,
-                         option_problem=option_problem_web_traffic, load_model_configuration=True)
+models_zillow_price = models.TFModels(number_of_classes=number_of_classes_web_traffic,
+                                      setting_object=setting_object_web_traffic,
+                                      option_problem=option_problem_web_traffic,
+                                      load_model_configuration=False)
+models_zillow_price.rnn_lstm_web_traffic_time()
+
