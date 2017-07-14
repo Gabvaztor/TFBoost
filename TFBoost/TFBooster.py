@@ -200,17 +200,20 @@ models_zillow_price = models.TFModels(input=train_set_zillow_price[0],test=test_
 # Setting object
 setting_object_web_traffic = SettingsObject.Settings(Dictionary.string_settings_web_traffic)
 # Option problem
-option_problem_web_traffic = Dictionary.string_settings_web_traffic_problem
+option_problem_web_traffic = Dictionary.string_option_web_traffic_problem
 # Number of classes
 number_of_classes_web_traffic = 1
 # Path Train: Must be a list
-path_train_validation_test_sets_web_traffic  = [setting_object_web_traffic.train_path]
+path_train_validation_test_sets_web_traffic  = [setting_object_web_traffic.train_path,
+                                                setting_object_web_traffic.test_path,
+                                                setting_object_web_traffic.model_path,
+                                                setting_object_web_traffic.submission_path]
 # Labels_set
 labels_set_web_traffic = None
 # Sets_Percentages
 percentages_sets_web_traffic = [0.7,0.2,0.1]
 # Is unique
-is_an_unique_csv_web_traffic = True  # If this variable is true, then only one CSV file will be passed and it will be treated like
+is_an_unique_csv_web_traffic = False  # If this variable is true, then only one CSV file will be passed and it will be treated like
 # trainSet, validationSet(if necessary) and testSet
 known_data_type_web_traffic = None  # Contains the type of data if the data file contains an unique type of data. Examples: # Number
 
@@ -222,7 +225,8 @@ tf_reader_web_traffic = tfr.Reader(delimiter=Dictionary.string_char_comma,
                                    labels_set=labels_set_web_traffic,
                                    is_unique_file=is_an_unique_csv_web_traffic,
                                    known_data_type=known_data_type_web_traffic,
-                                   percentages_sets=percentages_sets_web_traffic)  # Reader Object with all information
+                                   percentages_sets=percentages_sets_web_traffic,
+                                   type_problem=option_problem_web_traffic)  # Reader Object with all information
 
 test_set_web_traffic = tf_reader_web_traffic.test_set  # Test Set
 train_set_web_traffic  = tf_reader_web_traffic.train_set  # Train Set

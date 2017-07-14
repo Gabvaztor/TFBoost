@@ -56,6 +56,8 @@ class Dictionary(object):
     string_ckpt_extension = '.ckpt'
     # Format meta
     string_meta_extension = '.meta'
+    # Format csv
+    string_csv_extension = '.csv'
     # Format npy (numpy)
     string_npy_extension = '.npy'
     # Format zip
@@ -81,6 +83,8 @@ class Dictionary(object):
     string_char_N = "N"
     # Char N
     string_char_comma = ","
+    # Char _
+    string_char_low_stripe = "_"
 
     """
     STRINGS PROBLEMS

@@ -521,6 +521,31 @@ class TFModels():
         return json.dumps(self, default=lambda o: self.properties(attributes_to_delete),
                           sort_keys=True, indent=4)
 
+
+    @timed
+    def rnn_lstm_web_traffic_time(self):
+        """
+        LSTM solve to WEB_TRAFFIC_TIME problem
+        """
+        # Placeholders
+        x_input, y_labels, keep_probably = self.placeholders(args=None, kwargs=None)
+        # Reshape x placeholder into a specific tensor
+        x_reshape = tf.reshape(x_input, [-1, self.input_rows_numbers, self.input_columns_numbers, 1])
+        # Network structure
+        y_prediction = self.network_structure(x_reshape, args=None, keep_probably=keep_probably)
+        cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
+                                                                                        y_prediction=y_prediction)
+        # Batching values and labels from input and labels (with batch size)
+        self.update_batch()
+        # Session
+        sess = initialize_session()
+        # Saver session
+        saver = tf.train.Saver()  # Saver
+        # To restore model
+        if self.restore_model:
+            self.load_and_restore_model(sess)
+        self.train_model(args=None, kwargs=locals())
+
     @timed
     def convolution_model_image(self):
         """

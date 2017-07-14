@@ -52,6 +52,8 @@ Time
 '''
 import time
 
+import tensorflow as tf
+
 # --------------------------------------------------------------------------
 '''
 Traceback and Os to search
@@ -71,6 +73,9 @@ import numpy as np
 '''
 from sklearn.model_selection import train_test_split
 # --------------------------------------------------------------------------
+
+
+
 
 class Reader(object):
     """
@@ -112,7 +117,7 @@ class Reader(object):
         :param percentages_sets: 
         """
         # TODO (@gabvaztor) DOCs
-        self.path_to_read = paths_to_read
+        self.paths_to_read = paths_to_read
         self.number_of_classes = number_of_classes
         self.is_unique_file = is_unique_file
         self.known_data_type = known_data_type
@@ -120,7 +125,10 @@ class Reader(object):
         self.there_is_validation, self.train_validation_test_percentages = self.calculate_percentages(percentages_sets)
         self.reader_features = reader_features
         self.delimiter = delimiter
-        if self.reader_features.is_unique_csv:
+        if reader_features:
+            if self.reader_features.is_unique_csv:
+                self.unique_data_file(type_problem)
+        elif self.is_unique_file:
             self.unique_data_file(type_problem)
         else:
             self.multiple_data_files(type_problem)
@@ -148,7 +156,7 @@ class Reader(object):
             tf_search = Searcher(features=features)
             tf_search.find_train_and_test_sets_from_path_signals()
         elif type_problem == Dictionary.string_option_web_traffic_problem:
-            self.read_web_traffic_data()
+            self.read_web_traffic_data_and_create_files(is_necessary=False)
         self.load_sets()
 
     def load_sets(self):
@@ -186,10 +194,54 @@ class Reader(object):
                 raise RuntimeError(Errors.percentages_sets)
         return there_is_validation, train_validation_test_percentages
 
-    def read_web_traffic_data(self):
-        # TODO READ FILES
-        pass
-
+    @timed
+    def read_web_traffic_data_and_create_files(self, is_necessary=False):
+        """
+        Create 9 csv files each one with "Page_Date,Visits" as header. 
+        Note: The train_1.csv file must have 145063 rows with header 
+        It useful one time. If you have created the files, then you have not use it.
+        Attributes: 
+            
+            is_necessary: If True, then use this method. Else it is because you have created files before.
+            
+        """
+        if is_necessary:
+            pt('Reading data from ...')
+            key_1 = pd.read_csv(self.paths_to_read[1], encoding="utf-8")
+            train_1 = pd.read_csv(self.paths_to_read[0], encoding="utf-8")
+            #ss_1 = pd.read_csv(self.paths_to_read[2])
+            pt('Preprocessing...', "Changing NaN by 3")
+            train_1.fillna(3, inplace=True)
+            pt('Processing...')
+            ids = key_1.Id.values
+            pages2 = key_1.Page.values
+            print('train_1...')
+            pages = list(train_1.Page.values)
+            columns_list = list(train_1.columns.values)
+            columns_list.pop(0)
+            pt("Train_1", "Getting values...")
+            train_values = train_1.get_values()
+            del train_1
+            pages_with_date_and_label = {}
+            to_save = "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Trains\\"
+            part = 1
+            csv = Dictionary.string_csv_extension
+            pt("Train_1", "Start for...")
+            for index_page in range(len(pages)):
+                for index_date in range(len(columns_list)):
+                    if index_page % 16118 == 0 and index_date == 0 and index_page != 0:
+                        path_to_save = to_save + str(part) + csv
+                        save_submission_to_csv(path_to_save, pages_with_date_and_label)
+                        part += 1
+                        pages_with_date_and_label = {}
+                    page_with_date = pages[index_page] + Dictionary.string_char_low_stripe + str(columns_list[index_date])
+                    value = train_values[index_page][index_date+1]
+                    pages_with_date_and_label[page_with_date] = value
+                    if index_page % 1000 == 0 and index_date == 0:
+                        pt("index_page", index_page)
+            path_to_save = to_save + str(part) + csv
+            save_submission_to_csv(path_to_save, pages_with_date_and_label)
+            pt("END")
     def read_generic_problem(self):
         # TODO When the csv has only a type is much better use numpy. Use known_data_type
         # self.data = np.fromfile(dataFile,dtype = np.float64)

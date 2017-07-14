@@ -27,6 +27,11 @@ from shutil import *
 """ TO SOLVE sum(list) not exact problem"""
 from decimal import Decimal
 
+'''
+To install pandas: pip3 install pandas
+'''
+import pandas as pd
+
 def pt(title=None, text=None):
     """
     Use the print function to print a title and an object coverted to string
@@ -295,3 +300,15 @@ def convert_to_decimal(percentages_sets):
         values.append(decimal)
     total_sum = sum(values)
     return total_sum
+
+@timed
+def save_submission_to_csv(path_to_save, dictionary):
+    print('Saving submission...')
+    pt("Getting keys...")
+    keys = list(dictionary.keys())
+    pt("Getting values...")
+    values = list(dictionary.values())
+    submission = pd.DataFrame({'Pages_Date': keys, 'Visits': values})
+    pt("Saving to csv in path...")
+    submission.to_csv(path_to_save, index=False, encoding='utf-8')
+    pt("Save successfully")
