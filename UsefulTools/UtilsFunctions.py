@@ -32,6 +32,9 @@ To install pandas: pip3 install pandas
 '''
 import pandas as pd
 
+"""TensorFlow"""
+import tensorflow as tf
+
 def pt(title=None, text=None):
     """
     Use the print function to print a title and an object coverted to string
@@ -311,3 +314,7 @@ def save_submission_to_csv(path_to_save, dictionary):
     pt("Saving to csv in path...")
     submission.to_csv(path_to_save, index=False, encoding='utf-8')
     pt("Save successfully")
+
+def smape(y_true, y_prediction):
+    return tf.truediv((tf.subtract(tf.abs(y_prediction), tf.abs(y_true))),
+               (tf.add(tf.abs(y_true), tf.abs(y_prediction))) / 2.0)
