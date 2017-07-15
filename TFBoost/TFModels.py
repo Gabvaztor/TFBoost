@@ -548,12 +548,21 @@ class TFModels():
         """
         LSTM solve to WEB_TRAFFIC_TIME problem
         """
-        self.create_input_and_label_data()
+
+        self.input_size = 145062  # Change if necessary
+        self.trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
+        # self.create_input_and_label_data()
+        names_of_data = ["input_data","validation_data","inputs_labels", "validation_labels"]
+        """
         save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
-                                            train_accuracies=self.input,
-                                            validation_accuracies=self.validation,
-                                            train_losses=self.input_labels,
-                                            validation_losses=self.validation_labels)
+                                            numpy_file_1=self.input,
+                                            numpy_file_2=self.validation,
+                                            numpy_file_3=self.input_labels,
+                                            numpy_file_4=self.validation_labels,
+                                            names=names_of_data)
+        """
+        self.input, self.validation, self.input_labels, self.validation_labels = \
+            load_4_numpy_files(path_to_load=self.settings_object.accuracies_losses_path, names_to_load_4=names_of_data)
         self.update_batch(is_test=False)
         # TODO After that, create lstm network and feed with batches.
 
@@ -563,8 +572,9 @@ class TFModels():
         n_hidden = 128  # hidden layer num of features
         n_classes = 1
 
+        # TODO (@gabvaztor) Continue creating x placeholder to "be a sequence"
         # tf Graph input
-        x = tf.placeholder(tf.string, [None, n_classes])
+        x = tf.placeholder(tf.string, shape=[None, n_classes])
         y_labels = tf.placeholder(tf.float32, [None, n_classes])
         keep_probably = tf.placeholder(tf.float32)
 
@@ -1243,10 +1253,8 @@ class TFModels():
                 self.input_labels = np.asarray(self.input_labels)
                 self.validation = np.asarray(self.validation)
                 self.validation_labels = np.asarray(self.validation_labels)
-
             coord.request_stop()
             coord.join(threads)
-
 
 
 """

@@ -227,8 +227,8 @@ def preprocess_lists(lists, index_to_eliminate=2):
             processed_lists.append(list_to_process)
     return processed_lists
 
-def save_accuracies_and_losses_training(folder_to_save, train_accuracies, validation_accuracies, train_losses,
-                                        validation_losses):
+def save_accuracies_and_losses_training(folder_to_save, numpy_file_1, numpy_file_2, numpy_file_3,
+                                        numpy_file_4, names=None):
     """
     Save the accuracies and losses into a type_file folder
     :param folder_to_save: 
@@ -239,16 +239,21 @@ def save_accuracies_and_losses_training(folder_to_save, train_accuracies, valida
     :param type_file: folder to save
     """
     # TODO (@gabvaztor) finish DOcs
-
-    filename_train_accuracies = Dictionary.filename_train_accuracies
-    filename_validation_accuracies = Dictionary.filename_validation_accuracies
-    filename_train_losses = Dictionary.filename_train_losses
-    filename_validation_losses = Dictionary.filename_validation_losses
+    if not names:
+        name_file_1 = Dictionary.filename_train_accuracies
+        name_file_2 = Dictionary.filename_validation_accuracies
+        name_file_3 = Dictionary.filename_train_losses
+        name_file_4 = Dictionary.filename_validation_losses
+    else:
+        name_file_1 = names[0]
+        name_file_2 = names[1]
+        name_file_3 = names[2]
+        name_file_4 = names[3]
     create_directory_from_fullpath(folder_to_save)
-    np.save(folder_to_save + filename_train_accuracies, train_accuracies)
-    np.save(folder_to_save + filename_validation_accuracies, validation_accuracies)
-    np.save(folder_to_save + filename_train_losses, train_losses)
-    np.save(folder_to_save + filename_validation_losses, validation_losses)
+    np.save(folder_to_save + name_file_1, numpy_file_1)
+    np.save(folder_to_save + name_file_2, numpy_file_2)
+    np.save(folder_to_save + name_file_3, numpy_file_3)
+    np.save(folder_to_save + name_file_4, numpy_file_4)
 
 def load_accuracies_and_losses(path_to_load, flag_restore_model=False):
     """
@@ -271,6 +276,20 @@ def load_accuracies_and_losses(path_to_load, flag_restore_model=False):
             loss_validation = list(np.load(path_to_load+filename_validation_losses))
 
     return accuracies_train, accuracies_validation, loss_train, loss_validation
+
+
+def load_4_numpy_files(path_to_load, names_to_load_4):
+    # TODO (@gabvaztor) Docs
+    npy_extension = Dictionary.string_npy_extension
+    for i in range (0,4):
+        file_exists_in_path_or_create_path(path_to_load + names_to_load_4[i])
+    file_1 = list(np.load(path_to_load + names_to_load_4[0] + npy_extension))
+    file_2 = list(np.load(path_to_load + names_to_load_4[1] + npy_extension))
+    file_3 = list(np.load(path_to_load + names_to_load_4[2] + npy_extension))
+    file_4 = list(np.load(path_to_load + names_to_load_4[3] + npy_extension))
+
+    return file_1, file_2, file_3, file_4
+
 
 def save_and_restart(path_to_backup):
     """
