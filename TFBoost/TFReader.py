@@ -152,7 +152,6 @@ class Reader(object):
             self.load_sets(test=True)
         elif type_problem == Dictionary.string_option_web_traffic_problem:
             self.read_web_traffic_data_and_create_files(is_necessary_create_files=False)
-            self.create_web_traffic_data_inputs_from_train_path()
     def load_sets(self, validation=False, test=False):
         self.train_set.append(np.asarray(self.x_train))
         self.train_set.append(np.asarray(self.y_train))
@@ -282,23 +281,6 @@ class Reader(object):
                                                                                                 test_size=validationSize)  # Divide train and validation sets into two separate sets.
             # TODO If there is not train and test set with optional validation then Reader will do nothing
         self.load_sets()
-
-    def create_web_traffic_data_inputs_from_train_path(self):
-        """
-        for number_file in range(1, 9):
-            path_to_read = trains_path + str(number_file) + csv
-            pt("Reading...", path_to_read)
-            train_labels = pd.read_csv(path_to_read, encoding='utf-8')
-            if number_file <= 7:
-                self.y_train = np.asarray([train_labels.pop("Visits")], dtype=np.float32)
-                self.x_train = np.asarray([train_labels.pop("Pages_Date")], dtype=np.str)
-                self.load_sets(validation=False, test=False)
-            else:
-                pt("number_file", number_file)
-                self.y_validation = np.asarray([train_labels.pop("Visits")], dtype=np.float32)
-                self.x_validation = np.asarray([train_labels.pop("Pages_Date")], dtype=np.str)
-                self.load_sets(validation=True, test=False)
-        """
 
 class ReaderFeatures():
     """ ReaderFeatures Class

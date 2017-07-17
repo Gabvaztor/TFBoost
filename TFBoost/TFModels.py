@@ -71,7 +71,6 @@ import time
 """ To serialize object"""
 import json
 
-
 class TFModels():
     """
     Long Docs ...
@@ -106,7 +105,7 @@ class TFModels():
         self._show_advanced_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
         self._save_model_configuration = False  # If True, then all attributes will be saved in a settings_object path.
-        self._shuffle_data = True  # If True, then the train and validation data will be shuffled separately.
+        self._shuffle_data = False  # If True, then the train and validation data will be shuffled separately.
         self._save_graphs_images = False  # If True, then save graphs images from statistical values. NOTE that this will
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
         # the framework will save a graph
@@ -551,9 +550,9 @@ class TFModels():
 
         self.input_size = 145062  # Change if necessary
         self.trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
-        # self.create_input_and_label_data()
-        names_of_data = ["input_data","validation_data","inputs_labels", "validation_labels"]
+        names_of_data = ["input_data", "validation_data", "inputs_labels", "validation_labels"]
         """
+        self.create_input_and_label_data()
         save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
                                             numpy_file_1=self.input,
                                             numpy_file_2=self.validation,
@@ -563,26 +562,46 @@ class TFModels():
         """
         self.input, self.validation, self.input_labels, self.validation_labels = \
             load_4_numpy_files(path_to_load=self.settings_object.accuracies_losses_path, names_to_load_4=names_of_data)
+        to_convert_to_numpy_array = [self.input, self.validation, self.input_labels, self.validation_labels]
+        self.input, self.validation, self.input_labels, self.validation_labels = \
+            convert_to_numpy_array(to_convert_to_numpy_array_list=to_convert_to_numpy_array)
         self.update_batch(is_test=False)
         # TODO After that, create lstm network and feed with batches.
-
+        pt("input_shape", self.input.shape)
         # Network Parameters
         n_input = 28  # MNIST data input (img shape: 28*28)
         n_steps = 28  # timesteps
         n_hidden = 128  # hidden layer num of features
         n_classes = 1
 
+        # TENSORFLOW --------------------------------------
+        tf.reset_default_graph()
         # TODO (@gabvaztor) Continue creating x placeholder to "be a sequence"
         # tf Graph input
-        x = tf.placeholder(tf.string, shape=[None, n_classes])
-        y_labels = tf.placeholder(tf.float32, [None, n_classes])
+        x = tf.placeholder(tf.string, shape=[None, 1, 1])
+        # x = tf.decode_raw(x, tf.float32)
+        y_labels = tf.placeholder(tf.float32, [None, 1])
         keep_probably = tf.placeholder(tf.float32)
 
         # Define weights
-        weights = tf.Variable(tf.random_normal([n_hidden, n_classes]))
+        weights = tf.Variable(tf.random_normal([self.first_label_neurons, n_classes]))
         biases =  tf.Variable(tf.random_normal([n_classes]))
 
-        y_prediction = self.RNN(x, keep_probably, weights, biases)
+        # y_prediction = self.RNN(x, keep_probably, weights, biases)
+        # Prepare data shape to match `rnn` function requirements
+        # Current data input shape: (batch_size, n_steps, n_input)
+        # Required shape: 'n_steps' tensors list of shape (batch_size, n_input)
+
+        # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
+        #x = tf.unstack(input, n_steps, 1)
+        # x = tf.unstack(x, 1)
+        # Define a lstm cell with tensorflow
+        lstm_cell = tf.nn.rnn_cell.LSTMCell(self.first_label_neurons, forget_bias=1)
+        # Get lstm cell output
+        outputs, states = tf.nn.dynamic_rnn(lstm_cell, x, dtype=tf.string)
+        dropout = tf.nn.dropout(outputs[-1], keep_probably)
+        # Linear activation, using rnn inner loop last output
+        y_prediction = tf.matmul(dropout, weights) + biases
 
         # Define loss and optimizer
         cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_prediction, labels=y_labels))
@@ -600,7 +619,12 @@ class TFModels():
         if self.restore_model:
             self.load_and_restore_model(sess)
 
-        # TRAIN -----------------------------------------------
+        # TRAIN ----------------------------------------------
+
+        pt("input.shape", self.input.shape)
+        pt("input_labels.shape", self.input_labels.shape)
+        pt("validation.shape", self.validation.shape)
+        pt("validation_labels.shape", self.validation_labels.shape)
         x_validation_feed, y_validation_feed = self.validation, self.validation_labels
 
         # TRAIN VARIABLES
@@ -615,7 +639,7 @@ class TFModels():
         filepath_save = None
 
         # Update test feeds ( will be not modified during training)
-        feed_dict_validation_100 = {x: x_validation_feed, y_labels: y_validation_feed, keep_probably: 1}
+        feed_dict_validation_100 = {x: x_validation_feed, y_labels: y_validation_feed, keep_probably: 1.}
         # Update real num_train:
         num_train_start = int(self.num_trains_count % self.trains)
         if num_train_start == self.trains:
@@ -644,10 +668,10 @@ class TFModels():
                 loss_validation.append(cross_entropy_validation)
                 with tf.device('/cpu:1'):
                     save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
-                                                        train_accuracies=accuracies_train,
-                                                        validation_accuracies=accuracies_validation,
-                                                        train_losses=loss_train,
-                                                        validation_losses=loss_validation)
+                                                        numpy_file_1=accuracies_train,
+                                                        numpy_file_2=accuracies_validation,
+                                                        numpy_file_3=loss_train,
+                                                        numpy_file_4=loss_validation)
 
                 if num_train % 10 == 0:
                     percent_advance = str(num_train * 100 / self.trains)
@@ -702,9 +726,9 @@ class TFModels():
 
         # Define a lstm cell with tensorflow
         lstm_cell = rnn.BasicLSTMCell(self.first_label_neurons, forget_bias=1.0)
-
+        input = tf.unstack(input, 1, 1)
         # Get lstm cell output
-        outputs, states = rnn.static_rnn(lstm_cell, input, dtype=tf.float32)
+        outputs, states = rnn.static_rnn(lstm_cell, input, dtype=tf.string)
         dropout = tf.nn.dropout(outputs[-1], keep_probably)
         # Linear activation, using rnn inner loop last output
         y_prediction = tf.matmul(dropout, weights) + biases
@@ -1229,30 +1253,45 @@ class TFModels():
             record_defaults = [[""], [3.0]]
             page_date, visits = tf.decode_csv(csv_row, record_defaults=record_defaults)
             features = tf.stack(page_date)
-            with tf.device('/gpu:0'):
-                sess = initialize_session()
-                # Start populating the filename queue.
-                coord = tf.train.Coordinator()
-                threads = tf.train.start_queue_runners(coord=coord)
-                self.input, self.validation = [], []
-                self.input_labels, self.validation_labels = [], []
-                self.input_size = 145062  # Change if necessary
-                self.trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
-                percent_80_input_size = int(self.input_size * 0.8)
-                pt("Generating input and validation data...")
-                for i in range(self.input_size):
-                    # Retrieve a single instance:
-                    input, label = sess.run([features, visits])
-                    if i < percent_80_input_size:
-                        self.input.append(input)
-                        self.input_labels.append(label)
+            sess = initialize_session()
+            # Start populating the filename queue.
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(coord=coord)
+            self.input, self.validation = np.array([[]]), np.array([])
+            self.input_labels, self.validation_labels = np.array([]), np.array([])
+            self.input_size = 145062  # Change if necessary
+            self.trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
+            percent_80_input_size = int(self.input_size * 0.8)
+            pt("Generating input and validation data...")
+            is_first = True
+            is_validation = False
+            is_first_validation = True
+            for i in range(self.input_size):
+                # Retrieve a single instance:
+                input, label = sess.run([features, visits])
+                input_resized = np.asarray([[input.decode("utf-8")]])
+                label_resized = np.asarray([[label]])
+                if is_first and not is_validation:
+                    self.input = input_resized
+                    self.input_labels = label_resized
+                    is_first = False
+                    pt("input_shape", self.input.shape)
+                    pt("input_labels_shape", self.input_labels.shape)
+                    pt("input_resized_shape", input_resized.shape)
+                    pt("label_resized_shape", label_resized.shape)
+
+                if i < percent_80_input_size:
+                    self.input = np.concatenate((self.input, input_resized))
+                    self.input_labels = np.concatenate((self.input_labels, label_resized))
+                else:
+                    is_validation = True
+                    if is_first_validation:
+                        self.validation = input_resized
+                        self.validation_labels = label_resized
+                        is_first_validation = False
                     else:
-                        self.validation.append(input)
-                        self.validation_labels.append(label)
-                self.input = np.asarray(self.input)
-                self.input_labels = np.asarray(self.input_labels)
-                self.validation = np.asarray(self.validation)
-                self.validation_labels = np.asarray(self.validation_labels)
+                        self.validation = np.concatenate((self.validation, input_resized))
+                        self.validation_labels = np.concatenate((self.validation_labels, label_resized))
             coord.request_stop()
             coord.join(threads)
 

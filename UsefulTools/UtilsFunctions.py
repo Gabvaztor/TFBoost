@@ -283,10 +283,10 @@ def load_4_numpy_files(path_to_load, names_to_load_4):
     npy_extension = Dictionary.string_npy_extension
     for i in range (0,4):
         file_exists_in_path_or_create_path(path_to_load + names_to_load_4[i])
-    file_1 = list(np.load(path_to_load + names_to_load_4[0] + npy_extension))
-    file_2 = list(np.load(path_to_load + names_to_load_4[1] + npy_extension))
-    file_3 = list(np.load(path_to_load + names_to_load_4[2] + npy_extension))
-    file_4 = list(np.load(path_to_load + names_to_load_4[3] + npy_extension))
+    file_1 = np.load(path_to_load + names_to_load_4[0] + npy_extension)
+    file_2 = np.load(path_to_load + names_to_load_4[1] + npy_extension)
+    file_3 = np.load(path_to_load + names_to_load_4[2] + npy_extension)
+    file_4 = np.load(path_to_load + names_to_load_4[3] + npy_extension)
 
     return file_1, file_2, file_3, file_4
 
@@ -337,3 +337,11 @@ def save_submission_to_csv(path_to_save, dictionary):
 def smape(y_true, y_prediction):
     return tf.truediv((tf.subtract(tf.abs(y_prediction), tf.abs(y_true))),
                (tf.add(tf.abs(y_true), tf.abs(y_prediction))) / 2.0)
+
+def convert_to_numpy_array(to_convert_to_numpy_array_list):
+    to_return = []
+    if to_convert_to_numpy_array_list:
+        for element in to_convert_to_numpy_array_list:
+            element = np.asarray(element)
+            to_return.append(element)
+    return to_return

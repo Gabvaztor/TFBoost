@@ -235,5 +235,6 @@ models_zillow_price = models.TFModels(number_of_classes=number_of_classes_web_tr
                                       setting_object=setting_object_web_traffic,
                                       option_problem=option_problem_web_traffic,
                                       load_model_configuration=False)
-models_zillow_price.rnn_lstm_web_traffic_time()
+with tf.device('/gpu:0'):
+    models_zillow_price.rnn_lstm_web_traffic_time()
 
