@@ -566,12 +566,12 @@ class TFModels():
         self.input, self.validation, self.input_labels, self.validation_labels = \
             convert_to_numpy_array(to_convert_to_numpy_array_list=to_convert_to_numpy_array)
         # TODO (@gabvaztor) Convert input string into int32:
-        # - 0 Think about creating a dictionary from file with page and id
-        # - 0.1 Use it to identify directly page and id from step 2
-        # - 1 Creating a new column with date from string (format: 02022016)
-        # - 2 Creating a dictionary where keys are pages and values a different number for each page
-        # - 3 Creating placeholder with 2 dimension of num32
-        # - 4 Train model
+        # - 1 Creating a dictionary from file with page and id
+        # - 2 Use it to identify directly page and id from step 2
+        # - 3 Creating a new column with date from string (format: 02022016)
+        # - 4 Creating a dictionary where keys are pages and values a different number for each page
+        # - 5 Creating placeholder with 2 dimension of num32
+        # - 6 Train model
         self.update_batch(is_test=False)
         # TODO After that, create lstm network and feed with batches.
         pt("input_shape", self.input.shape)
