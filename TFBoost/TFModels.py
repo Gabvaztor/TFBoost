@@ -566,8 +566,6 @@ class TFModels():
         self.input, self.validation, self.input_labels, self.validation_labels = \
             convert_to_numpy_array(to_convert_to_numpy_array_list=to_convert_to_numpy_array)
         # TODO (@gabvaztor) Convert input string into int32:
-        # - 1 Creating a dictionary from file with page and id
-        # - 2 Use it to identify directly page and id from step 2
         # - 3 Creating a new column with date from string (format: 02022016)
         # - 4 Creating a dictionary where keys are pages and values a different number for each page
         # - 5 Creating placeholder with 2 dimension of num32
