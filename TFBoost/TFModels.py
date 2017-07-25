@@ -551,8 +551,8 @@ class TFModels():
         self.input_size = 145062  # Change if necessary
         self.trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
         names_of_data = ["input_data", "validation_data", "inputs_labels", "validation_labels"]
-        names_of_data_updated = ["input_data_updated", "validation_data_updated"]
-        names_dictionaries = ["dictionary_input", "dictionary_validation"]
+        names_of_data_updated = ["input_data_updated", "validation_data_updated", "inputs_labels", "validation_labels"]
+        names_dictionaries = ["input_validation_dictionary"]
         """
         self.create_input_and_label_data()
         save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
@@ -562,6 +562,7 @@ class TFModels():
                                             numpy_file_4=self.validation_labels,
                                             names=names_of_data)
         """
+        """
         self.input, self.validation, self.input_labels, self.validation_labels = \
             load_4_numpy_files(path_to_load=self.settings_object.accuracies_losses_path, names_to_load_4=names_of_data)
         to_convert_to_numpy_array = [self.input, self.validation, self.input_labels, self.validation_labels]
@@ -569,28 +570,41 @@ class TFModels():
             convert_to_numpy_array(to_convert_to_numpy_array_list=to_convert_to_numpy_array)
         # Delete first row because is repeated
         self.input = np.delete(self.input, 0, 0)
+        """
         # TODO (@gabvaztor) Convert input string into int32:
         # - 3 Creating a new column with date from string (format: 02022016) ✓
         # - 4 Creating a dictionary where keys are pages and values a different number for each page ✓
         # - 5 Creating placeholder with 2 dimension of num32
         # - 6 Train model
-
+        """
         self.input , input_dictionary = \
             self.create_new_date_column_from_string_with_date_web_traffic_time_problem(data_set=self.input,
                                                                                        rows_numbers=self.input.shape[0])
-        self.validation, validation_dictionary = \
+        self.validation, input_validation_dictionary = \
             self.create_new_date_column_from_string_with_date_web_traffic_time_problem(data_set=self.validation,
-                                                                                       rows_numbers=self.validation.shape[0])
+                                                                                       rows_numbers=self.validation.shape[0],
+                                                                                       dictionary=input_dictionary)
         numpy_files = [self.input, self.validation]
-        dictionaries_to_save = [input_dictionary, validation_dictionary]
+        dictionaries_to_save = [input_validation_dictionary]
         save_numpy_arrays_generic(folder_to_save=self.settings_object.accuracies_losses_path,
-                                            numpy_files = numpy_files,
+                                            numpy_files=numpy_files,
                                             names=names_of_data_updated)
         save_numpy_arrays_generic(folder_to_save=self.settings_object.accuracies_losses_path,
-                                            numpy_files = dictionaries_to_save,
+                                            numpy_files=dictionaries_to_save,
                                             names=names_dictionaries)
+        """
 
-        dict_1, dict_2  = load_numpy_arrays_generic(path_to_load=self.settings_object.accuracies_losses_path,
+        # Load input, validation and labels from updated arrays where inputs are [number, float] where number is
+        # the page id and float is the visits' number
+        self.input, self.validation, self.input_labels, self.validation_labels = \
+            load_numpy_arrays_generic(path_to_load=self.settings_object.accuracies_losses_path,
+                                      names=names_of_data_updated)
+        # Convert data to arrays
+        to_convert_to_numpy_array = [self.input, self.validation, self.input_labels, self.validation_labels]
+        self.input, self.validation, self.input_labels, self.validation_labels = \
+            convert_to_numpy_array(to_convert_to_numpy_array_list=to_convert_to_numpy_array)
+        # Load a complete dictionary where keys are the pages and values are the identifier (the first number of inputs)
+        complete_dictionary  = load_numpy_arrays_generic(path_to_load=self.settings_object.accuracies_losses_path,
                                                 names=names_dictionaries)
         self.update_batch(is_test=False)
         # TODO After that, create lstm network and feed with batches.
@@ -605,14 +619,14 @@ class TFModels():
         tf.reset_default_graph()
         # TODO (@gabvaztor) Continue creating x placeholder to "be a sequence"
         # tf Graph input
-        x = tf.placeholder(tf.string, shape=[None, 1, 1])
+        x = tf.placeholder(tf.float32, shape=[None, 1, 2])
         # x = tf.decode_raw(x, tf.float32)
         y_labels = tf.placeholder(tf.float32, [None, 1])
         keep_probably = tf.placeholder(tf.float32)
 
         # Define weights
-        weights = tf.Variable(tf.random_normal([self.first_label_neurons, n_classes]))
-        biases =  tf.Variable(tf.random_normal([n_classes]))
+        weights = tf.Variable(tf.random_normal([50, 1]))
+        biases =  tf.Variable(tf.random_normal([1]))
 
         # y_prediction = self.RNN(x, keep_probably, weights, biases)
         # Prepare data shape to match `rnn` function requirements
@@ -621,11 +635,11 @@ class TFModels():
 
         # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
         #x = tf.unstack(input, n_steps, 1)
-        # x = tf.unstack(x, 1)
-        # Define a lstm cell with tensorflow
-        lstm_cell = tf.nn.rnn_cell.LSTMCell(self.first_label_neurons, forget_bias=1)
-        # Get lstm cell output
-        outputs, states = tf.nn.dynamic_rnn(lstm_cell, x, dtype=tf.string)
+        x = tf.unstack(x, 1)
+        # 1-layer LSTM with n_hidden units.
+        rnn_cell = rnn.BasicLSTMCell(50)
+        # generate prediction
+        outputs, states = rnn.static_rnn(rnn_cell, x, dtype=tf.float32)
         dropout = tf.nn.dropout(outputs[-1], keep_probably)
         # Linear activation, using rnn inner loop last output
         y_prediction = tf.matmul(dropout, weights) + biases
@@ -664,7 +678,8 @@ class TFModels():
 
         # Folders and file where information and configuration files will be saved.
         filepath_save = None
-
+        # Reformat dimensions
+        # x = tf.squeeze(x, [1])
         # Update test feeds ( will be not modified during training)
         feed_dict_validation_100 = {x: x_validation_feed, y_labels: y_validation_feed, keep_probably: 1.}
         # Update real num_train:
@@ -741,12 +756,15 @@ class TFModels():
                     # Save configuration to that results
                     self._save_json_configuration(Constant.attributes_to_delete_configuration)
 
-    def create_new_date_column_from_string_with_date_web_traffic_time_problem(self, data_set, rows_numbers):
+    def create_new_date_column_from_string_with_date_web_traffic_time_problem(self, data_set, rows_numbers,
+                                                                              dictionary=None):
         pt("input_shape_rows", self.input.shape[0])
         pt("validation_shape_rows", self.validation.shape[0])
         pt("self.input", self.input[0][0])
         data = np.array([[]])
         dict_key_page_value_unity = {}
+        if dictionary:
+            dict_key_page_value_unity = dictionary
         is_first = True
         page_count = 1
         for row in range(rows_numbers):
