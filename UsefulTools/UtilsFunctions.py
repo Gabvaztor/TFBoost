@@ -255,6 +255,37 @@ def save_accuracies_and_losses_training(folder_to_save, numpy_file_1, numpy_file
     np.save(folder_to_save + name_file_3, numpy_file_3)
     np.save(folder_to_save + name_file_4, numpy_file_4)
 
+def save_numpy_arrays_generic(folder_to_save, numpy_files, names):
+    """
+    Save the accuracies and losses into a type_file folder
+    :param folder_to_save: 
+    :param numpy_files: Must have same size than names
+    :param names: Must have same size than numpy_files
+    :return: 
+    """
+    # TODO (@gabvaztor) finish DOcs
+
+    create_directory_from_fullpath(folder_to_save)
+    for index in range(len(numpy_files)):
+        np.save(folder_to_save + names[index], numpy_files[index])
+
+def load_numpy_arrays_generic(path_to_load, names):
+    """
+    
+    :param path_to_load: 
+    :param names: 
+    :return: 
+    """
+    # TODO (@gabvaztor) DOCS
+    files_to_return = []
+    npy_extension = Dictionary.string_npy_extension
+    for i in range(len(names)):
+        if file_exists_in_path_or_create_path(path_to_load + names[i] + npy_extension):
+            file = np.load(path_to_load + names[i] + npy_extension)
+            files_to_return.append(file)
+        else:
+            raise Exception("File does not exist")
+    return files_to_return
 def load_accuracies_and_losses(path_to_load, flag_restore_model=False):
     """
     

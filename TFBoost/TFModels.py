@@ -551,6 +551,8 @@ class TFModels():
         self.input_size = 145062  # Change if necessary
         self.trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
         names_of_data = ["input_data", "validation_data", "inputs_labels", "validation_labels"]
+        names_of_data_updated = ["input_data_updated", "validation_data_updated"]
+        names_dictionaries = ["dictionary_input", "dictionary_validation"]
         """
         self.create_input_and_label_data()
         save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
@@ -565,14 +567,34 @@ class TFModels():
         to_convert_to_numpy_array = [self.input, self.validation, self.input_labels, self.validation_labels]
         self.input, self.validation, self.input_labels, self.validation_labels = \
             convert_to_numpy_array(to_convert_to_numpy_array_list=to_convert_to_numpy_array)
+        # Delete first row because is repeated
+        self.input = np.delete(self.input, 0, 0)
         # TODO (@gabvaztor) Convert input string into int32:
-        # - 3 Creating a new column with date from string (format: 02022016)
-        # - 4 Creating a dictionary where keys are pages and values a different number for each page
+        # - 3 Creating a new column with date from string (format: 02022016) ✓
+        # - 4 Creating a dictionary where keys are pages and values a different number for each page ✓
         # - 5 Creating placeholder with 2 dimension of num32
         # - 6 Train model
+
+        self.input , input_dictionary = \
+            self.create_new_date_column_from_string_with_date_web_traffic_time_problem(data_set=self.input,
+                                                                                       rows_numbers=self.input.shape[0])
+        self.validation, validation_dictionary = \
+            self.create_new_date_column_from_string_with_date_web_traffic_time_problem(data_set=self.validation,
+                                                                                       rows_numbers=self.validation.shape[0])
+        numpy_files = [self.input, self.validation]
+        dictionaries_to_save = [input_dictionary, validation_dictionary]
+        save_numpy_arrays_generic(folder_to_save=self.settings_object.accuracies_losses_path,
+                                            numpy_files = numpy_files,
+                                            names=names_of_data_updated)
+        save_numpy_arrays_generic(folder_to_save=self.settings_object.accuracies_losses_path,
+                                            numpy_files = dictionaries_to_save,
+                                            names=names_dictionaries)
+
+        dict_1, dict_2  = load_numpy_arrays_generic(path_to_load=self.settings_object.accuracies_losses_path,
+                                                names=names_dictionaries)
         self.update_batch(is_test=False)
         # TODO After that, create lstm network and feed with batches.
-        pt("input_shape", self.input.shape)
+
         # Network Parameters
         n_input = 28  # MNIST data input (img shape: 28*28)
         n_steps = 28  # timesteps
@@ -719,6 +741,37 @@ class TFModels():
                     # Save configuration to that results
                     self._save_json_configuration(Constant.attributes_to_delete_configuration)
 
+    def create_new_date_column_from_string_with_date_web_traffic_time_problem(self, data_set, rows_numbers):
+        pt("input_shape_rows", self.input.shape[0])
+        pt("validation_shape_rows", self.validation.shape[0])
+        pt("self.input", self.input[0][0])
+        data = np.array([[]])
+        dict_key_page_value_unity = {}
+        is_first = True
+        page_count = 1
+        for row in range(rows_numbers):
+            string_with_date = data_set[row][0]
+            date = np.asarray([[string_with_date[-10:].replace("-","")]])
+            # string_without_date = np.asarray([[string_with_date[:-11]]])
+            page = string_with_date[:-11]
+            # page = string_without_date[0][0]
+            if is_first:
+                dict_key_page_value_unity[page] = page_count
+                data = np.asarray([[page_count]])
+                data = np.concatenate((data, date), axis=1)
+                page_count += 1
+                is_first = False
+            else:
+                number_page = page_count
+                if page in dict_key_page_value_unity:
+                    number_page = dict_key_page_value_unity.get(page)
+                else:
+                    dict_key_page_value_unity[page] = number_page
+                to_concatenate = np.asarray([[number_page]])
+                to_concatenate = np.concatenate((to_concatenate, date), axis=1)
+                data = np.concatenate((data, to_concatenate))
+                page_count += 1
+        return data , dict_key_page_value_unity
 
     def RNN(self, input, keep_probably, weights, biases):
 
@@ -1262,7 +1315,7 @@ class TFModels():
             # Start populating the filename queue.
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(coord=coord)
-            self.input, self.validation = np.array([[]]), np.array([])
+            self.input, self.validation = np.array([[]]), np.array([[]])
             self.input_labels, self.validation_labels = np.array([]), np.array([])
             self.input_size = 145062  # Change if necessary
             self.trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
@@ -1299,6 +1352,8 @@ class TFModels():
                         self.validation_labels = np.concatenate((self.validation_labels, label_resized))
             coord.request_stop()
             coord.join(threads)
+
+
 
 
 """
