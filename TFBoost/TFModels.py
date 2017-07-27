@@ -102,7 +102,7 @@ class TFModels():
         # the information.json has been saved.
         self._ask_to_continue_creating_model_without_exist = False  # If True and 'restore_model' is True,
         # ask to continues save model at first if there isn't a model to restore
-        self._show_advanced_info = False  # Labels and logits info.
+        self._show_advanced_info = True  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
         self._save_model_configuration = False  # If True, then all attributes will be saved in a settings_object path.
         self._shuffle_data = False  # If True, then the train and validation data will be shuffled separately.
@@ -114,7 +114,7 @@ class TFModels():
         self._input_columns_numbers = 60
         self._kernel_size = [5, 5]  # Kernel patch size
         self._epoch_numbers = 130  # Epochs number
-        self._batch_size = 100  # Batch size
+        self._batch_size = 5  # Batch size
         if input:
             self._input_size = 145062  # Change if necessary
             self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
@@ -619,7 +619,7 @@ class TFModels():
         tf.reset_default_graph()
         # TODO (@gabvaztor) Continue creating x placeholder to "be a sequence"
         # tf Graph input
-        x = tf.placeholder(tf.float32, shape=[None, 1, 2])
+        x = tf.placeholder(tf.float32, shape=[None, 2])
         # x = tf.decode_raw(x, tf.float32)
         y_labels = tf.placeholder(tf.float32, [None, 1])
         keep_probably = tf.placeholder(tf.float32)
@@ -635,14 +635,16 @@ class TFModels():
 
         # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
         #x = tf.unstack(input, n_steps, 1)
-        x = tf.unstack(x, 1)
+        #x = tf.unstack(x, 1)
         # 1-layer LSTM with n_hidden units.
-        rnn_cell = rnn.BasicLSTMCell(50)
+        #rnn_cell = rnn.BasicLSTMCell(50)
         # generate prediction
-        outputs, states = rnn.static_rnn(rnn_cell, x, dtype=tf.float32)
-        dropout = tf.nn.dropout(outputs[-1], keep_probably)
+        #outputs, states = rnn.static_rnn(rnn_cell, x, dtype=tf.float32)
+        #dropout = tf.nn.dropout(outputs[-1], keep_probably)
+        #dropout = tf.nn.dropout(outputs[-1], keep_probably)
         # Linear activation, using rnn inner loop last output
-        y_prediction = tf.matmul(dropout, weights) + biases
+        dense = tf.layers.dense(inputs=x, units=50, activation=tf.nn.relu)
+        y_prediction = tf.matmul(dense, weights) + biases
 
         # Define loss and optimizer
         cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_prediction, labels=y_labels))
@@ -692,12 +694,12 @@ class TFModels():
         for epoch in range(self.num_epochs_count, self.epoch_numbers):  # Start with load value or 0
             for num_train in range(num_train_start, self.trains):  # Start with load value or 0
                 # Update feeds
+
                 feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
                 feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
                                            keep_probably: self.train_dropout}
                 # Setting values
-                # TODO(@gabvaztor) Add validation_accuracy to training
-                self.validation_accuracy = accuracy.eval(feed_dict_train_100) * 100
+                self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
                 optimizer.run(feed_dict_train_dropout)
                 self.validation_accuracy = accuracy.eval(feed_dict_validation_100) * 100
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
@@ -722,7 +724,7 @@ class TFModels():
                        str(epoch) + ": " + percent_advance + '%')
                     pt('train_accuracy', self.train_accuracy)
                     pt('cross_entropy_train', cross_entropy_train)
-                    pt('test_accuracy', self.test_accuracy)
+                    pt('validation_accuracy', self.validation_accuracy)
                     pt('self.index_buffer_data', self.index_buffer_data)
 
                 # Update indexes
@@ -1082,7 +1084,7 @@ class TFModels():
         # Evaluate model
         cross_entropy = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits(labels=y_labels,
-                                                    logits=y_prediction))  # Cross entropy between y_ and y_conv
+                                                    logits=y_prediction))
 
         # train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer
         train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cross_entropy)  # Adam Optimizer
@@ -1097,15 +1099,18 @@ class TFModels():
 
     def show_advanced_information(self, y_labels, y_prediction, feed_dict):
         y__ = y_labels.eval(feed_dict)
-        argmax_labels_y_ = [np.argmax(m) for m in y__]
-        pt('y__shape', y__.shape)
-        pt('argmax_labels_y__', argmax_labels_y_)
-        pt('y__[-1]', y__[-1])
-        y__conv = y_prediction.eval(feed_dict)
-        argmax_labels_y_convolutional = [np.argmax(m) for m in y__conv]
-        pt('argmax_y_conv', argmax_labels_y_convolutional)
-        pt('y_conv_shape', y__conv.shape)
-        pt('index_buffer_data', self.index_buffer_data)
+        #argmax_labels_y_ = [np.argmax(m) for m in y__]
+        #pt('y_labels_shape', y__.shape)
+        #pt('argmax_labels_y__', argmax_labels_y_)
+        #pt('y__[-1]', y__[-1])
+        pt("y_labels",y__)
+        y__prediction = y_prediction.eval(feed_dict)
+        #argmax_labels_y_convolutional = [np.argmax(m) for m in y__prediction]
+        #pt('argmax_y_conv', argmax_labels_y_convolutional)
+        #pt('y_pred_shape', y__prediction.shape)
+        pt("y_pred", y__prediction)
+       #pt('index_buffer_data', self.index_buffer_data)
+        pt("SMAPE", smape(y__, y__prediction).eval(feed_dict))
 
     def save(self, saver, session):
         # Save variables to disk.
