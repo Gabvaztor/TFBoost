@@ -77,13 +77,13 @@ class TFModels():
     """
 
     # TODO Docs
-    def __init__(self, setting_object, option_problem, input=None, test=None, input_labels=None, test_labels=None,
+    def __init__(self, setting_object, option_problem, input_data=None, test=None, input_labels=None, test_labels=None,
                  number_of_classes=None , type=None, validation=None, validation_labels=None,
                  load_model_configuration=False, *args , **kwargs):
         # TODO(@gabvaztor) Show and save graphs during all training asking before
         # NOTE: IF YOU LOAD_MODEL_CONFIGURATION AND CHANGE SOME TENSORFLOW ATTRIBUTE AS NEURONS, THE TRAIN WILL START
         # AGAIN
-        self._input = input
+        self._input = input_data
         self._validation = validation
         self._test = test
         self._input_labels = input_labels
@@ -94,8 +94,8 @@ class TFModels():
         self._input_batch = None
         self._label_batch = None
         # CONFIGURATION VARIABLES
-        self._restore_model = False  # Labels and logits info.
-        self._save_model_information = False  # If must to save model or not
+        self._restore_model = True # Labels and logits info.
+        self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
         # 'should_save'
         self._show_when_save_information = False  # If True then you will see printed in console when during training
@@ -104,29 +104,32 @@ class TFModels():
         # ask to continues save model at first if there isn't a model to restore
         self._show_advanced_info = True  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
-        self._save_model_configuration = False  # If True, then all attributes will be saved in a settings_object path.
-        self._shuffle_data = False  # If True, then the train and validation data will be shuffled separately.
+        self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path.
+        self._shuffle_data = True  # If True, then the train and validation data will be shuffled separately.
         self._save_graphs_images = False  # If True, then save graphs images from statistical values. NOTE that this will
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
         # the framework will save a graph
         # TRAIN MODEL VARIABLES
-        self._input_rows_numbers = 60
-        self._input_columns_numbers = 60
-        self._kernel_size = [5, 5]  # Kernel patch size
-        self._epoch_numbers = 130  # Epochs number
-        self._batch_size = 5  # Batch size
-        if input:
-            self._input_size = 145062  # Change if necessary
+        self._input_rows_numbers = None
+        self._input_columns_numbers = None
+        self._kernel_size = [None, None]  # Kernel patch size
+        self._epoch_numbers = 999  # Epochs number
+        self._batch_size = 256  # Batch size
+        if self.input.shape is not None:  # Change if necessary
+            self._input_size = self.input.shape[0]  # Change if necessary
             self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
-        if test:
+        if self.validation.shape is not None:
+            self._validation_size = validation.shape[0]
+        if self.test:
             self._test_size = len(test)  # Change if necessary
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
-        self._first_label_neurons = 50
-        self._second_label_neurons = 55
-        self._third_label_neurons = 50
+        self._first_label_neurons = 64
+        self._second_label_neurons = None
+        self._third_label_neurons = None
         self._learning_rate = 1e-3  # Learning rate
         self._number_epoch_to_change_learning_rate = 15  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
+        self._print_information = 10  # How many trains are needed to print information
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training. Start at zero.
         self._num_trains_count = 1  # Start at one
@@ -158,6 +161,22 @@ class TFModels():
             pt("Saving model configuration...")
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
             pt("Model configuration has been saved")
+
+    @property
+    def validation_size(self):
+        return self._validation_size
+
+    @validation_size.setter
+    def validation_size(self, value):
+        self._validation_size = value
+
+    @property
+    def print_information(self):
+        return self._print_information
+
+    @print_information.setter
+    def print_information(self, value):
+        self._print_information = value
 
     @property
     def validation(self):
@@ -548,8 +567,8 @@ class TFModels():
         LSTM solve to WEB_TRAFFIC_TIME problem
         """
 
-        self.input_size = 145062  # Change if necessary
-        self.trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
+        #self.input_size = 145062  # Change if necessary
+        #self.trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
         names_of_data = ["input_data", "validation_data", "inputs_labels", "validation_labels"]
         names_of_data_updated = ["input_data_updated", "validation_data_updated", "inputs_labels", "validation_labels"]
         names_dictionaries = ["input_validation_dictionary"]
@@ -593,7 +612,7 @@ class TFModels():
                                             numpy_files=dictionaries_to_save,
                                             names=names_dictionaries)
         """
-
+        """
         # Load input, validation and labels from updated arrays where inputs are [number, float] where number is
         # the page id and float is the visits' number
         self.input, self.validation, self.input_labels, self.validation_labels = \
@@ -603,6 +622,7 @@ class TFModels():
         to_convert_to_numpy_array = [self.input, self.validation, self.input_labels, self.validation_labels]
         self.input, self.validation, self.input_labels, self.validation_labels = \
             convert_to_numpy_array(to_convert_to_numpy_array_list=to_convert_to_numpy_array)
+        """
         # Load a complete dictionary where keys are the pages and values are the identifier (the first number of inputs)
         complete_dictionary  = load_numpy_arrays_generic(path_to_load=self.settings_object.accuracies_losses_path,
                                                 names=names_dictionaries)
@@ -625,8 +645,10 @@ class TFModels():
         keep_probably = tf.placeholder(tf.float32)
 
         # Define weights
-        weights = tf.Variable(tf.random_normal([50, 1]))
-        biases =  tf.Variable(tf.random_normal([1]))
+
+        #weights = tf.Variable(tf.random_normal([100, 1]))
+        weights = tf.Variable(tf.truncated_normal([self.first_label_neurons, 1], stddev=0.01))
+        biases =  tf.Variable(tf.constant(0.01, shape=[1]))
 
         # y_prediction = self.RNN(x, keep_probably, weights, biases)
         # Prepare data shape to match `rnn` function requirements
@@ -641,18 +663,23 @@ class TFModels():
         # generate prediction
         #outputs, states = rnn.static_rnn(rnn_cell, x, dtype=tf.float32)
         #dropout = tf.nn.dropout(outputs[-1], keep_probably)
-        #dropout = tf.nn.dropout(outputs[-1], keep_probably)
+        #dropout = tf.nn.dropout(x, keep_probably)
         # Linear activation, using rnn inner loop last output
-        dense = tf.layers.dense(inputs=x, units=50, activation=tf.nn.relu)
+        dense = tf.layers.dense(inputs=x, units=self.first_label_neurons, activation=tf.nn.relu)
         y_prediction = tf.matmul(dense, weights) + biases
 
         # Define loss and optimizer
-        cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_prediction, labels=y_labels))
-        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(cross_entropy)
+        #error = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_prediction, labels=y_labels))
+        #error = tf.reduce_mean(smape(y_true=y_labels, y_prediction=y_prediction))
+        #error = tf.reduce_mean(mae(y_true=y_labels, y_prediction=y_prediction, batch_size=self.batch_size))
+        error = tf.reduce_mean(tf.contrib.keras.losses.mean_absolute_error(y_labels, y_prediction))
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(error)
 
         # Evaluate model
-        correct_prediction = smape(y_labels, y_prediction)
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        #correct_prediction = smape(y_true=y_labels, y_prediction=y_prediction)
+        #accuracy = tf.reduce_mean(smape(y_true=y_labels, y_prediction=y_prediction))
+        #accuracy = tf.reduce_mean(tf.contrib.keras.losses.mean_absolute_percentage_error(y_labels, y_prediction))
+        accuracy = tf.reduce_mean(mean_difference_percentages(y_labels, y_prediction))
 
         # Initializing the variables
         sess = initialize_session()
@@ -699,17 +726,17 @@ class TFModels():
                 feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
                                            keep_probably: self.train_dropout}
                 # Setting values
-                self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
+                self.train_accuracy = accuracy.eval(feed_dict_train_100)
                 optimizer.run(feed_dict_train_dropout)
-                self.validation_accuracy = accuracy.eval(feed_dict_validation_100) * 100
-                cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
-                cross_entropy_validation = cross_entropy.eval(feed_dict_validation_100)
+                self.validation_accuracy = accuracy.eval(feed_dict_validation_100)
+                error_train = error.eval(feed_dict_train_100)
+                error_validation = error.eval(feed_dict_validation_100)
 
                 # To generate statistics
                 accuracies_train.append(self.train_accuracy)
                 accuracies_validation.append(self.test_accuracy)
-                loss_train.append(cross_entropy_train)
-                loss_validation.append(cross_entropy_validation)
+                loss_train.append(error_train)
+                loss_validation.append(error_validation)
                 with tf.device('/cpu:1'):
                     save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
                                                         numpy_file_1=accuracies_train,
@@ -717,13 +744,13 @@ class TFModels():
                                                         numpy_file_3=loss_train,
                                                         numpy_file_4=loss_validation)
 
-                if num_train % 10 == 0:
+                if num_train % self.print_information == 0:
                     percent_advance = str(num_train * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
                        str(epoch) + ": " + percent_advance + '%')
                     pt('train_accuracy', self.train_accuracy)
-                    pt('cross_entropy_train', cross_entropy_train)
+                    pt('error_train', error_train)
                     pt('validation_accuracy', self.validation_accuracy)
                     pt('self.index_buffer_data', self.index_buffer_data)
 
@@ -738,7 +765,7 @@ class TFModels():
                     self.learning_rate = float(self.learning_rate / 10.)
                 if self.should_save():
                     filepath_save = self.save(saver=saver, session=sess)
-                if self.show_advanced_info:
+                if self.show_advanced_info and num_train % self.print_information == 0:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
                 with tf.device('/cpu:0'):
@@ -757,6 +784,7 @@ class TFModels():
                 if self.save_model_configuration:
                     # Save configuration to that results
                     self._save_json_configuration(Constant.attributes_to_delete_configuration)
+
 
     def create_new_date_column_from_string_with_date_web_traffic_time_problem(self, data_set, rows_numbers,
                                                                               dictionary=None):
@@ -912,10 +940,16 @@ class TFModels():
             if actual_information:
                 last_train_accuracy = actual_information._train_accuracy
                 last_test_accuracy = actual_information._test_accuracy
+                last_validation_accuracy = actual_information._validation_accuracy
                 if last_train_accuracy and last_test_accuracy:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
-                    if self.test_accuracy > last_test_accuracy:  # Save checking tests accuracies in this moment
-                        should_save = True
+                    if self.test_accuracy and last_test_accuracy:
+                        if self.test_accuracy > last_test_accuracy:  # Save checking tests accuracies in this moment
+                            should_save = True
+                    elif self.validation_accuracy and last_validation_accuracy:
+                        if self.validation_accuracy > last_validation_accuracy:  # Save checking validation
+                            #  accuracies in this moment
+                            should_save = True
                 else:
                     if self.ask_to_save_model_information:
                         pt("last_train_accuracy", last_train_accuracy)
@@ -969,6 +1003,8 @@ class TFModels():
                 configuration._ask_to_continue_creating_model_without_exist
             self._ask_to_save_model_information = configuration._ask_to_save_model_information
             self._show_when_save_information = configuration._show_when_save_information
+            self._print_information = configuration._print_information
+            self._validation_size = configuration._validation_size
             # If you don't restore model then you won't load train number and epochs number
             if self.restore_model:
                 self._num_trains_count = configuration._num_trains_count
@@ -1103,14 +1139,14 @@ class TFModels():
         #pt('y_labels_shape', y__.shape)
         #pt('argmax_labels_y__', argmax_labels_y_)
         #pt('y__[-1]', y__[-1])
-        pt("y_labels",y__)
+        #pt("y_labels",y__)
         y__prediction = y_prediction.eval(feed_dict)
         #argmax_labels_y_convolutional = [np.argmax(m) for m in y__prediction]
         #pt('argmax_y_conv', argmax_labels_y_convolutional)
         #pt('y_pred_shape', y__prediction.shape)
-        pt("y_pred", y__prediction)
+        pt("y_pred", y__prediction[0])
        #pt('index_buffer_data', self.index_buffer_data)
-        pt("SMAPE", smape(y__, y__prediction).eval(feed_dict))
+        #pt("SMAPE", smape(y__, y__prediction).eval(feed_dict))
 
     def save(self, saver, session):
         # Save variables to disk.
@@ -1262,7 +1298,7 @@ class TFModels():
                 loss_test.append(cross_entropy_test)
                 with tf.device('/cpu:1'):
                     save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
-                                                        train_accuracies=accuracies_train,
+                                                        ztrain_accuracies=accuracies_train,
                                                         validation_accuracies=accuracies_test,
                                                         train_losses=loss_train,
                                                         validation_losses=loss_test)

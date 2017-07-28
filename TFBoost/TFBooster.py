@@ -231,7 +231,19 @@ train_set_web_traffic  = tf_reader_web_traffic.train_set  # Train Set
 
 del tf_reader_web_traffic
 
-models_zillow_price = models.TFModels(number_of_classes=number_of_classes_web_traffic,
+names_of_data = ["input_data", "validation_data", "inputs_labels", "validation_labels"]
+names_of_data_updated = ["input_data_updated", "validation_data_updated", "inputs_labels", "validation_labels"]
+names_dictionaries = ["input_validation_dictionary"]
+# Load input, validation and labels from updated arrays where inputs are [number, float] where number is
+# the page id and float is the visits' number
+input_data, validation, input_labels, validation_labels = \
+    load_numpy_arrays_generic(path_to_load=setting_object_web_traffic.accuracies_losses_path,
+                              names=names_of_data_updated)
+models_zillow_price = models.TFModels(input_data=input_data,
+                                      input_labels=input_labels,
+                                      validation=validation,
+                                      validation_labels=validation_labels,
+                                      number_of_classes=number_of_classes_web_traffic,
                                       setting_object=setting_object_web_traffic,
                                       option_problem=option_problem_web_traffic,
                                       load_model_configuration=False)
