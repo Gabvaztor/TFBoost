@@ -94,7 +94,7 @@ class TFModels():
         self._input_batch = None
         self._label_batch = None
         # CONFIGURATION VARIABLES
-        self._restore_model = True # Labels and logits info.
+        self._restore_model = False # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
         # 'should_save'
@@ -112,16 +112,23 @@ class TFModels():
         # TRAIN MODEL VARIABLES
         self._input_rows_numbers = None
         self._input_columns_numbers = None
-        self._kernel_size = [None, None]  # Kernel patch size
+        self._kernel_size = [1, 1]  # Kernel patch size
         self._epoch_numbers = 999  # Epochs number
         self._batch_size = 256  # Batch size
-        if self.input.shape is not None:  # Change if necessary
+        if self.input is not None:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
             self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
-        if self.validation.shape is not None:
-            self._validation_size = validation.shape[0]
+        else:
+            self._input_size = None  # Change if necessary
+            self._trains = None  # Total number of trains for epoch
+        if self.validation is not None:
+            self._validation_size = validation.shape[0] # Change if necessary
+        else:
+            self._validation_size = None
         if self.test:
-            self._test_size = len(test)  # Change if necessary
+            self._test_size = len(test) # Change if necessary
+        else:
+            self._test_size = None
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
         self._first_label_neurons = 64
         self._second_label_neurons = None
@@ -137,17 +144,17 @@ class TFModels():
         self._train_accuracy = None
         self._validation_accuracy = None
         self._test_accuracy = None
-        # RESTART TRAINING
-        self._save_and_restart = False  # All history and metadata will be saved in a different folder and the execution
-        # will be restarted
-        if self.save_and_restart:
-            save_and_restart(self.settings_object.model_path)
         # OPTIONS
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
         #               - Others positions: all variables you need to process each input and label elements
         # noinspection PyUnresolvedReferences
         self._options = [option_problem]
+        # RESTART TRAINING
+        self._save_and_restart = False  # All history and metadata will be saved in a different folder and the execution
+        # will be restarted
+        if self.save_and_restart:
+            save_and_restart(self.settings_object.model_path)
         # SAVE AND LOAD MODEL
         # If load_model_configuration is True, then it will load a configuration from settings_object method
         if load_model_configuration:
@@ -156,7 +163,7 @@ class TFModels():
                 # input("You will load model configuration but no restore the tensorflow model, do you want to continue?")
                 pt("Loading model configuration", self.settings_object.configuration_path)
                 self._load_model_configuration(self.settings_object.load_actual_configuration())
-        if self._save_model_configuration:
+        if self.save_model_configuration:
             # Save model configuration in a json file
             pt("Saving model configuration...")
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
@@ -557,10 +564,19 @@ class TFModels():
         :param attributes_to_delete: String set with all attributes' names to delete from properties method
         :return: sort json from class properties.
         """
+        # TODO (gabvaztor) Finish this
+        if hasattr(self, 'isoformat'):
+            return self.isoformat()
+        else:
+            json.JSONEncoder.default(self, self)
         return json.dumps(self, default=lambda o: self.properties(attributes_to_delete),
                           sort_keys=True, indent=4)
 
-
+    def date_handler(obj):
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+        else:
+            json.JSONEncoder.default(self, obj)
     @timed
     def rnn_lstm_web_traffic_time(self, *args, **kwargs):
         """
@@ -1430,6 +1446,7 @@ def get_inputs_and_labels_shuffled(inputs, inputs_labels):
     c = list(zip(inputs, inputs_labels))
     random.shuffle(c)
     inputs_processed, labels_processed = zip(*c)
+    inputs_processed, labels_processed = np.asarray(inputs_processed), np.asarray(labels_processed)
     return inputs_processed, labels_processed
 
 

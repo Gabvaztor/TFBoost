@@ -1,6 +1,6 @@
 {
   "TRAIN_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Trains\\",
-  "MODEL_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Model\\model",
+  "MODEL_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Models\\model",
   "TEST_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\key_1.csv",
   "SUBMISSION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Predictions\\submision.csv",
   "CONFIGURATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Models\\configuration_model.json",
