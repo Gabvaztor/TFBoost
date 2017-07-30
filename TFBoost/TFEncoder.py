@@ -183,4 +183,5 @@ class Constant(object):
     attributes_to_delete_configuration = ["_input", "_test", "_input_labels", "_test_labels",
                                           "_settings_object",
                                           "_input_batch", "_label_batch",
-                                          "_validation", "_validation_labels"]
+                                          "_validation", "_validation_labels",
+                                          "_print_information"]

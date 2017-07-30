@@ -71,6 +71,10 @@ import time
 """ To serialize object"""
 import json
 
+""" To print stacktrace"""
+import traceback
+
+
 class TFModels():
     """
     Long Docs ...
@@ -94,7 +98,7 @@ class TFModels():
         self._input_batch = None
         self._label_batch = None
         # CONFIGURATION VARIABLES
-        self._restore_model = False # Labels and logits info.
+        self._restore_model = True # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
         # 'should_save'
@@ -541,9 +545,14 @@ class TFModels():
         self._test = value
 
     def _save_json_configuration(self, attributes_to_delete_configuration):
-        self._save_model_configuration_to_json(self.settings_object.configuration_path,
-                                               attributes_to_delete_configuration,
-                                               type_file="Configuration")
+        try:
+            self._save_model_configuration_to_json(self.settings_object.configuration_path,
+                                                   attributes_to_delete_configuration,
+                                                   type_file="Configuration")
+        except Exception as e:
+            pt(Errors.error, e)
+            traceback.print_exc()
+
 
     def properties(self, attributes_to_delete=None):
         """
@@ -565,18 +574,8 @@ class TFModels():
         :return: sort json from class properties.
         """
         # TODO (gabvaztor) Finish this
-        if hasattr(self, 'isoformat'):
-            return self.isoformat()
-        else:
-            json.JSONEncoder.default(self, self)
         return json.dumps(self, default=lambda o: self.properties(attributes_to_delete),
                           sort_keys=True, indent=4)
-
-    def date_handler(obj):
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        else:
-            json.JSONEncoder.default(self, obj)
     @timed
     def rnn_lstm_web_traffic_time(self, *args, **kwargs):
         """
@@ -1039,7 +1038,6 @@ class TFModels():
             test_accuracy = kwargs["test_accuracy"]
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  fullpath)
-        # TODO (gabvaztor) Using new SettingObject path
         filepath = create_historic_folder(fullpath, type_file, test_accuracy)
         write_string_to_pathfile(self.to_json(attributes_to_delete),
                                  filepath)
