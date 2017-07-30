@@ -74,6 +74,11 @@ import json
 """ To print stacktrace"""
 import traceback
 
+""" To work with numbers"""
+import numbers
+
+""" To work with types"""
+import types
 
 class TFModels():
     """
@@ -109,7 +114,8 @@ class TFModels():
         self._show_advanced_info = True  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
         self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path.
-        self._shuffle_data = True  # If True, then the train and validation data will be shuffled separately.
+        self._shuffle_data = False  # If True, then the train and validation data will be shuffled separately.
+        self._generate_predictions = False  # If true, it tries to generate a prediction
         self._save_graphs_images = False  # If True, then save graphs images from statistical values. NOTE that this will
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
         # the framework will save a graph
@@ -140,7 +146,7 @@ class TFModels():
         self._learning_rate = 1e-3  # Learning rate
         self._number_epoch_to_change_learning_rate = 15  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
-        self._print_information = 10  # How many trains are needed to print information
+        self._print_information = 100  # How many trains are needed to print information
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training. Start at zero.
         self._num_trains_count = 1  # Start at one
@@ -148,6 +154,7 @@ class TFModels():
         self._train_accuracy = None
         self._validation_accuracy = None
         self._test_accuracy = None
+        self._problem_information = "Accuracy represent error. Low is better"
         # OPTIONS
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
@@ -172,6 +179,14 @@ class TFModels():
             pt("Saving model configuration...")
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
             pt("Model configuration has been saved")
+
+    @property
+    def problem_information(self):
+        return self._problem_information
+
+    @problem_information.setter
+    def problem_information(self, value):
+        self.problem_information = value
 
     @property
     def validation_size(self):
@@ -565,6 +580,12 @@ class TFModels():
         if attributes_to_delete:
             for x in attributes_to_delete:
                 del dict_copy[x]
+        """
+        for k, v in dict_copy.items():
+            if isinstance(v, np.float32):  # Transform type np.float32 into float.
+                new_value = float(str(v))
+                dict_copy[k] = new_value
+        """
         return dict_copy
 
     def to_json(self, attributes_to_delete=None):
@@ -574,8 +595,9 @@ class TFModels():
         :return: sort json from class properties.
         """
         # TODO (gabvaztor) Finish this
-        return json.dumps(self, default=lambda o: self.properties(attributes_to_delete),
-                          sort_keys=True, indent=4)
+        self_dictionary = self.properties(attributes_to_delete)
+        json_string =  json.dumps(self, default=lambda o: self_dictionary, sort_keys=True, indent=4)
+        return json_string
     @timed
     def rnn_lstm_web_traffic_time(self, *args, **kwargs):
         """
@@ -741,9 +763,9 @@ class TFModels():
                 feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
                                            keep_probably: self.train_dropout}
                 # Setting values
-                self.train_accuracy = accuracy.eval(feed_dict_train_100)
+                self.train_accuracy = float(str(accuracy.eval(feed_dict_train_100)))
                 optimizer.run(feed_dict_train_dropout)
-                self.validation_accuracy = accuracy.eval(feed_dict_validation_100)
+                self.validation_accuracy = float(str(accuracy.eval(feed_dict_validation_100)))
                 error_train = error.eval(feed_dict_train_100)
                 error_validation = error.eval(feed_dict_validation_100)
 
@@ -752,21 +774,21 @@ class TFModels():
                 accuracies_validation.append(self.test_accuracy)
                 loss_train.append(error_train)
                 loss_validation.append(error_validation)
-                with tf.device('/cpu:1'):
-                    save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
-                                                        numpy_file_1=accuracies_train,
-                                                        numpy_file_2=accuracies_validation,
-                                                        numpy_file_3=loss_train,
-                                                        numpy_file_4=loss_validation)
+
+                save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
+                                                    numpy_file_1=accuracies_train,
+                                                    numpy_file_2=accuracies_validation,
+                                                    numpy_file_3=loss_train,
+                                                    numpy_file_4=loss_validation)
 
                 if num_train % self.print_information == 0:
                     percent_advance = str(num_train * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
                        str(epoch) + ": " + percent_advance + '%')
-                    pt('train_accuracy', self.train_accuracy)
+                    pt('train_error_percent', self.train_accuracy)
                     pt('error_train', error_train)
-                    pt('validation_accuracy', self.validation_accuracy)
+                    pt('validation_error_percent', self.validation_accuracy)
                     pt('self.index_buffer_data', self.index_buffer_data)
 
                 # Update indexes
@@ -783,14 +805,14 @@ class TFModels():
                 if self.show_advanced_info and num_train % self.print_information == 0:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
-                with tf.device('/cpu:0'):
-                    if (self.save_graphs_images and filepath_save) or (is_new_epoch_flag and filepath_save):
-                        self.show_save_statistics(accuracies_train=accuracies_train,
-                                                  accuracies_test=accuracies_validation,
-                                                  loss_train=loss_train, loss_test=loss_validation,
-                                                  folder_to_save=filepath_save, show_graphs=False,
-                                                  is_new_epoch_flag=is_new_epoch_flag)
-                        is_new_epoch_flag = False
+
+                if (self.save_graphs_images and filepath_save) or (is_new_epoch_flag and filepath_save):
+                    self.show_save_statistics(accuracies_train=accuracies_train,
+                                              accuracies_test=accuracies_validation,
+                                              loss_train=loss_train, loss_test=loss_validation,
+                                              folder_to_save=filepath_save, show_graphs=False,
+                                              is_new_epoch_flag=is_new_epoch_flag)
+                    is_new_epoch_flag = False
 
                 # Update num_trains_count and num_epoch_count
                 self.num_trains_count += 1
@@ -800,7 +822,13 @@ class TFModels():
                     # Save configuration to that results
                     self._save_json_configuration(Constant.attributes_to_delete_configuration)
 
+        self.generate_predictions_web_traffic_time_problem(dictionary=complete_dictionary)
 
+    def generate_predictions_web_traffic_time_problem(self, *args, **kwargs):
+        dictionary = kwargs['kwargs']['dictionary']
+        key_path = self.settings_object.test_path
+        # TODO (gabvaztor) Finish this
+        pass
     def create_new_date_column_from_string_with_date_web_traffic_time_problem(self, data_set, rows_numbers,
                                                                               dictionary=None):
         pt("input_shape_rows", self.input.shape[0])
@@ -956,13 +984,10 @@ class TFModels():
                 last_train_accuracy = actual_information._train_accuracy
                 last_test_accuracy = actual_information._test_accuracy
                 last_validation_accuracy = actual_information._validation_accuracy
-                if last_train_accuracy and last_test_accuracy:
+                if last_train_accuracy and last_validation_accuracy:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
-                    if self.test_accuracy and last_test_accuracy:
-                        if self.test_accuracy > last_test_accuracy:  # Save checking tests accuracies in this moment
-                            should_save = True
-                    elif self.validation_accuracy and last_validation_accuracy:
-                        if self.validation_accuracy > last_validation_accuracy:  # Save checking validation
+                    if self.validation_accuracy and last_validation_accuracy:
+                        if self.validation_accuracy < last_validation_accuracy:  # Save checking validation
                             #  accuracies in this moment
                             should_save = True
                 else:
@@ -1020,6 +1045,7 @@ class TFModels():
             self._show_when_save_information = configuration._show_when_save_information
             self._print_information = configuration._print_information
             self._validation_size = configuration._validation_size
+            self._problem_information = configuration._problem_information
             # If you don't restore model then you won't load train number and epochs number
             if self.restore_model:
                 self._num_trains_count = configuration._num_trains_count
@@ -1033,14 +1059,13 @@ class TFModels():
         :param attributes_to_delete: represent witch attributes set must not be save in json file.
         """
         type_file = kwargs["type_file"]
-        test_accuracy = ""
-        if "test_accuracy" in kwargs:
-            test_accuracy = kwargs["test_accuracy"]
-        write_string_to_pathfile(self.to_json(attributes_to_delete),
-                                 fullpath)
-        filepath = create_historic_folder(fullpath, type_file, test_accuracy)
-        write_string_to_pathfile(self.to_json(attributes_to_delete),
-                                 filepath)
+        accuracy = ""
+        if "accuracy" in kwargs:
+            accuracy = kwargs["accuracy"]
+        json = self.to_json(attributes_to_delete)
+        write_string_to_pathfile(json, fullpath)
+        filepath = create_historic_folder(fullpath, type_file, accuracy)
+        write_string_to_pathfile(json, filepath)
         return filepath
 
     def load_and_restore_model(self, session):
@@ -1158,7 +1183,8 @@ class TFModels():
         #argmax_labels_y_convolutional = [np.argmax(m) for m in y__prediction]
         #pt('argmax_y_conv', argmax_labels_y_convolutional)
         #pt('y_pred_shape', y__prediction.shape)
-        pt("y_pred", y__prediction[0])
+        #pt("y_pred", y__prediction[0])
+        pt("y_pred", y__prediction)
        #pt('index_buffer_data', self.index_buffer_data)
         #pt("SMAPE", smape(y__, y__prediction).eval(feed_dict))
 
@@ -1170,10 +1196,15 @@ class TFModels():
                 if self.show_when_save_information:
                     pt("Saving model information...")
                 if self.save_model_information:
+                    accuracy = None
+                    if self.validation_accuracy:
+                        accuracy = self.validation_accuracy
+                    elif self.test_accuracy:
+                        accuracy = self.test_accuracy
                     filepath = self._save_model_configuration_to_json(
                         fullpath=self.settings_object.information_path,
                         attributes_to_delete=Constant.attributes_to_delete_information,
-                        type_file="Information", test_accuracy=self.test_accuracy)
+                        type_file="Information", accuracy=accuracy)
                 else:
                     filepath = self.settings_object.history_information_path
                 if self.show_when_save_information:

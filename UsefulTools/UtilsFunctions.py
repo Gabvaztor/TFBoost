@@ -35,6 +35,9 @@ import pandas as pd
 """TensorFlow"""
 import tensorflow as tf
 
+"""Json"""
+import json
+
 def pt(title=None, text=None):
     """
     Use the print function to print a title and an object coverted to string
@@ -401,3 +404,10 @@ def convert_to_numpy_array(to_convert_to_numpy_array_list):
             element = np.asarray(element)
             to_return.append(element)
     return to_return
+
+def is_json(my_json):
+    try:
+        json_object = json.loads(str(my_json))
+    except ValueError:
+        return False
+    return True
