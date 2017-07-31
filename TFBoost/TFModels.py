@@ -609,6 +609,7 @@ class TFModels():
         names_of_data = ["input_data", "validation_data", "inputs_labels", "validation_labels"]
         names_of_data_updated = ["input_data_updated", "validation_data_updated", "inputs_labels", "validation_labels"]
         names_dictionaries = ["input_validation_dictionary"]
+        names_key = ["test_dictionary"]
         """
         self.create_input_and_label_data()
         save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
@@ -649,7 +650,8 @@ class TFModels():
                                             numpy_files=dictionaries_to_save,
                                             names=names_dictionaries)
         """
-        """
+
+
         # Load input, validation and labels from updated arrays where inputs are [number, float] where number is
         # the page id and float is the visits' number
         self.input, self.validation, self.input_labels, self.validation_labels = \
@@ -659,10 +661,24 @@ class TFModels():
         to_convert_to_numpy_array = [self.input, self.validation, self.input_labels, self.validation_labels]
         self.input, self.validation, self.input_labels, self.validation_labels = \
             convert_to_numpy_array(to_convert_to_numpy_array_list=to_convert_to_numpy_array)
-        """
+
         # Load a complete dictionary where keys are the pages and values are the identifier (the first number of inputs)
         complete_dictionary  = load_numpy_arrays_generic(path_to_load=self.settings_object.accuracies_losses_path,
                                                 names=names_dictionaries)
+
+        # This method create 99 numpy arrays with page-id dictionary and 99 page-date from test (submmition).
+        # Besides, create a dictionary with page-unique_number from test.
+        # self.test, complete_dictionary2, dictionary_with_id = self.create_numpy_from_key_id_web_traffic_time()
+
+        complete_dictionary2 = load_numpy_arrays_generic(path_to_load=self.settings_object.accuracies_losses_path,
+                                                        names=names_key)
+
+        # TODO (@gabvaztor) Turn into dictionary and check if equals
+        pt(type(complete_dictionary[0]))
+        pt(complete_dictionary[0][0])
+
+
+
         self.update_batch(is_test=False)
         # TODO After that, create lstm network and feed with batches.
 
@@ -863,6 +879,84 @@ class TFModels():
                 data = np.concatenate((data, to_concatenate))
                 page_count += 1
         return data , dict_key_page_value_unity
+
+    def create_numpy_from_key_id_web_traffic_time(self):
+        part = 1
+        test = "test_"
+        test_dictionary = "test_dictionary_"
+        page_id_dictionary = "page_id_dictionary_"
+        path_to_read = self.settings_object.test_path
+        filename_queue = tf.train.string_input_producer([path_to_read])
+        line_reader = tf.TextLineReader(skip_header_lines=1)
+        _, csv_row = line_reader.read(filename_queue)
+        # Default values, in case of empty columns. Also specifies the type of the
+        # decoded result.
+        record_defaults = [[""], [""]]
+        page_date, visits = tf.decode_csv(csv_row, record_defaults=record_defaults)
+        features = tf.stack(page_date)
+        sess = initialize_session()
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(coord=coord)
+        data = np.array([[]])
+        dict_key_page_value_unity = {}
+        dict_key_page_value_id = {}
+        page_count = 1
+        is_first = True
+        input_size = 8703720  # Change if necessary
+        m = 0
+        for i in range(input_size):
+            # Retrieve a single instance:
+            input_data, label = sess.run([features, visits])
+            input_date = str(input_data)[-11:-1].replace("-", "")
+            input_page = str(input_data.decode("utf-8")[:-11])
+            date = np.asarray([[input_date]])
+            page = np.asarray([[input_page]])
+            id = label.decode("utf-8")
+            page_string = page[0][0]
+            if is_first:
+                dict_key_page_value_id = {}
+                data = np.array([[]])
+                number_page = page_count
+                if not page_string in dict_key_page_value_unity:
+                    dict_key_page_value_unity[page_string] = number_page
+                    page_count += 1
+                dict_key_page_value_id[page_string+"_"+date[0][0]] = id
+                data = np.asarray([[page_count]])
+                data = np.concatenate((data, date), axis=1)
+                is_first = False
+            else:
+                number_page = page_count
+                if page_string in dict_key_page_value_unity:
+                    number_page = dict_key_page_value_unity.get(page_string)
+                else:
+                    dict_key_page_value_unity[page_string] = number_page
+                    page_count += 1
+                dict_key_page_value_id[page_string] = id
+                to_concatenate = np.asarray([[number_page]])
+                to_concatenate = np.concatenate((to_concatenate, date), axis=1)
+                data = np.concatenate((data, to_concatenate))
+                m += 1
+                if i % 1000 == 0:
+                    r = ((m*100)/8703720)
+                    pt("%",r)
+                    if r > 1.0:
+                        names_key = [test + str(part), page_id_dictionary + str(part)]
+                        save_numpy_arrays_generic(folder_to_save=self.settings_object.history_information_path,
+                                                  numpy_files=[data, dict_key_page_value_id],
+                                                  names=names_key)
+                        m = 0
+                        del data
+                        del dict_key_page_value_id
+                        is_first = True
+                        part += 1
+        names_key = [test + str(part), test_dictionary + str(part), page_id_dictionary + str(part)]
+        save_numpy_arrays_generic(folder_to_save=self.settings_object.history_information_path,
+                                  numpy_files=[data, dict_key_page_value_unity, dict_key_page_value_id],
+                                  names=names_key)
+        coord.request_stop()
+        coord.join(threads)
+        to_return = [data, dict_key_page_value_unity, dict_key_page_value_id]
+        return to_return
 
     def RNN(self, input, keep_probably, weights, biases):
 
