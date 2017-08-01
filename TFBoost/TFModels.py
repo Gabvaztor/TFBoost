@@ -609,7 +609,7 @@ class TFModels():
         names_of_data = ["input_data", "validation_data", "inputs_labels", "validation_labels"]
         names_of_data_updated = ["input_data_updated", "validation_data_updated", "inputs_labels", "validation_labels"]
         names_dictionaries = ["input_validation_dictionary"]
-        names_key = ["test_dictionary"]
+        names_key = ["test_dictionary_complete_no_repeated"]
         """
         self.create_input_and_label_data()
         save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
@@ -668,14 +668,20 @@ class TFModels():
 
         # This method create 99 numpy arrays with page-id dictionary and 99 page-date from test (submmition).
         # Besides, create a dictionary with page-unique_number from test.
+        """
         # self.test, complete_dictionary2, dictionary_with_id = self.create_numpy_from_key_id_web_traffic_time()
-
+        complete_dictionary2 = self.create_dict_from_test_submission()
+        save_numpy_arrays_generic(folder_to_save=self.settings_object.accuracies_losses_path,
+                                  numpy_files=[complete_dictionary2],
+                                  names=names_key)
+        """
         complete_dictionary2 = load_numpy_arrays_generic(path_to_load=self.settings_object.accuracies_losses_path,
                                                         names=names_key)
 
         # TODO (@gabvaztor) Turn into dictionary and check if equals
-        pt(type(complete_dictionary[0]))
-        pt(complete_dictionary[0][0])
+        # pt(complete_dictionary[0])
+        complete_dictionary = complete_dictionary[0][()]
+        complete_dictionary_test = complete_dictionary2[0][()]
 
 
 
@@ -838,7 +844,8 @@ class TFModels():
                     # Save configuration to that results
                     self._save_json_configuration(Constant.attributes_to_delete_configuration)
 
-        self.generate_predictions_web_traffic_time_problem(dictionary=complete_dictionary)
+        self.generate_predictions_web_traffic_time_problem(dictionary_train=complete_dictionary,
+                                                           dictionary_test=complete_dictionary_test)
 
     def generate_predictions_web_traffic_time_problem(self, *args, **kwargs):
         dictionary = kwargs['kwargs']['dictionary']
@@ -1551,9 +1558,30 @@ class TFModels():
             coord.request_stop()
             coord.join(threads)
 
-
-
-
+    def create_dict_from_test_submission(self):
+        path_to_read_test = self.settings_object.test_path
+        filename_queue = tf.train.string_input_producer([path_to_read_test])
+        line_reader = tf.TextLineReader(skip_header_lines=1)
+        _, csv_row = line_reader.read(filename_queue)
+        # Default values, in case of empty columns. Also specifies the type of the
+        # decoded result.
+        record_defaults = [[""], [""]]
+        page_date, visits = tf.decode_csv(csv_row, record_defaults=record_defaults)
+        features = tf.stack(page_date)
+        sess = initialize_session()
+        # Start populating the filename queue.
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(coord=coord)
+        size = 8703720
+        dictionary = {}
+        num_page = 1
+        for i in range(size):
+            input_data, label = sess.run([features, visits])
+            input_resized = input_data.decode("utf-8")[:-11]
+            if input_resized not in dictionary.keys():
+                dictionary[input_resized] = 1
+                num_page += 1
+        return dictionary
 """
 STATIC METHODS: Not need "self" :argument
 """
