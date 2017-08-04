@@ -594,7 +594,6 @@ class TFModels():
         :param attributes_to_delete: String set with all attributes' names to delete from properties method
         :return: sort json from class properties.
         """
-        # TODO (gabvaztor) Finish this
         self_dictionary = self.properties(attributes_to_delete)
         json_string =  json.dumps(self, default=lambda o: self_dictionary, sort_keys=True, indent=4)
         return json_string
@@ -683,8 +682,6 @@ class TFModels():
         complete_dictionary = complete_dictionary[0][()]
         complete_dictionary_test = complete_dictionary2[0][()]
 
-
-
         self.update_batch(is_test=False)
         # TODO After that, create lstm network and feed with batches.
 
@@ -706,7 +703,7 @@ class TFModels():
         # Define weights
 
         #weights = tf.Variable(tf.random_normal([100, 1]))
-        weights = tf.Variable(tf.truncated_normal([self.first_label_neurons, 1], stddev=0.01))
+        weights = tf.Variable(tf.truncated_normal([2, 1], stddev=0.01))
         biases =  tf.Variable(tf.constant(0.01, shape=[1]))
 
         # y_prediction = self.RNN(x, keep_probably, weights, biases)
@@ -724,8 +721,8 @@ class TFModels():
         #dropout = tf.nn.dropout(outputs[-1], keep_probably)
         #dropout = tf.nn.dropout(x, keep_probably)
         # Linear activation, using rnn inner loop last output
-        dense = tf.layers.dense(inputs=x, units=self.first_label_neurons, activation=tf.nn.relu)
-        y_prediction = tf.matmul(dense, weights) + biases
+        #dense = tf.layers.dense(inputs=x, units=self.first_label_neurons, activation=tf.nn.relu)
+        y_prediction = tf.matmul(x, weights) + biases
 
         # Define loss and optimizer
         #error = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_prediction, labels=y_labels))
@@ -761,6 +758,7 @@ class TFModels():
 
         # TO STATISTICS
         # To load accuracies and losses
+
         accuracies_train, accuracies_validation, loss_train, loss_validation = load_accuracies_and_losses(
             self.settings_object.accuracies_losses_path, self.restore_model)
 
@@ -1275,6 +1273,7 @@ class TFModels():
 
     def show_advanced_information(self, y_labels, y_prediction, feed_dict):
         y__ = y_labels.eval(feed_dict)
+        pt("y_pred", y__[0])
         #argmax_labels_y_ = [np.argmax(m) for m in y__]
         #pt('y_labels_shape', y__.shape)
         #pt('argmax_labels_y__', argmax_labels_y_)
@@ -1285,7 +1284,7 @@ class TFModels():
         #pt('argmax_y_conv', argmax_labels_y_convolutional)
         #pt('y_pred_shape', y__prediction.shape)
         #pt("y_pred", y__prediction[0])
-        pt("y_pred", y__prediction)
+        pt("y_pred", y__prediction[0])
        #pt('index_buffer_data', self.index_buffer_data)
         #pt("SMAPE", smape(y__, y__prediction).eval(feed_dict))
 
