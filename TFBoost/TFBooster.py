@@ -236,6 +236,7 @@ names_of_data_updated = ["input_data_updated", "validation_data_updated", "input
 names_dictionaries = ["input_validation_dictionary"]
 # Load input, validation and labels from updated arrays where inputs are [number, float] where number is
 # the page id and float is the visits' number
+
 input_data, validation, input_labels, validation_labels = \
     load_numpy_arrays_generic(path_to_load=setting_object_web_traffic.accuracies_losses_path,
                               names=names_of_data_updated)
