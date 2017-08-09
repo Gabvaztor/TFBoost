@@ -9,13 +9,12 @@ learning_rate = 0.001
 training_epochs = 600
 display_step = 50
 
-# Training Data
-x = 5.0
-y = 10.0
 
 # tf Graph Input
 X = tf.placeholder(tf.float32)
+x = 5.0
 Y = tf.placeholder(tf.float32)
+y = 10.0
 
 # Set model weights
 W = tf.Variable(0.0, name="weight")
