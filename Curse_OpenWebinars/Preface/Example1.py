@@ -24,7 +24,7 @@ b = tf.constant(0.0, name="bias")
 #b = tf.Variable(0.0, name="bias")
 
 # y_predecida = W*x+b
-y_predecida = tf.add(tf.multiply(X, W), b)
+y_predecida = tf.add(tf.multiply(W, X), b)
 # El error es la diferencia entre la 'y' real y la 'y_predecida'
 error = tf.abs(tf.subtract(Y, y_predecida))
 # Gradient descent
