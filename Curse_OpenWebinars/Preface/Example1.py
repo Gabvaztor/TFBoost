@@ -6,7 +6,7 @@ rng = numpy.random
 
 # Parameters
 learning_rate = 0.001
-training_epochs = 600
+training_epochs = 1000
 display_step = 50
 
 
