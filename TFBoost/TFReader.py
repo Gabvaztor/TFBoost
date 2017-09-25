@@ -356,7 +356,7 @@ class Searcher(Reader):
                         full_path = os.path.join(root, file_name)
                         self._get_sets_from_full_path_signals(full_path)
 
-    def _get_sets_from_full_path_signals(self,path):
+    def _get_sets_from_full_path_signals(self, path):
         """
         If path contains 'train', y_label is two dir up. Else if path contains 'test', y_label is one dir up.
         :param path: the full path
