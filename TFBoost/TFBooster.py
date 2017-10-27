@@ -76,7 +76,7 @@ import numpy as np
 import scipy.io as sio
 
 ''' Matlab URL: http://matplotlib.org/users/installing.html
-python -m pip install matplotlib'''
+python -m pip3 install matplotlib'''
 import matplotlib.pyplot as plt
 
 ''' TFLearn library. License MIT.
@@ -85,7 +85,7 @@ Git Clone : https://github.com/tflearn/tflearn.git
 import tflearn
 '''
  Sklearn(scikit-learn): Simple and efficient tools for data mining and data analysis
- To install: pip install -U scikit-learn
+ To install: pip3 install -U scikit-learn
 '''
 from sklearn.model_selection import train_test_split
 """
