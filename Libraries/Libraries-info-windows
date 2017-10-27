@@ -48,7 +48,7 @@ To install pandas: pip3 install pandas
 import pandas as pd
 ########################################################################################
 '''"Best image library"
-pip install opencv-python'''
+pip3 install opencv-python'''
 import cv2 as cv2
 ########################################################################################
 """H5PY"""
