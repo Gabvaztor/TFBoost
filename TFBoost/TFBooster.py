@@ -72,7 +72,7 @@ import numpy as np
 # You need to install the 64bit version of Scipy, at least on Windows.
 # It is mandatory to install 'Numpy+MKL' before scipy.
 # http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
-# We can find scipi in the url: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy'''
+# We can find scipy in the url: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy'''
 import scipy.io as sio
 
 ''' Matlab URL: http://matplotlib.org/users/installing.html

@@ -58,7 +58,7 @@ To install: pip3 install tflearn'''
 import tflearn
 
 '''"Best image library"
-pip install opencv-python'''
+pip3 install opencv-python'''
 import cv2
 
 """Python libraries"""
@@ -122,7 +122,7 @@ class TFModels():
         # TRAIN MODEL VARIABLES
         self._input_rows_numbers = None
         self._input_columns_numbers = None
-        self._kernel_size = [1, 1]  # Kernel patch size
+        self._kernel_size = [3, 3]  # Kernel patch size
         self._epoch_numbers = 999  # Epochs number
         self._batch_size = 256  # Batch size
         if self.input is not None:  # Change if necessary
@@ -624,29 +624,9 @@ class TFModels():
         #weights = tf.Variable(tf.random_normal([100, 1]))
         weights = tf.Variable(tf.truncated_normal([2, 1], stddev=0.01))
         biases =  tf.Variable(tf.constant(0.01, shape=[1]))
-
-        # y_prediction = self.RNN(x, keep_probably, weights, biases)
-        # Prepare data shape to match `rnn` function requirements
-        # Current data input shape: (batch_size, n_steps, n_input)
-        # Required shape: 'n_steps' tensors list of shape (batch_size, n_input)
-
-        # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
-        #x = tf.unstack(input, n_steps, 1)
-        #x = tf.unstack(x, 1)
-        # 1-layer LSTM with n_hidden units.
-        #rnn_cell = rnn.BasicLSTMCell(50)
-        # generate prediction
-        #outputs, states = rnn.static_rnn(rnn_cell, x, dtype=tf.float32)
-        #dropout = tf.nn.dropout(outputs[-1], keep_probably)
-        #dropout = tf.nn.dropout(x, keep_probably)
-        # Linear activation, using rnn inner loop last output
-        #dense = tf.layers.dense(inputs=x, units=self.first_label_neurons, activation=tf.nn.relu)
         y_prediction = tf.matmul(x, weights) + biases
 
         # Define loss and optimizer
-        #error = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y_prediction, labels=y_labels))
-        #error = tf.reduce_mean(smape(y_true=y_labels, y_prediction=y_prediction))
-        #error = tf.reduce_mean(mae(y_true=y_labels, y_prediction=y_prediction, batch_size=self.batch_size))
         error = tf.reduce_mean(tf.contrib.keras.losses.mean_absolute_error(y_labels, y_prediction))
         optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(error)
 

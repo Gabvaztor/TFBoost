@@ -52,8 +52,6 @@ Time
 '''
 import time
 
-import tensorflow as tf
-
 # --------------------------------------------------------------------------
 '''
 Traceback and Os to search
@@ -63,6 +61,7 @@ import os
 # --------------------------------------------------------------------------
 import numpy as np
 # --------------------------------------------------------------------------
+import collections
 # --------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -374,3 +373,13 @@ class Searcher(Reader):
             labels[int(y_label)] = 1
             self.y_test.append(list(labels))
             self.x_test.append(path)
+
+def build_dataset(words):
+    # TODO
+    words = "hola,hola,hola,hola"
+    count = collections.Counter(words).most_common()
+    dictionary = dict()
+    for word, _ in count:
+        dictionary[word] = len(dictionary)
+    reverse_dictionary = dict(zip(dictionary.values(), dictionary.keys()))
+    return dictionary, reverse_dictionary
