@@ -109,6 +109,7 @@ class Dictionary(object):
     filename_validation_accuracies = "validation_accuracies"
     filename_train_losses = "train_losses"
     filename_validation_losses = "validation_losses"
+    filename_numpy_default = "numpy_file_"
 
     """
     STRINGS OPTIONS

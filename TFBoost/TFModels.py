@@ -1225,7 +1225,7 @@ class TFModels():
                 loss_test.append(cross_entropy_test)
                 with tf.device('/cpu:1'):
                     save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
-                                                        ztrain_accuracies=accuracies_train,
+                                                        train_accuracies=accuracies_train,
                                                         validation_accuracies=accuracies_test,
                                                         train_losses=loss_train,
                                                         validation_losses=loss_test)
@@ -1338,31 +1338,6 @@ class TFModels():
                         self.validation_labels = np.concatenate((self.validation_labels, label_resized))
             coord.request_stop()
             coord.join(threads)
-
-    def create_dict_from_test_submission(self):
-        path_to_read_test = self.settings_object.test_path
-        filename_queue = tf.train.string_input_producer([path_to_read_test])
-        line_reader = tf.TextLineReader(skip_header_lines=1)
-        _, csv_row = line_reader.read(filename_queue)
-        # Default values, in case of empty columns. Also specifies the type of the
-        # decoded result.
-        record_defaults = [[""], [""]]
-        page_date, visits = tf.decode_csv(csv_row, record_defaults=record_defaults)
-        features = tf.stack(page_date)
-        sess = initialize_session()
-        # Start populating the filename queue.
-        coord = tf.train.Coordinator()
-        threads = tf.train.start_queue_runners(coord=coord)
-        size = 8703720
-        dictionary = {}
-        num_page = 1
-        for i in range(size):
-            input_data, label = sess.run([features, visits])
-            input_resized = input_data.decode("utf-8")[:-11]
-            if input_resized not in dictionary.keys():
-                dictionary[input_resized] = 1
-                num_page += 1
-        return dictionary
 """
 STATIC METHODS: Not need "self" :argument
 """

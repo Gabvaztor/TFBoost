@@ -113,6 +113,13 @@ def write_json_to_pathfile(json, filepath):
 
 
 def recurrent_method_pass_true_or_false(question, method):
+    """
+
+    :param question:
+    :param method:
+    :return:
+    """
+    # TODO (@gabvaztor) Docs
     response = False
     pt(Dictionary.string_get_response)
     save = str(input(question + " ")).upper()
@@ -230,51 +237,26 @@ def preprocess_lists(lists, index_to_eliminate=2):
             processed_lists.append(list_to_process)
     return processed_lists
 
-def save_accuracies_and_losses_training(folder_to_save, numpy_file_1, numpy_file_2, numpy_file_3,
-                                        numpy_file_4, names=None):
+def save_numpy_arrays_generic(folder_to_save, numpy_files, names=None):
     """
-    Save the accuracies and losses into a type_file folder
-    :param folder_to_save: 
-    :param train_accuracies: 
-    :param validation_accuracies: 
-    :param train_losses: 
-    :param validation_losses:
-    :param type_file: folder to save
-    """
-    # TODO (@gabvaztor) finish DOcs
-    if not names:
-        name_file_1 = Dictionary.filename_train_accuracies
-        name_file_2 = Dictionary.filename_validation_accuracies
-        name_file_3 = Dictionary.filename_train_losses
-        name_file_4 = Dictionary.filename_validation_losses
-    else:
-        name_file_1 = names[0]
-        name_file_2 = names[1]
-        name_file_3 = names[2]
-        name_file_4 = names[3]
-    create_directory_from_fullpath(folder_to_save)
-    np.save(folder_to_save + name_file_1, numpy_file_1)
-    np.save(folder_to_save + name_file_2, numpy_file_2)
-    np.save(folder_to_save + name_file_3, numpy_file_3)
-    np.save(folder_to_save + name_file_4, numpy_file_4)
-
-def save_numpy_arrays_generic(folder_to_save, numpy_files, names):
-    """
-    Save the accuracies and losses into a type_file folder
-    :param folder_to_save: 
-    :param numpy_files: Must have same size than names
+    Save the accuracies and losses into a type_file folder.
+    names and numpy_files are two list.
+    :param folder_to_save:
+    :param numpy_files:
     :param names: Must have same size than numpy_files
-    :return: 
-    """
-    # TODO (@gabvaztor) finish DOcs
 
+    """
+    # TODO (@gabvaztor) finish Docs
     create_directory_from_fullpath(folder_to_save)
     for index in range(len(numpy_files)):
-        np.save(folder_to_save + names[index], numpy_files[index])
+        if names:
+            np.save(folder_to_save + names[index], numpy_files[index])
+        else:
+            name_file = Dictionary.filename_numpy_default
+            np.save(folder_to_save + name_file+str(index+1), numpy_files[index])
 
 def load_numpy_arrays_generic(path_to_load, names):
     """
-    
     :param path_to_load: 
     :param names: 
     :return: 
