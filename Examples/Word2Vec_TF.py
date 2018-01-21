@@ -1,8 +1,13 @@
+"""
+We get the example from : "https://towardsdatascience.com/lstm-by-example-using-tensorflow-feb0c1968537"
+"""
+
 import numpy as np
 import tensorflow as tf
 #import os
 #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from UsefulTools.UtilsFunctions import *
+from UsefulTools.TensorFlowUtils import *
 corpus_raw = 'He is the king . The king is royal . She is the royal  queen . She is not the queen .'
 # convert to lower case
 corpus_raw = corpus_raw.lower()
@@ -71,18 +76,18 @@ W2 = tf.Variable(tf.random_normal([EMBEDDING_DIM, vocab_size]))
 b2 = tf.Variable(tf.random_normal([vocab_size]))
 prediction = tf.nn.softmax(tf.add( tf.matmul(hidden_representation, W2), b2))
 
-sess = tf.Session()
-init = tf.global_variables_initializer()
-sess.run(init) #make sure you do this!
+sess = initialize_session()
 # define the loss function:
 cross_entropy_loss = tf.reduce_mean(-tf.reduce_sum(y_label * tf.log(prediction), reduction_indices=[1]))
 
 # define the training step:
-train_step = tf.train.ProximalGradientDescentOptimizer(0.1).minimize(cross_entropy_loss)
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
+train_op = optimizer.minimize(cross_entropy_loss)
 n_iters = 30000
 # train for n_iter iterations
 for _ in range(n_iters):
-    sess.run(train_step, feed_dict={x: x_train, y_label: y_train})
+    pt(cross_entropy_loss.eval(feed_dict={x: x_train, y_label: y_train}))
+    sess.run(train_op, feed_dict={x: x_train, y_label: y_train})
     print('loss is : ', sess.run(cross_entropy_loss, feed_dict={x: x_train, y_label: y_train}))
 
 pt("W1")
