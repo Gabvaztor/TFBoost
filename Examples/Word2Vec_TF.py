@@ -1,5 +1,5 @@
 """
-We get the example from : "https://towardsdatascience.com/lstm-by-example-using-tensorflow-feb0c1968537"
+We get the example from : "https://towardsdatascience.com/learn-word2vec-by-implementing-it-in-tensorflow-45641adaf2ac"
 """
 
 import numpy as np
@@ -67,7 +67,7 @@ pt("y_train",y_train)
 x = tf.placeholder(tf.float32, shape=(None, vocab_size))
 y_label = tf.placeholder(tf.float32, shape=(None, vocab_size))
 
-EMBEDDING_DIM = 5 # you can choose your own number
+EMBEDDING_DIM = 200 # you can choose your own number
 W1 = tf.Variable(tf.random_normal([vocab_size, EMBEDDING_DIM]))
 b1 = tf.Variable(tf.random_normal([EMBEDDING_DIM])) #bias
 hidden_representation = tf.add(tf.matmul(x,W1), b1)
@@ -81,7 +81,7 @@ sess = initialize_session()
 cross_entropy_loss = tf.reduce_mean(-tf.reduce_sum(y_label * tf.log(prediction), reduction_indices=[1]))
 
 # define the training step:
-optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
 train_op = optimizer.minimize(cross_entropy_loss)
 n_iters = 30000
 # train for n_iter iterations

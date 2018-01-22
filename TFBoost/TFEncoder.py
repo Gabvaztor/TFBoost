@@ -21,7 +21,7 @@ Dictionary values with comments
 # Data.csv from Breast_Cancer_Wisconsin project
 dict['breast_Cancer_Wisconsin_Path'] = '../DataTest/Breast_Cancer_Wisconsin/data.csv'
 
-def dict(key):
+def dict_return(key):
     """
     Function to return the value from a key
     :param key:

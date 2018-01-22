@@ -1,5 +1,5 @@
 """
-We get the example from : "https://towardsdatascience.com/lstm-by-example-using-tensorflow-feb0c1968537"
+We get the example from : "https://towardsdatascience.com/learn-word2vec-by-implementing-it-in-tensorflow-45641adaf2ac"
 """
 
 import numpy as np
@@ -67,25 +67,25 @@ pt("y_train",y_train)
 x = tf.placeholder(tf.float32, shape=(None, vocab_size))
 y_label = tf.placeholder(tf.float32, shape=(None, vocab_size))
 
-EMBEDDING_DIM = 5 # you can choose your own number
+EMBEDDING_DIM = 15 # you can choose your own number
 W1 = tf.Variable(tf.random_normal([vocab_size, EMBEDDING_DIM]))
 b1 = tf.Variable(tf.random_normal([EMBEDDING_DIM])) #bias
 hidden_representation = tf.add(tf.matmul(x,W1), b1)
 
 W2 = tf.Variable(tf.random_normal([EMBEDDING_DIM, vocab_size]))
 b2 = tf.Variable(tf.random_normal([vocab_size]))
-prediction = tf.nn.softmax(tf.add( tf.matmul(hidden_representation, W2), b2))
+prediction = tf.add( tf.matmul(hidden_representation, W2), b2)
 
-sess = initialize_session()
 # define the loss function:
 #cross_entropy_loss = tf.reduce_mean(-tf.reduce_sum(y_label * tf.log(prediction), reduction_indices=[1]))
 #cross_entropy_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=y_label,logits=prediction)
-cross_entropy_loss = tf.nn.softmax_cross_entropy_with_logits(labels=y_label,logits=prediction)
+cross_entropy_loss =  tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_label,logits=prediction))
 
 # define the training step:
-optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
+optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
 train_op = optimizer.minimize(cross_entropy_loss)
-n_iters = 10000
+sess = initialize_session()
+n_iters = 30000
 # train for n_iter iterations
 for _ in range(n_iters):
     pt(cross_entropy_loss.eval(feed_dict={x: x_train, y_label: y_train}))
