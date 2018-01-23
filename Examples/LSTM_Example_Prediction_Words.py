@@ -39,4 +39,8 @@ dictionary, reverse_dictionary = build_dataset(words)
 pt("dictionary",dictionary)
 pt("reverse_dictionary",reverse_dictionary)
 
+# Target log path
+logs_path = '../rnn_words'
+writer = tf.summary.FileWriter(logs_path)
+
 # TODO finish
