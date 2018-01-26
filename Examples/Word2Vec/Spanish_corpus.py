@@ -18,20 +18,13 @@ Todos los niveles descritos aquí son inseparables y se complementan entre sí. 
 # IMPORTANTE: PARA INSTALAR TEXTACY HACE FALTA Microsoft Visual C++ 14.0. Si no lo instalas, te dará el siguiente error:
 #  error: Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools":
 #  http://landinghub.visualstudio.com/visual-cpp-build-tools
-# Instalarlo con la configuración por defecto, sino, no funcionará
 import textacy
 from textacy.datasets import Wikipedia
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter, defaultdict
-import spacy
-from spacy.lang.es.stop_words import STOP_WORDS
 import warnings; warnings.simplefilter('ignore')
-from UsefulTools.UtilsFunctions import *
-# importando gensim y TSNE para graficar
-import gensim
-from sklearn.manifold import TSNE
 
 # función leer texto
 def leer_texto(texto):
@@ -40,15 +33,4 @@ def leer_texto(texto):
         return text.read()
 
 wp = Wikipedia(data_dir='D:\Machine_Learning\Corpus\wikipedia_textacy', lang='es', version='latest')
-#wp.download()  # Para cuando sea necesario descargar el corpus
-
-pt("wiki info",wp.info)
-
-frases = []
-
-
-for text in wp.texts(min_len=1000, limit=2):
-    frases.append(text)
-    # Para mostrar algo del texto descargado
-    #print(text[:370], "\n")
-pt("frases", frases)
+wp.download()

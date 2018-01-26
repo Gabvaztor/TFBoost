@@ -1,7 +1,5 @@
 """
 We get the example from : "https://towardsdatascience.com/learn-word2vec-by-implementing-it-in-tensorflow-45641adaf2ac"
-
-This is Skip Gram form.
 """
 
 import numpy as np
@@ -10,8 +8,7 @@ import tensorflow as tf
 #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from UsefulTools.UtilsFunctions import *
 from UsefulTools.TensorFlowUtils import *
-corpus_raw = 'He is the king . The king is royal . She is the royal queen .'
-corpus_raw = 'Yo no tengo nada de estrés'
+corpus_raw = 'He is the king . The king is royal . She is the royal  queen . She is not the queen .'
 # convert to lower case
 corpus_raw = corpus_raw.lower()
 
@@ -47,7 +44,6 @@ for sentence in sentences:
             if nb_word != word:
                 data.append([word, nb_word])
 pt("data",data)
-pt("data",len(data))
 
 # function to convert numbers to one hot vectors
 def to_one_hot(data_point_index, vocab_size):
@@ -66,15 +62,12 @@ y_train = np.asarray(y_train)
 
 pt("x_train",x_train)
 pt("y_train",y_train)
-pt("x_train.shape",x_train.shape)
-pt("y_train.shape",y_train.shape)
-pt("vocab_size",str(vocab_size))
 
 # making placeholders for x_train and y_train
 x = tf.placeholder(tf.float32, shape=(None, vocab_size))
 y_label = tf.placeholder(tf.float32, shape=(None, vocab_size))
 
-EMBEDDING_DIM = 5 # you can choose your own number # Límite 282 portatil msi 820
+EMBEDDING_DIM = 200 # you can choose your own number
 W1 = tf.Variable(tf.random_normal([vocab_size, EMBEDDING_DIM]))
 b1 = tf.Variable(tf.random_normal([EMBEDDING_DIM])) #bias
 hidden_representation = tf.add(tf.matmul(x,W1), b1)
@@ -90,7 +83,7 @@ cross_entropy_loss = tf.reduce_mean(-tf.reduce_sum(y_label * tf.log(prediction),
 # define the training step:
 optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
 train_op = optimizer.minimize(cross_entropy_loss)
-n_iters = 10000
+n_iters = 30000
 # train for n_iter iterations
 for _ in range(n_iters):
     pt(cross_entropy_loss.eval(feed_dict={x: x_train, y_label: y_train}))
@@ -100,10 +93,8 @@ for _ in range(n_iters):
 pt("W1")
 vectors = sess.run(tf.add(W1, b1))
 pt("vectors",vectors)
-pt("vectors_shape",vectors.shape)
 
-#pt("Vector queen in word2int", vectors[ word2int['queen'] ])
-pt("Vector estrés in word2int", vectors[ word2int['estrés'] ])
+pt("Vector queen in word2int", vectors[ word2int['queen'] ])
 
 def euclidean_dist(vec1, vec2):
     return np.sqrt(np.sum((vec1-vec2)**2))
@@ -118,12 +109,9 @@ def find_closest(word_index, vectors):
             min_index = index
     return min_index
 
-#pt("Más cercano a king", int2word[find_closest(word2int['king'], vectors)])
-#pt("Más cercano a queen", int2word[find_closest(word2int['queen'], vectors)])
-#pt("Más cercano a royal", int2word[find_closest(word2int['royal'], vectors)])
-pt("Más cercano a nada", int2word[find_closest(word2int['nada'], vectors)])
-pt("Más cercano a yo", int2word[find_closest(word2int['yo'], vectors)])
-pt("Más cercano a estrés", int2word[find_closest(word2int['estrés'], vectors)])
+pt("Más cercano a king", int2word[find_closest(word2int['king'], vectors)])
+pt("Más cercano a queen", int2word[find_closest(word2int['queen'], vectors)])
+pt("Más cercano a royal", int2word[find_closest(word2int['royal'], vectors)])
 
 from sklearn.manifold import TSNE
 model = TSNE(n_components=2, random_state=0)
