@@ -58,5 +58,6 @@ Para descargar corpus de wikipedia en español u otros idiomas
 # IMPORTANTE: PARA INSTALAR TEXTACY HACE FALTA Microsoft Visual C++ 14.0. Si no lo instalas, te dará el siguiente error:
 #  error: Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools":
 #  http://landinghub.visualstudio.com/visual-cpp-build-tools
+# Instalarlo con la configuración por defecto, sino, no funcionará
 pip3 install textacy
 import textacy
