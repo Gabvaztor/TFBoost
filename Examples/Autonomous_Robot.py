@@ -47,8 +47,6 @@ Seguir estructura del código
      llama a la función), cada vez que se llame a esa función, debe dar los siguientes 50 elementos
      (tener en cuenta las ventanas temporales).
 
-@(sara.moreno)
-@(gabriel.vazquez)
 """
 import pandas as pd
 import tensorflow as tf
