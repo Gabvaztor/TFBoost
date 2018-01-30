@@ -1,47 +1,51 @@
 """
-Leemos del fichero (que es el csv que contiene la información recogida de Aquiles) las columnas:
-"Tipo Evento", "Contenido", "Imagen".
+Seguir estructura del código
 
-Los pasos que se siguen son los siguientes:
-
--1º. Leemos el fichero CSV.
+-1º. Leemos el fichero CSV que se corresponde con el archivo salida de Aquiles.
 -2º. Obtenemos las columnas: "Tipo Evento", "Contenido" e "Imagen".
 -3º. Eliminamos, de esas columnas, todas las filas cuyo "Contenido" o "Tipo Evento" sea vacío  o "Tipo Evento" no sea
      "Cursor" excepto para las que contengan en la columna "Contenido" un string o substring "{ctrl}k{ctrl}k". De esta
      forma nos quedamos solo con los "Tipo Evento" --> Cursor y con los "Tipo Evento" --> Keystrokes cuyo "Contenido"
      contenga un string o substring "{ctrl}k{ctrl}k", es decir, se haya detectado que el analista quiere que se aprenda
      a partir de ese momento hasta la siguiente vez que se encuentra "{ctrl}k{ctrl}k".
+     Esto se deberá modificar cuando tengamos una versión en la que necesitemos recoger keystrokes diferentes.
 -4º. Se crea, a partir de las columnas filtradas anteriormente, un DataFrame para poder trabajar con él.
 -5º. Se recogen la lista de acciones que se han realizado entre una un "{ctrl}k{ctrl}k" y otro "{ctrl}k{ctrl}k".
--6º. Se recoge, a partir del nombre de la imagen, el fingerprint de esa imagen en el archivo excel image-match.
--7º. Se transforman todas las acciones y el fingerprint de cada imagen (por acción), en un formato adecuado. En este
-     caso, hay que tener en cuenta que el fingerprint tiene un tamaño variable según el tamaño de la imagen y por ello
-     se debe NORMALIZAR para que todas tengan la misma. Igualmente, se tratará de que la RED asuma dicha "variabilidad"
-     (en análisis). El formato para las acciones debe quedar:
-     (tipo_de_click, coordenada x, coordenada y, fingerprint (normalizado o no))
+-6º. Se recoge, a partir del nombre de la imagen, el grupo de la imagen para la fase de entrenamiento (aprendizaje).
+     Hay que tener en cuenta que cada acción puede tener asociado una imagen diferente (esa información está en el log
+     de aquiles). En ese caso, para esa imagen hay que buscarle al grupo que pertenece (esto se hace asociando los ids
+     (nombre de la imagen) de los archivos image_match (que es el log enriquecido) y del log de aquiles).
+     Se debe retornar algo así por cada acción:
+     [Posición 0 --> 0 si "Tipo Evento" es Cursor y 1 si es Keystrokes,
+     Posición 1 --> (A partir de "Contenido") 0 si es click izquierdo ,1 si es click derecho o "la cadena string" si
+     es Keystrokes,
+     Posición 2 --> Primera coordenada,
+     Posición 3 --> Segunda coordenada,
+     Posición 4 --> Grupo de la imagen de la fila del contenido en la que está. Si esa fila no tiene imagen asociada,
+     se utilizará el grupo de la imagen anterior]
+-7º. Se transforman todas las acciones(por acción) en un formato adecuado. El formato para
+     las acciones debe quedar:
+     [tipo_de_click, coordenada x, coordenada y, grupo]
      El tipo_de_click será 0 si es "{LEFT MOUSE}" y 1 si es "{RIGHT MOUSE}".
-     Así, el array resultante podría quedar así: [0,450,354,[0,1,2,-1,-2,2,-1,0,0,0,1,...]] siendo el último elemento el
-     fingerprint.
--8º. Creación de los datos de entrenamiento con los labels (etiquetas): a partir de las acciones normalizadas al formato
-     adecuado, se debe guardar la primera firma obtenida. Esta firma servirá como entrada de todas las siguientes
-     iteraciones (batch) (incluso para las que no tienen imágenes propias). Se deberá crear un array con el formato:
-     ["action_1","action_2"], siendo el action_2 la siguiente acción del conjunto de acciones, siendo la etiqueta(label)
-     del action_1.
-     Esa action_2, para la siguiente iteración (batch), será la action_1 y esa acción tendrá su acción_2 (label) que se
-     corresponde con la siguiente acción. De esta forma, formaremos nuestro conjunto de entrenamiento, que servirá de
-     conjunto de testeo también.
-     Para el caso en el que en la columna "imagen" exista una imagen diferente (no vacía), se deberá utilizar esa imagen
-     como fingerprint para todas las siguientes y así sucesivamente hasta el final de las acciones.
+     Así, el array resultante podría quedar así: [0,450,354,4] siendo el último elemento el grupo.
+     Esta función es útil para manejar versiones del código. Así, para las versiones del código en las que necesitemos
+     un tipo de información diferente, podemos modificar esta función y recoger lo que necesitemos.
+-8º. Creación de los datos de entrenamiento con los labels (etiquetas):
+     Crear una lista de listas (A) que contenga las entradas y salidas del conjunto de entrenamiento.
+     La entrada (a) tiene la forma del paso anterior. La salida(b) es la siguiente acción del log de aquiles con esta
+     forma: [1,451,355], siendo el primer elemento el tipo de click, el segundo la coordenada x y el tercer elemento la
+     coordenada y.
+     Para la siguiente posición del array, (b) será la entrada y la salida de esa entrada será la siguiente acción
+     del log de aquiles y así sucesivamente hasta que se encuentre el siguiente fin de aprendizaje
+     (end_event_learning_capture).
      Un ejemplo de esto podría ser:
-     [[[0,450,354,[fingerprint_1]], [1,451,355]], (...)] --> Conjunto de acciones divididas entre sus
-     entradas y salidas(labels). Esto servirá para el entrenamiento y testeo de la red.
+     [[[0,450,354,grupo], [1,451,355]], [[1,451,355,grupo],[0,349,567]], (...)] --> Conjunto de acciones divididas entre
+     sus entradas y salidas(labels). Esto servirá para el entrenamiento y testeo de la red.
 -9º. Una función que se llama "get_batch" que recibe por parámetro el array del anterior y un número entero y
      devuelva un número de elementos de ese array (batches) igual al número entero dado. Además, debe existir una variable
      que guarde el índice en el que está. Si tenemos un array de 1000 elementos y cogemos 50 ( la primera vez que se
      llama a la función), cada vez que se llame a esa función, debe dar los siguientes 50 elementos
      (tener en cuenta las ventanas temporales).
-
-
 
 @(sara.moreno)
 @(gabriel.vazquez)
@@ -110,7 +114,9 @@ def split_list_in_pairs (a_list):
     else:
         final_list = [a_list[i:i + 2] for i in range(0, len(a_list), 2)]
     return final_list
-
+"""
+PASOS
+"""
 # Paso 1º. Ruta del fichero
 def read_file(path, separator):
     name_file = path
@@ -132,7 +138,7 @@ def get_columns(file):
 # Paso 4. Se crea, a partir de las columnas filtradas anteriormente, un DataFrame para poder trabajar con él.
 def normalize_columns_and_create_dataframe(tipo_evento, contenido, imagen):
     # Paso 3
-    # TODO (@IWT2) No eliminar elementos que contengan end_event_learning_capture
+    # TODO (@IWT2) No eliminar elementos que contengan información relevante (para futuras versiones)
     for index in range(0, len(tipo_evento)):
         if (not tipo_evento[index] == "Cursor" or contenido[index] == "NaN" or contenido[index] == "") \
                 and start_event_learning_capture not in contenido[index].lower():
@@ -151,26 +157,34 @@ def normalize_columns_and_create_dataframe(tipo_evento, contenido, imagen):
 
 # Paso 5. Obtenemos las imágenes a partir de los keystrokes y array de lista de acciones (índices)
 def get_images_from_keystrokes(tipo_evento, imagen):
+    # TODO images_from_keystrokes, por ahora, solo contiene los ids de las imágenes de las filas que tienen "keystrokes"
+    # TODO en su tipo_evento. ¿Debe contener todas las imágenes de todas las acciones que hay en starts_ends_indexes?
+    # TODO Si no es ahora, esa información la debemos tener en la siguiente fase.
     images_from_keystrokes = []  # Nombre de imágenes para utilizarlos como ids en el excel
     # Obtenemos los índices de las filas con "Tipo Evento" --> Keystrokes
     keystrokes_indexes = [x for x in range(len(list(tipo_evento.values))) if list(tipo_evento.values)[x].lower() ==
                           "keystrokes"]
-    starts_ends_indexes_mod4 = split_list_in_pairs(
+    starts_ends_indexes = split_list_in_pairs(
         a_list=keystrokes_indexes)  # Lista de parejas de todos los keystrokes_indexes
     print("keystrokes_indexes", keystrokes_indexes)
-    print("index_in_pairs", starts_ends_indexes_mod4)
+    print("index_in_pairs", starts_ends_indexes)
     for index in keystrokes_indexes:
         images_from_keystrokes.append(list(imagen.values)[index])
     print("images_from_keystrokes", images_from_keystrokes)
-    return images_from_keystrokes, starts_ends_indexes_mod4
+    return images_from_keystrokes, starts_ends_indexes
 
 # Paso 6. Obtenemos las siguientes acciones a realizar a partir de los índices obtenidos previamente.
-# Se debe acceder al excel image_match con los ids de las imagenes para recoger el fingerprint de cada una de ellas.
+# Se debe acceder al excel image_match con los ids de las imagenes para recoger el grupo de cada una de ellas.
 def get_next_actions(contenido, images_from_keystrokes, starts_ends_indexes):
     next_actions = []  # Lista de listas de siguientes acciones. Cada lista contenida tiene el siguiente formato:
-    # [Posición 0 --> 0 si "Tipo Evento" es Cursor y 1 si es Keystrokes, Posición 1 --> (A partir de "Contenido") 0 si es
-    # click izquierdo ,1 si es click derecho o la cadena string si es Keystrokes, Posición 2 --> Primera coordenada,
-    # Posición 3 --> Segunda coordenada]
+    # [Posición 0 --> 0 si "Tipo Evento" es Cursor y 1 si es Keystrokes,
+    # Posición 1 --> (A partir de "Contenido") 0 si es click izquierdo ,1 si es click derecho o "la cadena string" si
+    # es Keystrokes,
+    # Posición 2 --> Primera coordenada,
+    # Posición 3 --> Segunda coordenada,
+    # Posición 4 --> Grupo de la imagen de la fila del contenido en la que está. Si esa fila no tiene imagen asociada,
+    # se utilizará el grupo de la imagen anterior]
+    # TODO Tener en cuenta el doc del archivo para realizar esta función
     if not starts_ends_indexes:
         next_actions = -1  # No hay siguientes acciones
     else:
@@ -188,6 +202,7 @@ def get_next_actions(contenido, images_from_keystrokes, starts_ends_indexes):
 # Paso 7
 def normalize_actions(next_actions):
     # TODO
+
     return []
 # Paso 8
 def create_batches(normalized_actions):
@@ -203,10 +218,11 @@ def get_batch(batches, quantity):
 
 index_batch = 0  # Índice para tener en cuenta el índice por donde va el recorrido del batch.
 batches = []  # Que se utilizará para quedar guardada la primera vez que se cree.
-file = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\logfiles20180123.csv"  # Se deberá
+file_aquiles = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\logfiles20180123.csv"  # Se deberá
+file_mod2_3 = "log2_3"  # Se deberá
 # recoger como parámetro al igual que quantity y start_all_flag
 
-def main_train_phase(file_path=None,quantity=None, start_all_flag=False):
+def main_train_phase(file_path_aquiles=None, file_path_mod2_3=None, quantity=None, start_all_flag=False):
     """
 
     :param file_path:
@@ -217,47 +233,44 @@ def main_train_phase(file_path=None,quantity=None, start_all_flag=False):
     # TODO Docs
     global batches
     if start_all_flag:
-        file = read_file(file_path,separator=";")
+        # TODO Tras el cambio en la forma de realizar la fase de entrenamiento (ahora es por el grupo), es posible que
+        # TODO los nombres de las variables y las entradas de las funciones no sean acordes al doc del archivo.
+        # TODO Cambiarlo si es necesario e intentar hacer el código para que sea granular.
+        file = read_file(file_path_aquiles,separator=";")
         tipo_evento, contenido, imagen = get_columns(file=file)
         normalize_columns_and_create_dataframe(tipo_evento=tipo_evento,contenido=contenido,imagen=imagen)
         images_from_keystrokes, starts_ends_indexes = get_images_from_keystrokes(tipo_evento=tipo_evento, imagen=imagen)
         next_actions = get_next_actions(contenido=contenido, images_from_keystrokes=images_from_keystrokes,
                                         starts_ends_indexes=starts_ends_indexes)
-        normalized_actions = normalize_actions(next_actions=next_actions)
-        batches = create_batches(normalized_actions)
+        if not next_actions == -1:
+            normalized_actions = normalize_actions(next_actions=next_actions)
+            batches = create_batches(normalized_actions)
+        else:
+            pt("No hay acciones")
     batch_to_train = get_batch(batches=batches,quantity=quantity)
     return batch_to_train
+
+# Get batch algorithm
+#batch = main_train_phase(file_aquiles, file_mod2_3,2, True)
 
 """
 RED NEURONAL
 """
 # input con label
-fingerprint_1 = np.asarray([-2,-1,1])
-tipo_click = np.asarray([0])
-coordenada_x = np.asarray([450])
-coordenada_y = np.asarray([354])
-input = np.asarray([
-                  [tipo_click,coordenada_x,coordenada_y,fingerprint_1],
-                  [tipo_click,coordenada_x,coordenada_y,fingerprint_1],
-                  [tipo_click,coordenada_x,coordenada_y,fingerprint_1],
-                  [tipo_click,coordenada_x,coordenada_y,fingerprint_1],
-                  [tipo_click,coordenada_x,coordenada_y,fingerprint_1],
-                  [tipo_click,coordenada_x,coordenada_y,fingerprint_1],
-                  [tipo_click,coordenada_x,coordenada_y,fingerprint_1],
-                  [tipo_click,coordenada_x,coordenada_y,fingerprint_1],
-                  [tipo_click,coordenada_x,coordenada_y,fingerprint_1],
-                  [tipo_click,coordenada_x,coordenada_y,fingerprint_1]
-                  ])
-label = np.asarray([1,451,355])
-batches_1 = [
-            [input, label]
-            ]
 
-
+tipo_click = 0.
+coordenada_x = 450.
+coordenada_y = 354.
+grupo = 4.
+input = np.asarray([tipo_click,coordenada_x,coordenada_y,grupo]).reshape(1,4)
+label = np.asarray([1.,451.,355.]).reshape(1,3)
+batches_ = []
+for i in range(10):
+    batches_.append([input, label])
 
 # Parametros de la red
-n_oculta_1 = 256 # 1ra capa de atributos
-n_oculta_2 = 256 # 2ra capa de atributos
+n_oculta_1 = 4 # 1ra capa de atributos
+n_oculta_2 = 4 # 2ra capa de atributos
 n_entradas = 4 # 4 datos de entrada
 n_clases = 3 # 3 salidas
 
@@ -296,7 +309,7 @@ sesgo = {
 # Construimos el modelo
 pred = perceptron_multicapa(x, pesos, sesgo)
 
-# Definimos la funcion de costo
+# Definimos la funcion de coste
 costo = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
 
 # Algoritmo de optimización
@@ -311,19 +324,29 @@ sess = initialize_session()
 
 epochs = 100
 trains = 10
+costes = []
+precisiones = []
 # Entrenamiento
-for epoca in range(epochs):
+for epoca in range(1000):
     avg_cost = 0.
     for train in range(trains):
-        pt("batches_1[train][0]",batches_1[train][0])
-        pt("batches_1[train][1]",batches_1[train][1])
-        x_train, y_train = input[train], batches_1[train][1]
+        #pt("batches_[train][0].shape",batches_[train][0].shape)
+        x_train, y_train = batches_[train][0], batches_[train][1]
         # Optimización por backprop y funcion de costo
-        _, c, summary = sess.run([optimizar, costo, Precision],
+        _, c, summary, y_ = sess.run([optimizar, costo, Precision,pred],
                                  feed_dict={x: x_train, y: y_train})
-        y_ = y.eval()
-        pt("y", y_)
+        if train == 0:
+            pt("coste",c)
+            pt("Precision",summary)
+            costes.append(c)
+            precisiones.append(summary)
+            pt("y", y_)
     # imprimir información de entrenamiento
     if epoca % 1 == 0:
-        pt("costo",costo)
-        pt("Precision",Precision)
+        pt("costes",costes)
+        pt("precisiones",precisiones)
+
+pt("FINAL",pred.eval(feed_dict={x:batches_[0][0]}))
+
+#np.savetxt("W.csv", W_val, delimiter=",")
+#np.savetxt("b.csv", b_val, delimiter=",")
