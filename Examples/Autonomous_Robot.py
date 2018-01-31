@@ -42,13 +42,20 @@ Seguir estructura del código
      [[[0,450,354,grupo], [1,451,355]], [[1,451,355,grupo],[0,349,567]], (...)] --> Conjunto de acciones divididas entre
      sus entradas y salidas(labels). Esto servirá para el entrenamiento y testeo de la red.
 -9º. Una función que se llama "get_batch" que recibe por parámetro el array del anterior y un número entero y
-     devuelva un número de elementos de ese array (batches) igual al número entero dado. Además, debe existir una variable
-     que guarde el índice en el que está. Si tenemos un array de 1000 elementos y cogemos 50 ( la primera vez que se
-     llama a la función), cada vez que se llame a esa función, debe dar los siguientes 50 elementos
+     devuelva un número de elementos de ese array (batches) igual al número entero dado. Además, debe existir una
+     variable que guarde el índice en el que está. Si tenemos un array de 1000 elementos y cogemos 50 ( la primera vez
+     que se llama a la función), cada vez que se llame a esa función, debe dar los siguientes 50 elementos
      (tener en cuenta las ventanas temporales).
 
+@(sara.moreno)
+@(gabriel.vazquez)
 """
+# pip3 install pandas
 import pandas as pd
+# Para instalar tensorflow (versión CPU): Una vez tengáis Python versión > 3 --> poner en línea de comandos:
+# pip3 install --upgrade tensorflow
+# Para versión GPU:
+# pip3 install --upgrade tensorflow-gpu
 import tensorflow as tf
 import numpy as np
 
@@ -116,25 +123,34 @@ def split_list_in_pairs (a_list):
 PASOS
 """
 # Paso 1º. Ruta del fichero
-def read_file(path, separator):
-    name_file = path
+def read_file(name_file, separator):
+    """
+    Lee el fichero csv pasado como path
+    """
     file = pd.read_csv(name_file, sep=separator)
     return file
 
 # Paso 2º. Obtenemos las columnas: "Tipo Evento", "Contenido" e "Imagen"
 def get_columns(file):
+    """
+    Se recogen las columnas "tipo_evento", "contenido" y "imagen" y se retornan
+    """
     tipo_evento = file.pop("Tipo Evento")
     contenido = file.pop("Contenido")
     imagen = file.pop(" Imagen")
     return tipo_evento,contenido,imagen
 
-# Paso 3. Eliminamos, de esas columnas, todas las filas cuyo "Contenido" o "Tipo Evento" sea vacío  o "Tipo Evento" no
-# sea "Cursor" excepto para las que contengan en la columna "Contenido" un string o substring "{ctrl}k{ctrl}k". De esta
-# forma nos quedamos solo con los "Tipo Evento" --> Cursor y con los "Tipo Evento" --> Keystrokes cuyo "Contenido"
-# contenga un string o substring "{ctrl}k{ctrl}k", es decir, se haya detectado que el analista quiere que se aprenda
-# a partir de ese momento hasta la siguiente vez que se encuentra "{ctrl}k{ctrl}k".
-# Paso 4. Se crea, a partir de las columnas filtradas anteriormente, un DataFrame para poder trabajar con él.
+# Paso 3 y 4
 def normalize_columns_and_create_dataframe(tipo_evento, contenido, imagen):
+    """
+    Paso 3. Eliminamos, de esas columnas, todas las filas cuyo "Contenido" o "Tipo Evento" sea vacío  o "Tipo Evento" no
+    sea "Cursor" excepto para las que contengan en la columna "Contenido" un string o substring "{ctrl}k{ctrl}k". De
+    esta forma nos quedamos solo con los "Tipo Evento" --> Cursor y con los "Tipo Evento" --> Keystrokes cuyo
+    "Contenido" contenga un string o substring "{ctrl}k{ctrl}k", es decir, se haya detectado que el analista quiere que
+    se aprenda a partir de ese momento hasta la siguiente vez que se encuentra "{ctrl}k{ctrl}k".
+    Paso 4. Se crea, a partir de las columnas filtradas anteriormente, un DataFrame para poder trabajar con él y se
+    retorna.
+    """
     # Paso 3
     # TODO (@IWT2) No eliminar elementos que contengan información relevante (para futuras versiones)
     for index in range(0, len(tipo_evento)):
@@ -155,6 +171,10 @@ def normalize_columns_and_create_dataframe(tipo_evento, contenido, imagen):
 
 # Paso 5. Obtenemos las imágenes a partir de los keystrokes y array de lista de acciones (índices)
 def get_images_from_keystrokes(tipo_evento, imagen):
+    """
+    Se recogen la lista de acciones que se han realizado entre una un "start_event_learning_capture" y otro
+    "end_event_learning_capture".
+    """
     # TODO images_from_keystrokes, por ahora, solo contiene los ids de las imágenes de las filas que tienen "keystrokes"
     # TODO en su tipo_evento. ¿Debe contener todas las imágenes de todas las acciones que hay en starts_ends_indexes?
     # TODO Si no es ahora, esa información la debemos tener en la siguiente fase.
@@ -222,19 +242,20 @@ file_mod2_3 = "log2_3"  # Se deberá
 
 def main_train_phase(file_path_aquiles=None, file_path_mod2_3=None, quantity=None, start_all_flag=False):
     """
-
-    :param file_path:
-    :param quantity:
-    :param start_all_flag:
-    :return:
+    Este método realiza todos las fases para retornar un batch de tamaño "quantity".
+    Si "start_all_flag" es False, realiza todos los pasos para crear el batch y guardarlo en memoria. Una vez que ese
+    batch con todos los elementos esté creado (la primera vez o cuando se crea necesario realizarlo), se debe poner a
+    False para solo retornar el batch de tamaño "quantity". Al realizar todos los pasos se actualiza la variable global
+    "batches".
+    Si en alguna de las fases se retorna un elemento vacío, el método mostrará por pantalla que no existen acciones a
+    realizar y el elemento batches será un array vacío por lo que retornará un array vacío.
     """
-    # TODO Docs
     global batches
     if start_all_flag:
         # TODO Tras el cambio en la forma de realizar la fase de entrenamiento (ahora es por el grupo), es posible que
         # TODO los nombres de las variables y las entradas de las funciones no sean acordes al doc del archivo.
         # TODO Cambiarlo si es necesario e intentar hacer el código para que sea granular.
-        file = read_file(file_path_aquiles,separator=";")
+        file = read_file(name_file=file_path_aquiles,separator=";")
         tipo_evento, contenido, imagen = get_columns(file=file)
         normalize_columns_and_create_dataframe(tipo_evento=tipo_evento,contenido=contenido,imagen=imagen)
         images_from_keystrokes, starts_ends_indexes = get_images_from_keystrokes(tipo_evento=tipo_evento, imagen=imagen)
@@ -255,26 +276,43 @@ def main_train_phase(file_path_aquiles=None, file_path_mod2_3=None, quantity=Non
 RED NEURONAL
 """
 # input con label
-
+# Creación del conjunto de entrenamiento
+# Como se utiliza "mean_squared_error" para el cálculo del error, se estipula que 0 es click izquierdo y 100 click
+# derecho. Así, el error absoluto buscará mejor de una forma más certera.
 tipo_click = 0.
-coordenada_x = 450.
-coordenada_y = 354.
-grupo = 4.
-input = np.asarray([tipo_click,coordenada_x,coordenada_y,grupo]).reshape(1,4)
-label = np.asarray([1.,451.,355.]).reshape(1,3)
-batches_ = []
-for i in range(10):
-    batches_.append([input, label])
+coordenada_x = 0.
+coordenada_y = 0.
+grupo = 0.
+
+input_batch = []
+label_batch = []
+
+for int in range(10):
+    if int % 2 == 0:
+        tipo_click = 0.
+    else:
+        tipo_click = 100.
+    coordenada_x+= 100.
+    coordenada_y+= 100.
+    grupo += 1
+    input_batch.append([tipo_click,coordenada_x,coordenada_y,grupo])
+    label_batch.append([tipo_click,coordenada_x,coordenada_y])
+
+inputs = np.asarray(input_batch).reshape(10,4)
+labels = np.asarray(label_batch).reshape(10,3)
+
+pt("inputs",inputs)
+pt("labels",labels)
 
 # Parametros de la red
-n_oculta_1 = 4 # 1ra capa de atributos
-n_oculta_2 = 4 # 2ra capa de atributos
+n_oculta_1 = 8 # 1ra capa de atributos
+n_oculta_2 = 8 # 2ra capa de atributos
 n_entradas = 4 # 4 datos de entrada
 n_clases = 3 # 3 salidas
 
 # input para los grafos
-x = tf.placeholder("float", [None, n_entradas],  name='DatosEntrada')
-y = tf.placeholder("float", [None, n_clases], name='Clases')
+x = tf.placeholder(tf.float32, [None, n_entradas],  name='DatosEntrada')
+y = tf.placeholder(tf.float32, [None, n_clases], name='Clases')
 
 # Creamos el modelo
 def perceptron_multicapa(x, pesos, sesgo):
@@ -308,15 +346,15 @@ sesgo = {
 pred = perceptron_multicapa(x, pesos, sesgo)
 
 # Definimos la funcion de coste
-costo = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
-
+#costo = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
+error = tf.losses.mean_squared_error(labels=y,predictions=pred)
 # Algoritmo de optimización
-optimizar = tf.train.AdamOptimizer(learning_rate=0.001).minimize(costo)
+optimizar = tf.train.AdamOptimizer(learning_rate=0.001).minimize(error)
 
 # Evaluar el modelo
-pred_correcta = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
+#pred_correcta = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
 # Calcular la precisión
-Precision = tf.reduce_mean(tf.cast(pred_correcta, "float"))
+#acierto = tf.subtract(tf.constant(1.),error)
 
 sess = initialize_session()
 
@@ -324,27 +362,34 @@ epochs = 100
 trains = 10
 costes = []
 precisiones = []
+stop_train_flag = False
 # Entrenamiento
-for epoca in range(1000):
-    avg_cost = 0.
+for epoca in range(10000):
+    if stop_train_flag:
+        break
     for train in range(trains):
         #pt("batches_[train][0].shape",batches_[train][0].shape)
-        x_train, y_train = batches_[train][0], batches_[train][1]
+        x_train, y_train = inputs, labels
         # Optimización por backprop y funcion de costo
-        _, c, summary, y_ = sess.run([optimizar, costo, Precision,pred],
-                                 feed_dict={x: x_train, y: y_train})
+        _, actual_error, y_ = sess.run([optimizar, error,pred],
+                                 feed_dict={x: x_train[train].reshape(1,4), y: y_train[train].reshape(1,3)})
         if train == 0:
-            pt("coste",c)
-            pt("Precision",summary)
-            costes.append(c)
-            precisiones.append(summary)
+            pt("error",actual_error)
+            costes.append(actual_error)
+            #precisiones.append(accuracy)
             pt("y", y_)
+        if actual_error < 0.0000001:
+            stop_train_flag = True
+            break
     # imprimir información de entrenamiento
     if epoca % 1 == 0:
-        pt("costes",costes)
-        pt("precisiones",precisiones)
+        pass
+        #pt("costes",costes)
+        #pt("precisiones",precisiones)
 
-pt("FINAL",pred.eval(feed_dict={x:batches_[0][0]}))
-
+pt("costes", costes)
+pt("FINAL para 10000 épocas con 10 entrenamientos cada una. Debe salir:", labels[0])
+pt("Y la salida es:",pred.eval(feed_dict={x:inputs[0].reshape(1,4)}))
+pt("Con un error de:", costes[-1])
 #np.savetxt("W.csv", W_val, delimiter=",")
 #np.savetxt("b.csv", b_val, delimiter=",")
