@@ -158,12 +158,15 @@ def normalize_columns_and_create_dataframe(tipo_evento, contenido, imagen):
     """
     # Paso 3
     # TODO (@IWT2) No eliminar elementos que contengan información relevante (para futuras versiones)
+    # Se comenta para no eliminar ningún elemento del log de Aquiles
+    """
     for index in range(0, len(tipo_evento)):
         if (not tipo_evento[index] == "Cursor" or contenido[index] == "NaN" or contenido[index] == "") \
                 and start_event_learning_capture not in contenido[index].lower():
             del tipo_evento[index]
             del contenido[index]
             del imagen[index]
+    """
     # Paso 4
     dataset = {}
     dataset[0] = tipo_evento
@@ -175,15 +178,20 @@ def normalize_columns_and_create_dataframe(tipo_evento, contenido, imagen):
     return final_dataframe
 
 # Paso 5. Obtenemos las imágenes a partir de los keystrokes y array de lista de acciones (índices)
-def get_images_from_keystrokes(tipo_evento, imagen):
+def get_images_from_keystrokes(contenido):
     """
     Se recogen la lista de acciones que se han realizado entre una un "start_event_learning_capture" y otro
     "end_event_learning_capture".
     """
     #images_from_keystrokes = []  # Nombre de imágenes para utilizarlos como ids en el excel
+    """
     # Obtenemos los índices de las filas con "Tipo Evento" --> Keystrokes
     keystrokes_indexes = [x for x in range(len(list(tipo_evento.values))) if list(tipo_evento.values)[x].lower() ==
                           "keystrokes"]
+    """
+    keystrokes_indexes = [x for x in range(len(list(contenido.values))) if  start_event_learning_capture in
+                          list(contenido.values)[x].lower()]
+    pt("keystrokes_indexes",keystrokes_indexes)
     starts_ends_indexes = split_list_in_pairs(
         a_list=keystrokes_indexes)  # Lista de parejas de todos los keystrokes_indexes
     print("keystrokes_indexes", keystrokes_indexes)
@@ -252,63 +260,134 @@ def get_next_actions(tipo_evento, contenido, imagen, path_enriched_log, starts_e
     # se utilizará el grupo de la imagen anterior]
     # TODO Tener en cuenta el doc del archivo para realizar esta función
     if not starts_ends_indexes:
-        next_actions = -1  # No hay siguientes acciones
+        next_actions = []  # No hay siguientes acciones
     else:
         for index in range(len(starts_ends_indexes)):
             current_learning = starts_ends_indexes[index]  # Contiene una lista con un número o un par de números
+            pt("current_learning",current_learning)
             if (len(current_learning)) == 2:
-                # TODO (@IWT2) Finish: Recoger la lista de elementos que hay entre los dos índices
-                # TODO utilizar images_from_keystrokes para recoger las imagenes del excel image_match.
-                # Recogemos el id de la primera imagen disponible justo después de pulsar 'start_event_learning_capture'
-                # Si no existe, imagen_id es vacío.
-                try:
-                    image_id = imagen[current_learning[0]]
-                except:
-                    image_id = None
-                for element_index in range(current_learning[0]+1,current_learning[1]):
-                    if not image_id and not imagen[element_index]:
+                if current_learning[1] - current_learning[0] + 1 > 1:  # Si hay más de una acción
+                    # Añadimos una lista que contendrá las acciones para este intervalo entre entradas y salidas. Esta
+                    # lista podrá ser vacía si no se cumple alguna de las lógicas de negocio de este método. Por ello,
+                    # será necesario eliminar las listas que no contengan acciones.
+                    next_actions.append([])
+                    # Recogemos el id de la primera imagen disponible justo después de pulsar
+                    # 'start_event_learning_capture'. Si no existe, imagen_id es vacío.
+                    try:
+                        image_id = imagen[current_learning[0]]
+                    except:
                         image_id = None
-                    elif not image_id:
-                        image_id = imagen[element_index]
-                    if image_id:  # Si existe una imagen_id guardamos acción. Sino, pasamos a siguiente línea.
-                        event_type = tipo_evento[element_index]
-                        if event_type == "Cursor": # Si es cursor es 0, si es keystrokes es 1.
-                            event_type = 0
-                        else:
-                            event_type = 1
-                        # Obtenemos contenido_information (0 si es click izquierdo y 1 si es click derecho o el string
-                        # en sí si es keystroke). Además las coordenadas si es un evento de cursor. Sino, las
-                        # las coordenadas valen "-1".
-                        contenido_information, coordinate_x, \
-                        coordinate_y = get_click_and_coordinates(contenido[element_index])
-                        # Obtiene el grupo de la imagen
-                        group_image = get_group_from_image(image_id,path_enriched_log=path_enriched_log)
-                        if group_image:  # Si existe grupo de la imagen (debe existir) TODO Analizar este if
-                            action = [event_type, contenido_information, coordinate_x, coordinate_y, group_image]
-                            pt("action",action)
-                            next_actions.append(action)
+                    for element_index in range(current_learning[0]+1,current_learning[1]):
+                        pt("index", element_index+1)
+                        pt("image_id", image_id)
+                        pt("imagen[element_index]", imagen[element_index])
+                        pt("type_imagen[element_index]",type(imagen[element_index]))
+                        if not image_id and not imagen[element_index]:
+                            pt("Se actualiza image_id a None")
+                            image_id = None
+                        elif imagen[element_index] != image_id :
+                            if str(type(imagen[element_index])) != "<class 'float'>":
+                                if (imagen[element_index] != '' and
+                                     imagen[element_index].lower() != 'nan' and
+                                     imagen[element_index].lower() != None
+                                     ):
+                                        pt("imagen[element_index]",imagen[element_index])
+                                        pt("Se actualiza image_id a imagen[element_index]")
+                                        image_id = imagen[element_index]
+                        if image_id:  # Si existe una imagen_id guardamos acción. Sino, pasamos a siguiente línea.
+                            pt("image_id", image_id)
+                            event_type = tipo_evento[element_index]
+                            if event_type == "Cursor": # Si es cursor es 0, si es keystrokes es 1.
+                                event_type = 0
+                            else:
+                                event_type = 1
+                            # Obtenemos contenido_information (0 si es click izquierdo y 1 si es click derecho o el string
+                            # en sí si es keystroke). Además las coordenadas si es un evento de cursor. Sino, las
+                            # las coordenadas valen "-1".
+                            contenido_information, coordinate_x, \
+                            coordinate_y = get_click_and_coordinates(contenido[element_index])
+                            # Obtiene el grupo de la imagen
+                            group_image = get_group_from_image(image_id,path_enriched_log=path_enriched_log)
+                            if group_image:  # Si existe grupo de la imagen (debe existir) TODO Analizar este if
+                                action = [event_type, contenido_information, coordinate_x, coordinate_y, group_image]
+                                pt("action",action)
+                                next_actions[index].append(action)
             else: # Solo tiene un elemento
-                next_actions = -1  # No recogemos nada (en esta versión)
-    print("next_actions",next_actions)
+                if len(next_actions) == 0:
+                    next_actions = []  # No recogemos nada (en esta versión)
     return next_actions
 # Paso 7
 def normalize_actions(next_actions):
     """
-    Elimina el primer elemento de cada lista de la lista de "next_actions"
+    Elimina el primer elemento de cada lista de la lista de "next_actions".
+    "next_actions" es de la forma:
+    [actions_1,actions2,...] --> cada actions_x es de la forma:
+    [action_1,action_2,...] --> cada action_x es de la forma:
+    [Posición 0 --> 0 si "Tipo Evento" es Cursor y 1 si es Keystrokes,
+     Posición 1 --> (A partir de "Contenido") 0 si es click izquierdo ,1 si es click derecho o "la cadena string" si
+     es Keystrokes,
+     Posición 2 --> Primera coordenada,
+     Posición 3 --> Segunda coordenada,
+     Posición 4 --> Grupo de la imagen de la fila del contenido en la que está. Si esa fila no tiene imagen asociada,
+     se utilizará el grupo de la imagen anterior]
+     En resumen, esta función eliminará la "Posición 0" de cada action_x.
+
+     Además, para esta versión, eliminará los action_x que contengan keystrokes en vez de coordenadas.
     """
-    #TODO Revisar versión
-    for element in next_actions:
-        del element[0]
+    # TODO Revisar versión
+    recursive_flag = False
+    for actions_index in range(len(next_actions)):
+        length_actions = len(next_actions[actions_index])
+        for action_index in range(length_actions):
+            action_x = next_actions[actions_index][action_index]
+            if not action_x:
+                del next_actions[actions_index][action_index]
+                recursive_flag = True
+                break
+            elif action_x[0] == 1:
+                del next_actions[actions_index][action_index]
+                recursive_flag = True
+                break
+            elif len(next_actions[actions_index][action_index]) == 5:
+                del next_actions[actions_index][action_index][0]
+    if recursive_flag:
+        normalize_actions(next_actions=next_actions)
+    pt("next_actions_end",next_actions)
     return next_actions
 # Paso 8
 def create_batches(normalized_actions):
+    """
+    A partir de las acciones normalizadas, se crea el conjunto de entrenamiento. Este conjunto contendrá las entradas
+    y salidas del las acciones normalizadas por cada iteración de acciones.
+
+    Así, si existe por cada conjunto de acciones un total de 4 acciones, e.g.:
+    [[0, 966.0, 591.0, 3], [0, 676.0, 267.0, 4], [0, 1359.0, 14.0, 5], [0, 731.0, 435.0, 6]]
+    Se haría un conjunto de entrenamiento supervisado tal que:
+    |--------------------ENTRADAS--------------------|--------------------SALIDAS--------------------|
+                    [0, 966.0, 591.0, 3]----------------------------->[0, 676.0, 267.0]
+                    [0, 676.0, 267.0, 4]----------------------------->[0, 1359.0, 14.0]
+                    [0, 1359.0, 14.0, 5]----------------------------->[0, 731.0, 435.0]
+
+    La dimensión del array sería, por cada conjunto de acciones y para este ejemplo: (3,3), es decir, 3 entradas y
+    3 salidas.
+    Las entradas tienen de dimensión (1,4), es decir, 1 fila y 4 columnas y las salidas tienen una dimensión (1,3),
+    es decir, 1 fila y 3 columnas.
+    En total, el tamaño total del array de entradas será de: (x,4), siendo x el número total de entradas y el array de
+    salidas tendrá un tamaño de (x,3), siendo x el número total de salidas (que es el mismo que el de entradas).
+    Se retornará un array en el que, accediendo a su primera posición, se retornarán las entradas y accediendo a su
+    segunda posición se obtendrán las salidas. Hay que tener en cuenta que las entradas serán un conjunto de lista de
+    acciones, por lo que accediendo a la primera posición de la primera posición del array se obtendrá la primera lista
+    de acciones de entradas.
+    """
+
+
     # TODO
     return []
 
 # Paso 9
-def get_batch(batches, quantity):
+def get_batch(batches, quantity=None):
     global index_batch  # Para tener en cuenta el índice por donde va el recorrido del batch.
-    # Si quantity es None, que recoja un número por defecto.
+    # Si quantity es None, que recoja el total de acciones.
     # TODO
     return[]
 
@@ -330,21 +409,20 @@ def main_train_phase(file_path_aquiles=None, file_path_mod2_3=None, quantity=Non
     """
     global batches
     if start_all_flag:
-        # TODO Tras el cambio en la forma de realizar la fase de entrenamiento (ahora es por el grupo), es posible que
-        # TODO los nombres de las variables y las entradas de las funciones no sean acordes al doc del archivo.
-        # TODO Cambiarlo si es necesario e intentar hacer el código para que sea granular.
+
         file = read_file(name_file=file_path_aquiles,separator=";")
         tipo_evento, contenido, imagen = get_columns(file=file)
         normalize_columns_and_create_dataframe(tipo_evento=tipo_evento,contenido=contenido,imagen=imagen)
-        starts_ends_indexes = get_images_from_keystrokes(tipo_evento=tipo_evento, imagen=imagen)
+        starts_ends_indexes = get_images_from_keystrokes(contenido=contenido)
         next_actions = get_next_actions(tipo_evento=tipo_evento,contenido=contenido, imagen= imagen,
                                         path_enriched_log=file_mod2_3,
                                         starts_ends_indexes=starts_ends_indexes)
-        if next_actions == -1 or not next_actions:
+        if not next_actions:
+            pt("No hay acciones")
+        else:
+            pt("next_actions",next_actions)
             normalized_actions = normalize_actions(next_actions=next_actions)
             batches = create_batches(normalized_actions)
-        else:
-            pt("No hay acciones")
     batch_to_train = get_batch(batches=batches,quantity=quantity)
     return batch_to_train
 
