@@ -157,7 +157,6 @@ def normalize_columns_and_create_dataframe(tipo_evento, contenido, imagen):
     retorna.
     """
     # Paso 3
-    # TODO (@IWT2) No eliminar elementos que contengan información relevante (para futuras versiones)
     # Se comenta para no eliminar ningún elemento del log de Aquiles
     """
     for index in range(0, len(tipo_evento)):
@@ -213,13 +212,13 @@ def get_click_and_coordinates(contenido_column):
     3- El contenido en sí de la cadena ya que es keystroke. En este caso, coordinate_x y coordinate_y serán valdrán "-1"
     """
     contenido_information = contenido_column
-    coordinate_x = -1
-    coordinate_y = -1
+    coordinate_x = -1000.
+    coordinate_y = -1000.
     if "{LEFT MOUSE}" in contenido_column:
-        contenido_information = 0
+        contenido_information = -1 * 1000.
     elif "{RIGHT MOUSE}" in contenido_column:
-        contenido_information = 1
-    if contenido_information == 0 or contenido_information == 1: # Si es un evento de ratón
+        contenido_information = 1. * 1000.
+    if contenido_information == (-1 * 1000.) or contenido_information == (1. * 1000.): # Si es un evento de ratón
         split_contenido_v1 = contenido_column.split(sep="}")
         split_contenido_v2 = split_contenido_v1[1].split(sep="-")
         coordinate_x = float(split_contenido_v2[0])
@@ -242,7 +241,7 @@ def get_group_from_image(image_id, path_enriched_log):
                 row = row_index
                 break
         if row:
-            group = sheet.cell(row=row, column=3).value
+            group = float(sheet.cell(row=row, column=3).value) * 1000.
     except:
         ValueError("No se ha podido leer del log enriquecido")
     return group
@@ -258,7 +257,7 @@ def get_next_actions(tipo_evento, contenido, imagen, path_enriched_log, starts_e
     # Posición 3 --> Segunda coordenada,
     # Posición 4 --> Grupo de la imagen de la fila del contenido en la que está. Si esa fila no tiene imagen asociada,
     # se utilizará el grupo de la imagen anterior]
-    # TODO Tener en cuenta el doc del archivo para realizar esta función
+    # TODO Tener en cuenta la última acción antes del "start_event_learning_capture"
     if not starts_ends_indexes:
         next_actions = []  # No hay siguientes acciones
     else:
@@ -289,8 +288,7 @@ def get_next_actions(tipo_evento, contenido, imagen, path_enriched_log, starts_e
                             if str(type(imagen[element_index])) != "<class 'float'>":
                                 if (imagen[element_index] != '' and
                                      imagen[element_index].lower() != 'nan' and
-                                     imagen[element_index].lower() != None
-                                     ):
+                                     imagen[element_index].lower() != None):
                                         pt("imagen[element_index]",imagen[element_index])
                                         pt("Se actualiza image_id a imagen[element_index]")
                                         image_id = imagen[element_index]
@@ -378,26 +376,62 @@ def create_batches(normalized_actions):
     segunda posición se obtendrán las salidas. Hay que tener en cuenta que las entradas serán un conjunto de lista de
     acciones, por lo que accediendo a la primera posición de la primera posición del array se obtendrá la primera lista
     de acciones de entradas.
+
+    Además, los números serán floats y
     """
+    batches = []
+    pt("normalized",normalized_actions[0])
+    inputs = []
+    outputs = []
+    for actions_index in range(len(normalized_actions)):
+        inputs.append([])
+        outputs.append([])
+        length_actions = len(normalized_actions[actions_index])
+        for action_index in range(length_actions-1):
+            action_input = normalized_actions[actions_index][action_index]
+            action_output = normalized_actions[actions_index][action_index+1][:3]
+            inputs[actions_index].append(np.asarray(action_input))
+            outputs[actions_index].append(np.asarray(action_output))
+    pt("inputs", inputs)
+    pt("outputs", outputs)
+    batches.append(np.asarray(inputs))
+    batches.append(np.asarray(outputs))
+    pt("batches", batches)
+    pt("batches.shape", len(batches))
+    pt("batches[0]", np.asarray(batches[0]).shape)
+    pt("batches[0][0]", np.asarray(batches[0][0]).shape)
+    pt("batches[1]", np.asarray(batches[1]).shape)
+    pt("batches[1][0]", np.asarray(batches[1][0]).shape)
+    return batches
 
-
-    # TODO
-    return []
+index_batch = 0  # Índice para tener en cuenta el índice por donde va el recorrido del batch.
+index_total_batch = -1  # Índice que no puede sobrepasar "index_batch"
+batches = []  # Que se utilizará para quedar guardada la primera vez que se cree.
+# recoger como parámetro al igual que quantity y start_all_flag
 
 # Paso 9
 def get_batch(batches, quantity=None):
+    """
+    Devuelve x entradas y x salidas de la red donde x es 1 o "quantity".
+    """
     global index_batch  # Para tener en cuenta el índice por donde va el recorrido del batch.
     # Si quantity es None, que recoja el total de acciones.
-    # TODO
-    return[]
+    global index_total_batch
+    if quantity:
+        # TODO Tener en cuenta quantity
+        pass
+    else:
+        total_inputs_labels = np.asarray(batches[0]).shape[0] - 1
+        index_total_batch = total_inputs_labels
+        x_input = batches[0][index_batch]
+        y_labels = batches[1][index_batch]
+        if index_batch + 1 <= index_total_batch:
+            index_batch += 1
+        else:
+            index_batch = 0
+        return x_input, y_labels
 
-index_batch = 0  # Índice para tener en cuenta el índice por donde va el recorrido del batch.
-batches = []  # Que se utilizará para quedar guardada la primera vez que se cree.
-file_aquiles = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\logfiles20180123.csv"  # Aquiles
-file_mod2_3 = "C:\\Users\Gabriel\Desktop\Proto1_v5\image_match.xlsx"  # Se deberá
-# recoger como parámetro al igual que quantity y start_all_flag
-
-def main_train_phase(file_path_aquiles=None, file_path_mod2_3=None, quantity=None, start_all_flag=False):
+def main_train_phase(file_path_aquiles=None, file_path_mod2_3=None, start_all_flag=False, quantity=None,):
     """
     Este método realiza todos las fases para retornar un batch de tamaño "quantity".
     Si "start_all_flag" es False, realiza todos los pasos para crear el batch y guardarlo en memoria. Una vez que ese
@@ -409,7 +443,6 @@ def main_train_phase(file_path_aquiles=None, file_path_mod2_3=None, quantity=Non
     """
     global batches
     if start_all_flag:
-
         file = read_file(name_file=file_path_aquiles,separator=";")
         tipo_evento, contenido, imagen = get_columns(file=file)
         normalize_columns_and_create_dataframe(tipo_evento=tipo_evento,contenido=contenido,imagen=imagen)
@@ -419,146 +452,206 @@ def main_train_phase(file_path_aquiles=None, file_path_mod2_3=None, quantity=Non
                                         starts_ends_indexes=starts_ends_indexes)
         if not next_actions:
             pt("No hay acciones")
+            raise ValueError("No hay acciones")
         else:
-            pt("next_actions",next_actions)
             normalized_actions = normalize_actions(next_actions=next_actions)
             batches = create_batches(normalized_actions)
-    batch_to_train = get_batch(batches=batches,quantity=quantity)
-    return batch_to_train
+    if not batches:
+        pt("No hay elementos en el batch")
+        raise ValueError("No hay elementos en el batch, trate de crear primero el batch para reutilizarlo")
+    else:
+        x_input, y_labels = get_batch(batches=batches,quantity=quantity)
+    return x_input, y_labels
 
-# Get batch algorithm
-batch = main_train_phase(file_aquiles, file_mod2_3,2, True)
-fgh
 """
 RED NEURONAL
 """
-# input con label
-# Creación del conjunto de entrenamiento
-# Como se utiliza "mean_squared_error" para el cálculo del error, se estipula que 0 es click izquierdo y 100 click
-# derecho. Así, el error absoluto buscará mejor de una forma más certera.
-tipo_click = 0.
-coordenada_x = 0.
-coordenada_y = 0.
-grupo = 0.
+def train_set_to_test():
+    # Creación del conjunto de entrenamiento
+    # input con label
+    # Como se utiliza "mean_squared_error" para el cálculo del error, se estipula que 0 es click izquierdo y 1000 click
+    # derecho. Así, el error absoluto buscará mejor de una forma más certera.
+    tipo_click = 0.
+    coordenada_x = 0.
+    coordenada_y = 0.
+    grupo = 0.
 
-input_batch = []
-label_batch = []
+    input_batch = []
+    label_batch = []
 
-for int in range(10):
-    if int % 2 == 0:
-        tipo_click = 1000.
-        grupo = 1000.
-        coordenada_x -= -50.
-        coordenada_y -= -50.
-    elif int % 3 == 0 :
-        tipo_click = 1000.
-        grupo = 2000.
+    for int in range(10):
+        if int % 2 == 0:
+            tipo_click = 1000.
+            grupo = 1000.
+            coordenada_x -= -50.
+            coordenada_y -= -50.
+        elif int % 3 == 0 :
+            tipo_click = 1000.
+            grupo = 2000.
+        else:
+            tipo_click = 0.
+            grupo = 3000.
+        coordenada_x+= 100.
+        coordenada_y+= 100.
+
+        input_batch.append([tipo_click,coordenada_x,coordenada_y,grupo])
+        label_batch.append([tipo_click,coordenada_x,coordenada_y])
+
+    inputs = np.asarray(input_batch).reshape(10,4)
+    labels = np.asarray(label_batch)[::-1].reshape(10,3)
+
+    test_set_input = np.asarray([0.,500.,500.,3000.])
+    pt("inputs",inputs)
+    pt("labels",labels)
+    pt("test_set_input",test_set_input)
+    return input_batch, label_batch, test_set_input
+
+def create_restore_train_network(path_to_save_model, restore_flag=False):
+    if restore_flag:
+        tf.reset_default_graph()
+    # Parametros de la red
+    n_oculta_1 = 8 # 1ra capa de atributos
+    n_oculta_2 = 8 # 2ra capa de atributos
+    n_entradas = 4 # 4 datos de entrada
+    n_clases = 3 # 3 salidas
+
+    # input para los grafos
+    x = tf.placeholder(tf.float32, [None, n_entradas],  name='DatosEntrada')
+    y = tf.placeholder(tf.float32, [None, n_clases], name='Clases')
+
+    # Creamos el modelo
+    def perceptron_multicapa(x, pesos, sesgo):
+        # Función de activación de la capa escondida
+        capa_1 = tf.add(tf.matmul(x, pesos['h1']), sesgo['b1'])
+        # activacion relu
+        capa_1 = tf.nn.relu(capa_1)
+        # Función de activación de la capa escondida
+        capa_2 = tf.add(tf.matmul(capa_1, pesos['h2']), sesgo['b2'])
+        # activación relu
+        capa_2 = tf.nn.relu(capa_2)
+        # Salida con activación lineal
+        salida = tf.matmul(capa_2, pesos['out']) + sesgo['out']
+        return salida
+
+
+    # Definimos los pesos y sesgo de cada capa.
+    pesos = {
+        'h1': tf.Variable(tf.random_normal([n_entradas, n_oculta_1])),
+        'h2': tf.Variable(tf.random_normal([n_oculta_1, n_oculta_2])),
+        'out': tf.Variable(tf.random_normal([n_oculta_2, n_clases]))
+    }
+    sesgo = {
+        'b1': tf.Variable(tf.random_normal([n_oculta_1])),
+        'b2': tf.Variable(tf.random_normal([n_oculta_2])),
+        'out': tf.Variable(tf.random_normal([n_clases]))
+    }
+    # Construimos el modelo
+    pred = perceptron_multicapa(x, pesos, sesgo)
+
+    # Definimos la funcion de coste
+    error = tf.losses.mean_squared_error(labels=y,predictions=pred)
+    # Algoritmo de optimización
+    optimizar = tf.train.AdamOptimizer(learning_rate=0.01).minimize(error)
+
+    # Evaluar el modelo
+    #pred_correcta = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
+    # Calcular la precisión
+    #acierto = tf.subtract(tf.constant(1.),error)
+
+    sess = initialize_session()
+    # Para guardar
+    saver = tf.train.Saver()
+    if not restore_flag:
+        epochs = 10000
+        trains = 10
+        costs = []
+        stop_train_flag = False
+        min_error = 1000000000.
+        save_path = None
+        # TODO A partir del error, ir guardando cada iteración en la que es menor (el error) para así después restaurar
+        # Entrenamiento
+        for epoca in range(epochs):
+            if stop_train_flag:
+                break
+            for train in range(trains):
+                # Get batch algorithm
+                x_train, y_train = main_train_phase(file_aquiles, file_mod2_3, False)
+                # Optimización por backprop y funcion de costo
+                _, actual_error, y_ = sess.run([optimizar, error,pred],
+                                         feed_dict={x: x_train, y: y_train})
+                if train == 0:
+                    # imprimir información de entrenamiento
+                    pt("error",actual_error)
+                    costs.append(actual_error)
+                    #precisiones.append(accuracy)
+                    pt("x_train",x_train)
+                    pt("y_train",y_train)
+                    pt("y", y_)
+                if actual_error < 0.1:  # Si error absoluto es menor a 0.1
+                    min_error = actual_error
+                    # Guarda las variables en un path
+                    save_path = saver.save(sess, path_to_save_model)
+                    stop_train_flag = True
+                    break
+            if epoca % 100 == 0:
+                if actual_error < min_error:
+                    min_error = actual_error
+                    # Guarda las variables en un path
+                    save_path = saver.save(sess, path_to_save_model)
+                #pt("costes",costes)
+                #pt("precisiones",precisiones)
+        pt("costes", costs)
+        pt("FINAL para 10000 épocas con 10 entrenamientos cada una.")
+        pt("Con un error absoluto de aprendizaje de ", min_error)
+        pt("Modelo guardado en", save_path)
+        #np.savetxt("W.csv", W_val, delimiter=",")
+        #np.savetxt("b.csv", b_val, delimiter=",")
+        return save_path
     else:
-        tipo_click = 0.
-        grupo = 3000.
-    coordenada_x+= 100.
-    coordenada_y+= 100.
-
-    input_batch.append([tipo_click,coordenada_x,coordenada_y,grupo])
-    label_batch.append([tipo_click,coordenada_x,coordenada_y])
-
-inputs = np.asarray(input_batch).reshape(10,4)
-labels = np.asarray(label_batch)[::-1].reshape(10,3)
-
-test_set_input = np.asarray([0.,500.,500.,3000.])
-pt("inputs",inputs)
-pt("labels",labels)
-pt("test_set_input",test_set_input)
-
-# Parametros de la red
-n_oculta_1 = 8 # 1ra capa de atributos
-n_oculta_2 = 8 # 2ra capa de atributos
-n_entradas = 4 # 4 datos de entrada
-n_clases = 3 # 3 salidas
-
-# input para los grafos
-x = tf.placeholder(tf.float32, [None, n_entradas],  name='DatosEntrada')
-y = tf.placeholder(tf.float32, [None, n_clases], name='Clases')
-
-# Creamos el modelo
-def perceptron_multicapa(x, pesos, sesgo):
-    # Función de activación de la capa escondida
-    capa_1 = tf.add(tf.matmul(x, pesos['h1']), sesgo['b1'])
-    # activacion relu
-    capa_1 = tf.nn.relu(capa_1)
-    # Función de activación de la capa escondida
-    capa_2 = tf.add(tf.matmul(capa_1, pesos['h2']), sesgo['b2'])
-    # activación relu
-    capa_2 = tf.nn.relu(capa_2)
-    # Salida con activación lineal
-    salida = tf.matmul(capa_2, pesos['out']) + sesgo['out']
-    return salida
-
-
-# Definimos los pesos y sesgo de cada capa.
-pesos = {
-    'h1': tf.Variable(tf.random_normal([n_entradas, n_oculta_1])),
-    'h2': tf.Variable(tf.random_normal([n_oculta_1, n_oculta_2])),
-    'out': tf.Variable(tf.random_normal([n_oculta_2, n_clases]))
-}
-sesgo = {
-    'b1': tf.Variable(tf.random_normal([n_oculta_1])),
-    'b2': tf.Variable(tf.random_normal([n_oculta_2])),
-    'out': tf.Variable(tf.random_normal([n_clases]))
-}
-
-
-# Construimos el modelo
-pred = perceptron_multicapa(x, pesos, sesgo)
-
-# Definimos la funcion de coste
-error = tf.losses.mean_squared_error(labels=y,predictions=pred)
-# Algoritmo de optimización
-optimizar = tf.train.AdamOptimizer(learning_rate=0.001).minimize(error)
-
-# Evaluar el modelo
-#pred_correcta = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
-# Calcular la precisión
-#acierto = tf.subtract(tf.constant(1.),error)
-
-sess = initialize_session()
-
-epochs = 100000
-trains = 10
-costes = []
-precisiones = []
-stop_train_flag = False
-# TODO A partir del error, ir guardando cada iteración en la que es menor (el error) para así después restaurar
-# TODO ese modelo
-# Entrenamiento
-for epoca in range(epochs):
-    if stop_train_flag:
-        break
-    for train in range(trains):
-        #pt("batches_[train][0].shape",batches_[train][0].shape)
-        x_train, y_train = inputs, labels
-        # Optimización por backprop y funcion de costo
-        _, actual_error, y_ = sess.run([optimizar, error,pred],
-                                 feed_dict={x: x_train[train].reshape(1,4), y: y_train[train].reshape(1,3)})
-        if train == 0:
-            pt("error",actual_error)
-            costes.append(actual_error)
-            #precisiones.append(accuracy)
-            pt("y", y_)
-        if actual_error < 0.00001:  # Si error absoluto es menor a 0.1
-            stop_train_flag = True
+        # Restauramos el modelo
+        saver.restore(sess, path_to_save_model)
+        pt("Modelo restaurado con éxito")
+    # PARA LOS DATOS CREADOS POR DEFECTO
+    """
+    # Entrenamiento
+    for epoca in range(epochs):
+        if stop_train_flag:
             break
-    # imprimir información de entrenamiento
-    if epoca % 1 == 0:
-        pass
-        #pt("costes",costes)
-        #pt("precisiones",precisiones)
-pt("inputs",inputs)
-pt("labels",labels)
-pt("test_set_input",test_set_input)
-pt("costes", costes)
-pt("FINAL para 10000 épocas con 10 entrenamientos cada una.")
-pt("Y la salida es",pred.eval(feed_dict={x:test_set_input.reshape(1,4)}))
-pt("Con un error absoluto de aprendizaje de ", costes[-1])
-#np.savetxt("W.csv", W_val, delimiter=",")
-#np.savetxt("b.csv", b_val, delimiter=",")
+        for train in range(trains):
+            #pt("batches_[train][0].shape",batches_[train][0].shape)
+            # Get batch algorithm
+            x_train, y_train = main_train_phase(file_aquiles, file_mod2_3, False)
+            # Optimización por backprop y funcion de costo
+            _, actual_error, y_ = sess.run([optimizar, error,pred],
+                                     feed_dict={x: x_train[train].reshape(1,4), y: y_train[train].reshape(1,3)})
+            if train == 0:
+                pt("error",actual_error)
+                costes.append(actual_error)
+                #precisiones.append(accuracy)
+                pt("y", y_)
+            if actual_error < 0.00001:  # Si error absoluto es menor a 0.1
+                stop_train_flag = True
+                break
+        # imprimir información de entrenamiento
+        if epoca % 1 == 0:
+            pass
+            #pt("costes",costes)
+            #pt("precisiones",precisiones)
+    pt("inputs",inputs)
+    pt("labels",labels)
+    pt("test_set_input",test_set_input)
+    pt("costes", costes)
+    pt("FINAL para 10000 épocas con 10 entrenamientos cada una.")
+    pt("Y la salida es",pred.eval(feed_dict={x:test_set_input.reshape(1,4)}))
+    pt("Con un error absoluto de aprendizaje de ", costes[-1])
+    """
+file_aquiles = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\logfiles20180123.csv"  # Aquiles
+file_mod2_3 = "C:\\Users\Gabriel\Desktop\Proto1_v5\image_match.xlsx"  # Log enriquecido
+restore_model = True
+# Get batch algorithm
+main_train_phase(file_aquiles, file_mod2_3, True)
+path_save_restore_model = "../RAIL/Model_Saved/model.ckpt"
+if not restore_model:
+    save_path = create_restore_train_network(path_save_restore_model, restore_flag=False)
+else:
+    create_restore_train_network(path_save_restore_model, restore_flag=True)
