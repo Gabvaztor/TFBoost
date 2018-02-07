@@ -1,6 +1,5 @@
+# coding=utf-8
 """
-We get the example from : "https://towardsdatascience.com/learn-word2vec-by-implementing-it-in-tensorflow-45641adaf2ac"
-
 This is Skip Gram form.
 """
 
@@ -10,8 +9,107 @@ import tensorflow as tf
 #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from UsefulTools.UtilsFunctions import *
 from UsefulTools.TensorFlowUtils import *
+from Examples.Dialog import Dialog
+
+# Para eliminar tildes
+import unicodedata
+
+
+def delete_accents_marks(string):
+    return ''.join((c for c in unicodedata.normalize('NFD', string) if unicodedata.category(c) != 'Mn'))
+
+# function to convert numbers to one hot vectors
+def to_one_hot(data_point_index, vocab_size):
+    temp = np.zeros(vocab_size)
+    temp[data_point_index] = 1
+    return temp
+
+def process_for_senteces(sentences):
+    """
+    Preprocesa las frases para quitarle los singos de acentuación, los puntos, comas, (...)
+    """
+    processed_sentences = []
+    for sentence in sentences:
+        sentence_split = sentence.split()
+        new_sentence_processed = []
+        for word in sentence_split:
+            new_sentence_processed.append(delete_accents_marks(word).lower())
+        processed_sentences.append(new_sentence_processed)
+    pt("processed_sentences", processed_sentences)
+    return processed_sentences
+
+
+def create_dictionaries(processes_sentences):
+    """
+    Crea los diccionarios int2word y word2int a partir de las frases procesadas y las retorna en ese orden
+    """
+    int2word = {}
+    word2int = {}
+    return int2word, word2int
+
+
+def get_words_set(processes_sentences):
+    """
+    A partir de frases preprocesadas, obtiene el conjunto de palabras (sin repetición) de las que se compone
+    """
+    words = []
+
+    return words
+
+
+def generate_training_data(processes_sentences, question_id):
+    """
+    Genera el conjunto de datos que se utilizará para entrenar a la red una vez estén sean one-hot-vector y a partir de
+    la "question_id"
+    """
+    data = []
+
+    return data
+
+
+def generate_batches(data):
+    """
+    Genera las entradas y los labels a partir de los datos generados previamente.
+    """
+    x_input = []
+    y_label = []
+
+    return x_input, y_label
+
+
+def generate_network_and_vector(x_input, y_label):
+    """
+    Crea la red neuronal con TensorFlow y utiliza las entradas y los labels para entrenarla. La red consta de 3 capas:
+    - Una de entrada
+    - Una intermedia
+    - Una de salida
+    Al hacer Skip Gram, siendo los inputs one-hot-vectors, nos quedamos con los pesos y biases de las dos primeras
+    capas. Así, se hace Word Embedding y obtenemos los vectores asociados a las palabras.
+    """
+    vectors = []
+    return vectors
+
+class Word2Vec():
+    words_vectors = []
+    word2int = {}
+    int2word = {}
+    vocab_size = 0
+
+def main(sentences, question_id):
+    word2vec_class = Word2Vec()
+    processes_sentences = process_for_senteces(sentences)
+    words = get_words_set(processes_sentences)
+    word2vec_class.word2int, word2vec_class.int2word = create_dictionaries(processes_sentences)
+    word2vec_class.vocab_size = len(words)
+    data = generate_training_data(processes_sentences, question_id)
+    x_input, y_label = generate_batches(data)
+    vectors = generate_network_and_vector(x_input,y_label)
+    return {question_id:vectors}
+if __name__ == '__main__':
+    dict = main(Dialog.Estres.palabras_destacadas_pregunta_1, Dialog.Estres.id_pregunta_1)
+
 corpus_raw = 'He is the king . The king is royal . She is the royal queen .'
-corpus_raw = 'Yo no tengo nada de estrés'
+#corpus_raw = 'Yo no tengo nada de estrés'
 # convert to lower case
 corpus_raw = corpus_raw.lower()
 
@@ -37,7 +135,7 @@ sentences = []
 for sentence in raw_sentences:
     sentences.append(sentence.split())
 pt("sentences",sentences)
-
+ASD
 #training data
 data = []
 WINDOW_SIZE = 2
@@ -74,7 +172,7 @@ pt("vocab_size",str(vocab_size))
 x = tf.placeholder(tf.float32, shape=(None, vocab_size))
 y_label = tf.placeholder(tf.float32, shape=(None, vocab_size))
 
-EMBEDDING_DIM = 100 # you can choose your own number # Límite 282 portatil msi 820
+EMBEDDING_DIM = 200 # you can choose your own number # Límite 282 portatil msi 820
 W1 = tf.Variable(tf.random_normal([vocab_size, EMBEDDING_DIM]))
 b1 = tf.Variable(tf.random_normal([EMBEDDING_DIM])) #bias
 hidden_representation = tf.add(tf.matmul(x,W1), b1)
