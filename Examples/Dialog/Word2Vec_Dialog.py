@@ -39,13 +39,18 @@ def process_for_senteces(sentences):
     return processed_sentences
 
 
-def create_dictionaries(processes_sentences):
+def create_dictionaries(words):
     """
     Crea los diccionarios int2word y word2int a partir de las frases procesadas y las retorna en ese orden
     """
     int2word = {}
     word2int = {}
-    return int2word, word2int
+    for i, word in enumerate(words):
+        word2int[word] = i
+        int2word[i] = word
+    pt("word2int", word2int)
+    pt("int2word", int2word)
+    return word2int, int2word
 
 
 def get_words_set(processes_sentences):
@@ -53,7 +58,13 @@ def get_words_set(processes_sentences):
     A partir de frases preprocesadas, obtiene el conjunto de palabras (sin repetición) de las que se compone
     """
     words = []
-
+    to_delete_marks = [",", ".", ":", ";"]
+    corpus = [item for sublist in processes_sentences for item in sublist]
+    for word in corpus:
+        if word not in to_delete_marks:
+            words.append(word)
+    words = set(words)  # Removemos palabras repetidas
+    pt("words",words)
     return words
 
 
@@ -63,21 +74,34 @@ def generate_training_data(processes_sentences, question_id):
     la "question_id"
     """
     data = []
-
+    if question_id == 99:
+        pass
+    else:
+        WINDOW_SIZE = 5
+    for sentence in processes_sentences:
+        for word_index, word in enumerate(sentence):
+            for nb_word in sentence[max(word_index - WINDOW_SIZE, 0): min(word_index + WINDOW_SIZE, len(sentence)) + 1]:
+                if nb_word != word:
+                    data.append([word, nb_word])
+    pt("data", data)
+    pt("data", len(data))
     return data
 
 
-def generate_batches(data):
+def generate_batches(data, word2int, vocab_size):
     """
     Genera las entradas y los labels a partir de los datos generados previamente.
     """
     x_input = []
     y_label = []
+    for data_word in data:
+        pt("dataword", data_word)
+        x_input.append(to_one_hot(word2int[data_word[0]], vocab_size))
+        y_label.append(to_one_hot(word2int[data_word[1]], vocab_size))
+    return np.asarray(x_input), np.asarray(y_label)
 
-    return x_input, y_label
 
-
-def generate_network_and_vector(x_input, y_label):
+def generate_network_and_vector(x_input, y_label, vocab_size):
     """
     Crea la red neuronal con TensorFlow y utiliza las entradas y los labels para entrenarla. La red consta de 3 capas:
     - Una de entrada
@@ -86,7 +110,37 @@ def generate_network_and_vector(x_input, y_label):
     Al hacer Skip Gram, siendo los inputs one-hot-vectors, nos quedamos con los pesos y biases de las dos primeras
     capas. Así, se hace Word Embedding y obtenemos los vectores asociados a las palabras.
     """
-    vectors = []
+    # making placeholders for x_train and y_train
+    x = tf.placeholder(tf.float32, shape=(None, vocab_size))
+    y = tf.placeholder(tf.float32, shape=(None, vocab_size))
+
+    EMBEDDING_DIM = 200  # you can choose your own number # Límite 282 portatil msi 820
+    W1 = tf.Variable(tf.random_normal([vocab_size, EMBEDDING_DIM]))
+    b1 = tf.Variable(tf.random_normal([EMBEDDING_DIM]))  # bias
+    hidden_representation = tf.add(tf.matmul(x, W1), b1)
+
+    W2 = tf.Variable(tf.random_normal([EMBEDDING_DIM, vocab_size]))
+    b2 = tf.Variable(tf.random_normal([vocab_size]))
+    prediction = tf.nn.softmax(tf.add(tf.matmul(hidden_representation, W2), b2))
+
+    sess = initialize_session()
+    # define the loss function:
+    cross_entropy_loss = tf.reduce_mean(-tf.reduce_sum(y_label * tf.log(prediction), reduction_indices=[1]))
+
+    # define the training step:
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
+    train_op = optimizer.minimize(cross_entropy_loss)
+    n_iters = 10000
+    # train for n_iter iterations
+    for _ in range(n_iters):
+        pt(cross_entropy_loss.eval(feed_dict={x: x_input, y: y_label}))
+        sess.run(train_op, feed_dict={x: x_input, y: y_label})
+        print('Cross Entropy es', sess.run(cross_entropy_loss, feed_dict={x: x_input, y: y_label}))
+
+    pt("W1")
+    vectors = sess.run(tf.add(W1, b1))
+    pt("vectors", vectors)
+    pt("vectors_shape", vectors.shape)
     return vectors
 
 class Word2Vec():
@@ -99,15 +153,16 @@ def main(sentences, question_id):
     word2vec_class = Word2Vec()
     processes_sentences = process_for_senteces(sentences)
     words = get_words_set(processes_sentences)
-    word2vec_class.word2int, word2vec_class.int2word = create_dictionaries(processes_sentences)
+    word2vec_class.word2int, word2vec_class.int2word = create_dictionaries(words)
     word2vec_class.vocab_size = len(words)
     data = generate_training_data(processes_sentences, question_id)
-    x_input, y_label = generate_batches(data)
-    vectors = generate_network_and_vector(x_input,y_label)
+    x_input, y_label = generate_batches(data, word2vec_class.word2int, word2vec_class.vocab_size)
+    vectors = generate_network_and_vector(x_input, y_label, word2vec_class.vocab_size)
     return {question_id:vectors}
 if __name__ == '__main__':
     dict = main(Dialog.Estres.palabras_destacadas_pregunta_1, Dialog.Estres.id_pregunta_1)
-
+    pt("dict", dict)
+    asd
 corpus_raw = 'He is the king . The king is royal . She is the royal queen .'
 #corpus_raw = 'Yo no tengo nada de estrés'
 # convert to lower case
