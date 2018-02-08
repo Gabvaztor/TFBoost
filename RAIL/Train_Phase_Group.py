@@ -431,7 +431,7 @@ def get_batch(batches, quantity=None):
             index_batch = 0
         return x_input, y_labels
 
-def main_train_phase(file_path_aquiles=None, file_path_mod2_3=None, start_all_flag=False, quantity=None,):
+def main_train_phase(file_path_aquiles=None, enriched_file=None, start_all_flag=False, quantity=None,):
     """
     Este método realiza todos las fases para retornar un batch de tamaño "quantity".
     Si "start_all_flag" es False, realiza todos los pasos para crear el batch y guardarlo en memoria. Una vez que ese
@@ -448,7 +448,7 @@ def main_train_phase(file_path_aquiles=None, file_path_mod2_3=None, start_all_fl
         normalize_columns_and_create_dataframe(tipo_evento=tipo_evento,contenido=contenido,imagen=imagen)
         starts_ends_indexes = get_images_from_keystrokes(contenido=contenido)
         next_actions = get_next_actions(tipo_evento=tipo_evento,contenido=contenido, imagen= imagen,
-                                        path_enriched_log=file_mod2_3,
+                                        path_enriched_log=enriched_file,
                                         starts_ends_indexes=starts_ends_indexes)
         if not next_actions:
             pt("No hay acciones")
@@ -506,7 +506,7 @@ def train_set_to_test():
     pt("test_set_input",test_set_input)
     return input_batch, label_batch, test_set_input
 
-def create_restore_train_network(path_to_save_model, restore_flag=False):
+def create_restore_train_network(path_to_save_model, restore_flag=False, test_input=None):
     if restore_flag:
         tf.reset_default_graph()
     # Parametros de la red
@@ -568,14 +568,13 @@ def create_restore_train_network(path_to_save_model, restore_flag=False):
         stop_train_flag = False
         min_error = 1000000000.
         save_path = None
-        # TODO A partir del error, ir guardando cada iteración en la que es menor (el error) para así después restaurar
         # Entrenamiento
         for epoca in range(epochs):
             if stop_train_flag:
                 break
             for train in range(trains):
                 # Get batch algorithm
-                x_train, y_train = main_train_phase(file_aquiles, file_mod2_3, False)
+                x_train, y_train = main_train_phase(file_aquiles, enriched_file, False)
                 # Optimización por backprop y funcion de costo
                 _, actual_error, y_ = sess.run([optimizar, error,pred],
                                          feed_dict={x: x_train, y: y_train})
@@ -593,7 +592,7 @@ def create_restore_train_network(path_to_save_model, restore_flag=False):
                     save_path = saver.save(sess, path_to_save_model)
                     stop_train_flag = True
                     break
-            if epoca % 100 == 0:
+            if epoca % 10 == 0:
                 if actual_error < min_error:
                     min_error = actual_error
                     # Guarda las variables en un path
@@ -611,6 +610,10 @@ def create_restore_train_network(path_to_save_model, restore_flag=False):
         # Restauramos el modelo
         saver.restore(sess, path_to_save_model)
         pt("Modelo restaurado con éxito")
+        # Si existe conjunto de testeo, predecir valir
+        if test_input is not None:
+            prediction = pred.eval(feed_dict={x: test_input})
+            pt("prediction", prediction)
     # PARA LOS DATOS CREADOS POR DEFECTO
     """
     # Entrenamiento
@@ -646,12 +649,14 @@ def create_restore_train_network(path_to_save_model, restore_flag=False):
     pt("Con un error absoluto de aprendizaje de ", costes[-1])
     """
 file_aquiles = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\logfiles20180123.csv"  # Aquiles
-file_mod2_3 = "C:\\Users\Gabriel\Desktop\Proto1_v5\image_match.xlsx"  # Log enriquecido
-restore_model = True
+enriched_file = "C:\\Users\Gabriel\Desktop\Proto1_v5\image_match.xlsx"  # Log enriquecido
+restore_model = True  # Para saltarse el entrenamiento y cargar el modelo (se debe tener el modelo guardado)
 # Get batch algorithm
-main_train_phase(file_aquiles, file_mod2_3, True)
+main_train_phase(file_aquiles, enriched_file, start_all_flag=True)
 path_save_restore_model = "../RAIL/Model_Saved/model.ckpt"
 if not restore_model:
     save_path = create_restore_train_network(path_save_restore_model, restore_flag=False)
 else:
-    create_restore_train_network(path_save_restore_model, restore_flag=True)
+    test_set_input = np.asarray([-1000., 500., 500., 3000.]).reshape(1,4)
+    test_set_input = generate_test_input()
+    create_restore_train_network(path_save_restore_model, restore_flag=True, test_input=test_set_input)
