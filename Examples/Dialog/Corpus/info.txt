@@ -1,0 +1,1 @@
+Contiene todos los json de las clases y los arrays que representan los words embeddings de cada clase.
