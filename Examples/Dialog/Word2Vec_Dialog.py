@@ -74,7 +74,7 @@ def generate_training_data(processes_sentences, question_id):
     la "question_id"
     """
     data = []
-    if question_id == 99:
+    if question_id == "1_x":
         pass
     else:
         WINDOW_SIZE = 5
@@ -101,7 +101,7 @@ def generate_batches(data, word2int, vocab_size):
     return np.asarray(x_input), np.asarray(y_label)
 
 
-def generate_network_and_vector(x_input, y_label, vocab_size, embedding_dim):
+def generate_network_and_vector(x_input, y_label, vocab_size, embedding_dim, trains):
     """
     Crea la red neuronal con TensorFlow y utiliza las entradas y los labels para entrenarla. La red consta de 3 capas:
     - Una de entrada
@@ -130,7 +130,7 @@ def generate_network_and_vector(x_input, y_label, vocab_size, embedding_dim):
     # define the training step:
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
     train_op = optimizer.minimize(cross_entropy_loss)
-    n_iters = 10000
+    n_iters = trains
     # train for n_iter iterations
     for _ in range(n_iters):
         #pt(cross_entropy_loss.eval(feed_dict={x: x_input, y: y_label}))
@@ -148,7 +148,7 @@ class Word2Vec():
     word2int = {}
     int2word = {}
     vocab_size = 0
-    question_id = -1
+    question_id = "0"
     name = ""
     def to_json(self):
         """
@@ -156,12 +156,18 @@ class Word2Vec():
         :param attributes_to_delete: String set with all attributes' names to delete from properties method
         :return: sort json from class properties.
         """
-        self_dictionary = self.__dict__.copy()
+        self_dictionary = self.__dict__.copy().pop("words_vectors")
         json_string =  json.dumps(self, default=lambda o: self_dictionary, sort_keys=True, indent=4)
         return json_string
 
-    def save(self, fullpath):
-        write_string_to_pathfile(json, fullpath)
+    def save(self, path):
+        json_extension = ".json"
+        numpy_extension = ".npy"
+        fullpath_json = path + self.name + self.question_id + json_extension
+        fullpath_numpy = path + self.name + self.question_id + "_words_vector"+ numpy_extension
+        np.save(fullpath_numpy, self.words_vectors)
+        pt("To save", self.to_json())
+        write_string_to_pathfile(self.to_json(), fullpath_json)
 
 def main(sentences, question_id, name, full_path_to_save):
     word2vec_class = Word2Vec()
@@ -171,16 +177,16 @@ def main(sentences, question_id, name, full_path_to_save):
     word2vec_class.vocab_size, word2vec_class.name = len(words), name
     data = generate_training_data(processes_sentences, question_id)
     x_input, y_label = generate_batches(data, word2vec_class.word2int, word2vec_class.vocab_size)
-    vectors = generate_network_and_vector(x_input, y_label, word2vec_class.vocab_size, 100)
+    vectors = generate_network_and_vector(x_input, y_label, word2vec_class.vocab_size, 100, 1000)
     word2vec_class.words_vectors, word2vec_class.question_id = vectors, question_id
-    word2vec_class.save(fullpath=path_to_save)
     pt("Vector estrés in word2int", vectors[word2vec_class.word2int['si']])
+    word2vec_class.save(path=path_to_save)
 
 if __name__ == '__main__':
-    path_to_save = "../Examples/Dialog/Corpus/"
-    json_extension = ".json"
+    path_to_save = "D:\\Google Drive\Work\\ML_Kerox_Technology\\Corpus\\"
+    path_to_save = "..\\Examples\\Dialog\\Corpus\\"
     main(Dialog.Estres.palabras_destacadas_pregunta_1, Dialog.Estres.id_pregunta_1, Dialog.Estres.name,
-                path_to_save+Dialog.Estres.name+str(Dialog.Estres.id_pregunta_1)+json_extension)
+                path_to_save)
     sdasd
 
 def euclidean_dist(vec1, vec2):
