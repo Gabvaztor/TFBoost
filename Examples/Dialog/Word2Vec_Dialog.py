@@ -124,71 +124,23 @@ def generate_network_and_vector(x_input, y_label, vocab_size, embedding_dim, tra
     prediction = tf.nn.softmax(tf.add(tf.matmul(hidden_representation, W2), b2))
 
     sess = initialize_session()
-    # define the loss function:
+    # Función de error
     cross_entropy_loss = tf.reduce_mean(-tf.reduce_sum(y_label * tf.log(prediction), reduction_indices=[1]))
 
-    # define the training step:
+    # Optimizador y train_op
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
     train_op = optimizer.minimize(cross_entropy_loss)
     n_iters = trains
-    # train for n_iter iterations
+    # Entrenamiento
     for _ in range(n_iters):
         #pt(cross_entropy_loss.eval(feed_dict={x: x_input, y: y_label}))
         sess.run(train_op, feed_dict={x: x_input, y: y_label})
         print('Cross Entropy es', sess.run(cross_entropy_loss, feed_dict={x: x_input, y: y_label}))
-
     pt("W1")
     vectors = sess.run(tf.add(W1, b1))
     pt("vectors", vectors)
     pt("vectors_shape", vectors.shape)
     return vectors
-
-class Word2Vec():
-    words_vectors = []
-    word2int = {}
-    int2word = {}
-    vocab_size = 0
-    question_id = "0"
-    name = ""
-    def to_json(self):
-        """
-        Convert TFModel class to json with properties method.
-        :param attributes_to_delete: String set with all attributes' names to delete from properties method
-        :return: sort json from class properties.
-        """
-        self_dictionary = self.__dict__.copy()
-        self_dictionary.pop("words_vectors")
-        json_string =  json.dumps(self, default=lambda o: self_dictionary, sort_keys=True, indent=4)
-        return json_string
-
-    def save(self, path):
-        json_extension = ".json"
-        numpy_extension = ".npy"
-        fullpath_json = path + self.name + self.question_id + json_extension
-        fullpath_numpy = path + self.name + self.question_id + "_words_vector"+ numpy_extension
-        np.save(fullpath_numpy, self.words_vectors)
-        pt("To save", self.to_json())
-        write_string_to_pathfile(self.to_json(), fullpath_json)
-
-def main(sentences, question_id, name, full_path_to_save):
-    word2vec_class = Word2Vec()
-    processes_sentences = process_for_senteces(sentences)
-    words = get_words_set(processes_sentences)
-    word2vec_class.word2int, word2vec_class.int2word = create_dictionaries(words)
-    word2vec_class.vocab_size, word2vec_class.name = len(words), name
-    data = generate_training_data(processes_sentences, question_id)
-    x_input, y_label = generate_batches(data, word2vec_class.word2int, word2vec_class.vocab_size)
-    vectors = generate_network_and_vector(x_input, y_label, word2vec_class.vocab_size, 100, 1000)
-    word2vec_class.words_vectors, word2vec_class.question_id = vectors, question_id
-    pt("Vector estrés in word2int", vectors[word2vec_class.word2int['si']])
-    word2vec_class.save(path=path_to_save)
-
-if __name__ == '__main__':
-    path_to_save = "D:\\Google Drive\Work\\ML_Kerox_Technology\\Corpus\\"
-    path_to_save = "..\\Dialog\\Corpus\\"
-    main(Dialog.Estres.palabras_destacadas_pregunta_1, Dialog.Estres.id_pregunta_1, Dialog.Estres.name,
-                path_to_save)
-    sdasd
 
 def euclidean_dist(vec1, vec2):
     return np.sqrt(np.sum((vec1-vec2)**2))
@@ -202,6 +154,111 @@ def find_closest(word_index, vectors):
             min_dist = euclidean_dist(vector, query_vector)
             min_index = index
     return min_index
+
+class Word2Vec():
+    words_vectors = []
+    word2int = {}
+    int2word = {}
+    vocab_size = 0
+    question_id = "0"
+    name = ""
+    json_extension = ".json"
+    numpy_extension = ".npy"
+    words_vector_str = "-words_vector"
+    def to_json(self):
+        """
+        Convert TFModel class to json with properties method.
+        :param attributes_to_delete: String set with all attributes' names to delete from properties method
+        :return: sort json from class properties.
+        """
+        self_dictionary = self.__dict__.copy()
+        pt("self_dictionary", self_dictionary)
+        self_dictionary.pop("words_vectors")
+        json_string =  json.dumps(self, default=lambda o: self_dictionary, sort_keys=True, indent=4)
+        return json_string
+
+    def save(self, path):
+        fullpath_json = path + self.name + "-" +  self.question_id + self.json_extension
+        fullpath_numpy = path + self.name + "-" + self.question_id + self.words_vector_str + self.numpy_extension
+        try:
+            pt("To save", self.to_json())
+            write_string_to_pathfile(self.to_json(), fullpath_json)
+            np.save(fullpath_numpy, self.words_vectors)
+            pt("Clase Word2Vec guardada con éxito")
+        except:
+            raise ValueError("No se ha podido guardar la clase Word2Vec")
+
+    def load(self, path, name, question_id):
+        """
+        Carga un objeto de clase Word2Vec a partir de un path, un name y una question_id
+        """
+        try:
+            fullpath_numpy = path + name + "-" + question_id + self.words_vector_str + self.numpy_extension
+            fullpath_json = path + name + "-" + question_id + self.json_extension
+            self.name = name
+            self.question_id = question_id
+            self.words_vectors = np.load(fullpath_numpy)
+            with open(fullpath_json) as json_data:
+                word2vec = json.load(json_data)
+                self.word2int=word2vec["word2int"]
+                self.int2word=word2vec["int2word"]
+                self.vocab_size=word2vec["vocab_size"]
+            pt("Clase Word2Vec cargada con éxito")
+        except:
+            raise ValueError("No se ha podido cargar Word2Vec")
+
+    def __str__(self):
+        return ("self.words_vectors" + self.words_vectors + "\n",
+                "self.word2int" + self.word2int + "\n",
+                "self.int2word" + self.int2word + "\n",
+                "self.vocab_size" + self.vocab_size + "\n",
+                "self.question_id" + self.question_id + "\n",
+                "self.name" + self.name)
+
+    def __repr__(self):
+        return ("self.words_vectors" + self.words_vectors + "\n",
+                "self.word2int" + self.word2int + "\n",
+                "self.int2word" + self.int2word + "\n",
+                "self.vocab_size" + self.vocab_size + "\n",
+                "self.question_id" + self.question_id + "\n",
+                "self.name" + self.name)
+
+def main(name, question_id, path_to_save_load, sentences=None):
+    word2vec_class = Word2Vec()
+    processes_sentences = process_for_senteces(sentences)
+    words = get_words_set(processes_sentences)
+    word2vec_class.word2int, word2vec_class.int2word = create_dictionaries(words)
+    word2vec_class.vocab_size, word2vec_class.name = len(words), name
+    data = generate_training_data(processes_sentences, question_id)
+    x_input, y_label = generate_batches(data, word2vec_class.word2int, word2vec_class.vocab_size)
+    vectors = generate_network_and_vector(x_input, y_label, word2vec_class.vocab_size, 100, 100)
+    word2vec_class.words_vectors, word2vec_class.question_id = vectors, question_id
+    pt("Vector estrés in word2int", vectors[word2vec_class.word2int['si']])
+    pt("Más cercano a si", word2vec_class.int2word[find_closest(word2vec_class.word2int['si'], vectors)])
+    return word2vec_class
+
+if __name__ == '__main__':
+    #path_to_save = "D:\\Google Drive\Work\\ML_Kerox_Technology\\Corpus\\"
+    path_to_save_load = "..\\Dialog\\Corpus\\"
+    load = True
+    if load:
+        # Para cargar
+        word2vec_class = Word2Vec().load(path=path_to_save_load, name=Dialog.Estres.name,
+                                         question_id=Dialog.Estres.id_pregunta_1)
+        pt("word2vec_class cargado", word2vec_class)
+        raise ValueError("Cargado con éxito")
+    else:
+        # Generar vectores
+        word2vec_class = main(Dialog.Estres.name, Dialog.Estres.id_pregunta_1, path_to_save_load,
+                              Dialog.Estres.palabras_destacadas_pregunta_1)
+        word2vec_class.save(path=path_to_save_load)
+        raise ValueError("Generado y guardado con éxito")
+
+
+
+
+
+
 
 #pt("Más cercano a king", int2word[find_closest(word2int['king'], vectors)])
 #pt("Más cercano a queen", int2word[find_closest(word2int['queen'], vectors)])
