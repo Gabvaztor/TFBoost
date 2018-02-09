@@ -63,10 +63,22 @@ from matplotlib import pyplot
 # Para leer excel
 # Para instalar: pip3 install openpyxl
 import openpyxl
+# Para obtener la firma de las imágenes
+from image_match.goldberg import ImageSignature
 
+# VARIABLES GROBALES
 # Keystrokes a tener en cuenta
 start_event_learning_capture = "{ctrl}k{ctrl}k"
 end_event_learning_capture = "{ctrl}k{ctrl}k"
+# Path donde se guarda el modelo de la red neuronal
+path_save_restore_model = "../RAIL/Model_Saved/model.ckpt"
+# SE RECOGEN POR INPUT
+aquiles_file = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\logfiles20180123.csv"  # Aquiles
+enriched_file = "C:\\Users\Gabriel\Desktop\Proto1_v5\image_match.xlsx"  # Log enriquecido
+# TODO Modificar en una futura versión
+images_aquiles_path = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\PRIMARY\imagenesCaracteristicas"
+images_aquiles_to_get_sign_path = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\PRIMARY\\"
+
 
 """
 Funciones útiles
@@ -140,6 +152,7 @@ def get_columns(file):
     """
     Se recogen las columnas "tipo_evento", "contenido" y "imagen" y se retornan
     """
+    file = read_file(name_file=file, separator=";")
     tipo_evento = file.pop("Tipo Evento")
     contenido = file.pop("Contenido")
     imagen = file.pop(" Imagen")
@@ -431,7 +444,7 @@ def get_batch(batches, quantity=None):
             index_batch = 0
         return x_input, y_labels
 
-def main_train_phase(file_path_aquiles=None, enriched_file=None, start_all_flag=False, quantity=None,):
+def main_train_phase(file_path_aquiles=None, enriched_file=None, start_all_flag=False, quantity=None):
     """
     Este método realiza todos las fases para retornar un batch de tamaño "quantity".
     Si "start_all_flag" es False, realiza todos los pasos para crear el batch y guardarlo en memoria. Una vez que ese
@@ -443,9 +456,8 @@ def main_train_phase(file_path_aquiles=None, enriched_file=None, start_all_flag=
     """
     global batches
     if start_all_flag:
-        file = read_file(name_file=file_path_aquiles,separator=";")
-        tipo_evento, contenido, imagen = get_columns(file=file)
-        normalize_columns_and_create_dataframe(tipo_evento=tipo_evento,contenido=contenido,imagen=imagen)
+        tipo_evento, contenido, imagen = get_columns(file=file_path_aquiles)
+        # normalize_columns_and_create_dataframe(tipo_evento=tipo_evento,contenido=contenido,imagen=imagen)
         starts_ends_indexes = get_images_from_keystrokes(contenido=contenido)
         next_actions = get_next_actions(tipo_evento=tipo_evento,contenido=contenido, imagen= imagen,
                                         path_enriched_log=enriched_file,
@@ -574,7 +586,7 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
                 break
             for train in range(trains):
                 # Get batch algorithm
-                x_train, y_train = main_train_phase(file_aquiles, enriched_file, False)
+                x_train, y_train = main_train_phase(aquiles_file, enriched_file, False)
                 # Optimización por backprop y funcion de costo
                 _, actual_error, y_ = sess.run([optimizar, error,pred],
                                          feed_dict={x: x_train, y: y_train})
@@ -648,15 +660,144 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
     pt("Y la salida es",pred.eval(feed_dict={x:test_set_input.reshape(1,4)}))
     pt("Con un error absoluto de aprendizaje de ", costes[-1])
     """
-file_aquiles = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\logfiles20180123.csv"  # Aquiles
-enriched_file = "C:\\Users\Gabriel\Desktop\Proto1_v5\image_match.xlsx"  # Log enriquecido
-restore_model = True  # Para saltarse el entrenamiento y cargar el modelo (se debe tener el modelo guardado)
-# Get batch algorithm
-main_train_phase(file_aquiles, enriched_file, start_all_flag=True)
-path_save_restore_model = "../RAIL/Model_Saved/model.ckpt"
-if not restore_model:
-    save_path = create_restore_train_network(path_save_restore_model, restore_flag=False)
-else:
-    test_set_input = np.asarray([-1000., 500., 500., 3000.]).reshape(1,4)
-    test_set_input = generate_test_input()
-    create_restore_train_network(path_save_restore_model, restore_flag=True, test_input=test_set_input)
+
+
+def get_path_from_robot_id_and_image_id(robot_id, image_id):
+    """
+
+    A partir del "robot_id" y de la "image_id" obtiene el path completo de la imagen.
+    """
+    # TODO
+    return image_id
+
+
+def get_image_sign_processed(path_image):
+    """
+    Obtiene la firma de la imagen dada y la procesa para que tenga el mismo formato que las firmas en el log
+    enriquecido
+    """
+    image_signature = ImageSignature()
+    sign_image = image_signature.generate_signature(path_image)
+    pt("sign_image", sign_image)
+    sign_image_processed = str(sign_image).replace('\n', '*').replace('[ ', '').replace(']', '')
+    pt("sign_image_processed",sign_image_processed)
+    # Procesamos la firma para que se obtenga de la misma forma que en el log enriquecido
+    return sign_image_processed
+
+
+def get_group_comparing_hamming_distance(image_sign, enriched_file_path):
+    """
+
+    A partir de la firma de una imagen, compara la firma con todas las firmas existentes en el log enriquecido y
+    obtiene el grupo de la que haya obtenido la distancia hamming menor.
+    """
+    actual_group = None
+    actual_hamming_distance = 900000000000
+    def hamdist(str1, str2):
+        """Count the # of differences between equal length strings str1 and str2"""
+        diffs = 0
+        for ch1, ch2 in zip(str1, str2):
+            if ch1 != ch2:
+                diffs += 1
+        return diffs
+    try:
+        enriched_log = openpyxl.load_workbook(filename=enriched_file_path)
+        sheet = enriched_log.get_sheet_by_name("Agrupacion")
+        max_row = sheet.max_row
+        for row_index in range(1, max_row + 1):
+            if hamdist(sheet.cell(row=row_index, column=2).value, image_sign) < actual_hamming_distance:
+                actual_hamming_distance = hamdist(sheet.cell(row=row_index, column=2).value, image_sign)
+                actual_group = sheet.cell(row=row_index, column=3).value
+        if actual_group:
+            actual_group = float(actual_group) * 1000.
+    except:
+        ValueError("No se ha podido leer el log enriquecido")
+    pt("actual_hamming_distance", actual_hamming_distance)
+    pt("actual_group", actual_group)
+    return actual_group
+def get_group_from_image_id_and_hamming_distance(image_id, enriched_file_path, robot_id):
+    """
+
+    Obtiene el grupo de la imagen a partir de la "image_id", el "robot_id" y el log enriquecido
+
+    """
+    group = None
+    # Path de la imagen para obtener la firma
+    # TODO Para futura versión
+    path_image = get_path_from_robot_id_and_image_id(robot_id, image_id)
+    # TODO por ahora, recogemos el path real a partir de nuestro path de aquiles
+    path_image = images_aquiles_to_get_sign_path + image_id
+    # Firma de la imagen procesada
+    image_sign = get_image_sign_processed(path_image=path_image)
+    # Grupo de la imagen a través de la distancia hamming
+    group = get_group_comparing_hamming_distance(image_sign=image_sign, enriched_file_path=enriched_file_path)
+    if not group:
+        raise ValueError("No se ha podido obtener el grupo de la imagen")
+    return group
+
+
+def get_last_action(tipo_evento, contenido, imagen, enriched_file_path, robot_id):
+    """
+
+    Recoge de las columnas "tipo_evento", "contenido" e "imagen" la última disponible acción disponible.
+    A partir de la imagen, tenemos que buscar el grupo a partir del log enriquecido buscando la mínimia distancia
+    hamming entre la última imagen y las firmas de las imágenes diponibles.
+
+    """
+    image_id = None
+    contenido_data = None
+    imagen = list(imagen.values)
+    try:
+        # Para coger la imagen
+        for image_index in range(1, len(imagen)+2):
+            if str(type(imagen[-image_index])) != "<class 'float'>":
+                if (imagen[-image_index] != '' and
+                            imagen[-image_index].lower() != 'nan' and
+                            imagen[-image_index].lower() != None):
+                    pt("imagen[element_index]", imagen[-image_index])
+                    pt("Se actualiza image_id a imagen[element_index]")
+                    image_id = imagen[-image_index]
+                    break
+        # TODO Comprobar versión. Para esta versión cogemos solo cuando es Cursor
+        for contenido_index in range(1, len(tipo_evento.values)):
+            if tipo_evento.values[-contenido_index].lower() == "cursor":
+                contenido_data = contenido.values[contenido_index]
+                break
+        # Devuelve tres elementos:
+        # "contenido_information" contiene -1000 si es click izquierdo, 1000 si es click derecho o una secuencia str.
+        # "coordinate_x" y "coordinate_y" son las coordeandas. Valdrán -1000 si "contenido_information" es string.
+        contenido_information, coordinate_x, coordinate_y = get_click_and_coordinates(contenido_data)
+        # Obtenemos el grupo a partir de una "imagen_id"
+        group = get_group_from_image_id_and_hamming_distance(image_id, enriched_file_path, robot_id)
+        return [contenido_information, coordinate_x, coordinate_y, group]
+    except:
+        raise ValueError("No se ha podido obtener la última acción para la predicción")
+
+
+
+
+def generate_test_input(log_aquiles_path, enriched_file_path, robot_id):
+    """
+    Recoge la última acción del log junto con la última imagen y se realiza la distancia hamming entre la firma de la
+    imagen y las firmas de las iágenes del log enriquecido. El grupo de la acción será el grupo de la imagen cuya
+    distancia hamming sea menor.
+    Retorna esa última acción con el tipo de click, coordenadas y grupo de la imagen en un array.
+    """
+
+    tipo_evento, contenido, imagen = get_columns(file=log_aquiles_path)
+    last_action = get_last_action(tipo_evento, contenido, imagen, enriched_file_path, robot_id)
+
+    return np.asarray(last_action).reshape(1,4)
+
+if __name__ == '__main__':
+    restore_model = True  # Para saltarse el entrenamiento y cargar el modelo (se debe tener el modelo guardado)
+    # Get batch algorithm
+    main_train_phase(aquiles_file, enriched_file, start_all_flag=True)
+    if not restore_model:
+        save_path = create_restore_train_network(path_save_restore_model, restore_flag=False)
+    else:
+        test_set_input = np.asarray([-1000., 500., 500., 3000.]).reshape(1,4)
+        test_set_input = generate_test_input(log_aquiles_path=aquiles_file, enriched_file_path=enriched_file, robot_id=2)
+        pt("test_set_input", test_set_input)
+        create_restore_train_network(path_save_restore_model, restore_flag=True, test_input=test_set_input)
+
