@@ -156,7 +156,8 @@ class Word2Vec():
         :param attributes_to_delete: String set with all attributes' names to delete from properties method
         :return: sort json from class properties.
         """
-        self_dictionary = self.__dict__.copy().pop("words_vectors")
+        self_dictionary = self.__dict__.copy()
+        self_dictionary.pop("words_vectors")
         json_string =  json.dumps(self, default=lambda o: self_dictionary, sort_keys=True, indent=4)
         return json_string
 
@@ -184,7 +185,7 @@ def main(sentences, question_id, name, full_path_to_save):
 
 if __name__ == '__main__':
     path_to_save = "D:\\Google Drive\Work\\ML_Kerox_Technology\\Corpus\\"
-    path_to_save = "..\\Examples\\Dialog\\Corpus\\"
+    path_to_save = "..\\Dialog\\Corpus\\"
     main(Dialog.Estres.palabras_destacadas_pregunta_1, Dialog.Estres.id_pregunta_1, Dialog.Estres.name,
                 path_to_save)
     sdasd
