@@ -110,6 +110,7 @@ def generate_network_and_vector(x_input, y_label, vocab_size, embedding_dim, tra
     Al hacer Skip Gram, siendo los inputs one-hot-vectors, nos quedamos con los pesos y biases de las dos primeras
     capas. Así, se hace Word Embedding y obtenemos los vectores asociados a las palabras.
     """
+    start_time = time.time()
     # making placeholders for x_train and y_train
     x = tf.placeholder(tf.float32, shape=(None, vocab_size))
     y = tf.placeholder(tf.float32, shape=(None, vocab_size))
@@ -131,13 +132,21 @@ def generate_network_and_vector(x_input, y_label, vocab_size, embedding_dim, tra
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
     train_op = optimizer.minimize(cross_entropy_loss)
     n_iters = trains
+    optimal_W1 = W1
+    optimal_b1 = b1
+    min_loss = 1000000000.
     # Entrenamiento
     for _ in range(n_iters):
         #pt(cross_entropy_loss.eval(feed_dict={x: x_input, y: y_label}))
         sess.run(train_op, feed_dict={x: x_input, y: y_label})
+        actual_loss = sess.run(cross_entropy_loss, feed_dict={x: x_input, y: y_label})
         print('Cross Entropy es', sess.run(cross_entropy_loss, feed_dict={x: x_input, y: y_label}))
-    pt("W1")
-    vectors = sess.run(tf.add(W1, b1))
+        if actual_loss < min_loss:
+            optimal_W1 = W1
+            optimal_b1 = b1
+            min_loss = actual_loss
+    pt('Tiempo entrenamiento', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
+    vectors = sess.run(tf.add(optimal_W1, optimal_b1))
     pt("vectors", vectors)
     pt("vectors_shape", vectors.shape)
     return vectors
@@ -223,7 +232,8 @@ class Word2Vec():
                 "self.question_id" + self.question_id + "\n",
                 "self.name" + self.name)
 
-def main(name, question_id, path_to_save_load, sentences=None):
+def main(name, question_id, dimension_vector, trains, sentences=None):
+    start_time = time.time()
     word2vec_class = Word2Vec()
     processes_sentences = process_for_senteces(sentences)
     words = get_words_set(processes_sentences)
@@ -231,16 +241,17 @@ def main(name, question_id, path_to_save_load, sentences=None):
     word2vec_class.vocab_size, word2vec_class.name = len(words), name
     data = generate_training_data(processes_sentences, question_id)
     x_input, y_label = generate_batches(data, word2vec_class.word2int, word2vec_class.vocab_size)
-    vectors = generate_network_and_vector(x_input, y_label, word2vec_class.vocab_size, 100, 100)
+    vectors = generate_network_and_vector(x_input, y_label, word2vec_class.vocab_size, dimension_vector, trains)
     word2vec_class.words_vectors, word2vec_class.question_id = vectors, question_id
     pt("Vector estrés in word2int", vectors[word2vec_class.word2int['si']])
     pt("Más cercano a si", word2vec_class.int2word[find_closest(word2vec_class.word2int['si'], vectors)])
+    pt('Duración total', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
     return word2vec_class
 
 if __name__ == '__main__':
     #path_to_save = "D:\\Google Drive\Work\\ML_Kerox_Technology\\Corpus\\"
     path_to_save_load = "..\\Dialog\\Corpus\\"
-    load = True
+    load = False
     if load:
         # Para cargar
         word2vec_class = Word2Vec().load(path=path_to_save_load, name=Dialog.Estres.name,
@@ -249,16 +260,12 @@ if __name__ == '__main__':
         raise ValueError("Cargado con éxito")
     else:
         # Generar vectores
-        word2vec_class = main(Dialog.Estres.name, Dialog.Estres.id_pregunta_1, path_to_save_load,
-                              Dialog.Estres.palabras_destacadas_pregunta_1)
+        word2vec_class = main(name=Dialog.Estres.name, question_id=Dialog.Estres.id_pregunta_1,
+                              dimension_vector=100,trains=30000, sentences=Dialog.Estres.palabras_destacadas_pregunta_1)
         word2vec_class.save(path=path_to_save_load)
         raise ValueError("Generado y guardado con éxito")
 
-
-
-
-
-
+kjfgjkf
 
 #pt("Más cercano a king", int2word[find_closest(word2int['king'], vectors)])
 #pt("Más cercano a queen", int2word[find_closest(word2int['queen'], vectors)])
