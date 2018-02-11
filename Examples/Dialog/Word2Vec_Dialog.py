@@ -292,6 +292,7 @@ def process_answer(answer, word2vec_class):
     """
     A partir de una respuesta, la convierte en un vector y, después, lo transforma en un número entero.
     """
+    # TODO
     pt("answer", answer)
     answer_processed = process_for_senteces(answer)
     words = get_words_set(answer_processed)
