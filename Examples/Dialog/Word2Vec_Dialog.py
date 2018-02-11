@@ -166,6 +166,7 @@ def find_closest(word_index, vectors):
 
 class Word2Vec():
     words_vectors = []
+    words = ""
     word2int = {}
     int2word = {}
     vocab_size = 0
@@ -236,17 +237,83 @@ def main(name, question_id, dimension_vector, trains, sentences=None):
     start_time = time.time()
     word2vec_class = Word2Vec()
     processes_sentences = process_for_senteces(sentences)
-    words = get_words_set(processes_sentences)
-    word2vec_class.word2int, word2vec_class.int2word = create_dictionaries(words)
-    word2vec_class.vocab_size, word2vec_class.name = len(words), name
+    word2vec_class.words = get_words_set(processes_sentences)
+    word2vec_class.word2int, word2vec_class.int2word = create_dictionaries(word2vec_class.words)
+    word2vec_class.vocab_size, word2vec_class.name = len(word2vec_class.words), name
     data = generate_training_data(processes_sentences, question_id)
     x_input, y_label = generate_batches(data, word2vec_class.word2int, word2vec_class.vocab_size)
     vectors = generate_network_and_vector(x_input, y_label, word2vec_class.vocab_size, dimension_vector, trains)
     word2vec_class.words_vectors, word2vec_class.question_id = vectors, question_id
-    pt("Vector estrés in word2int", vectors[word2vec_class.word2int['si']])
-    pt("Más cercano a si", word2vec_class.int2word[find_closest(word2vec_class.word2int['si'], vectors)])
     pt('Duración total', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
     return word2vec_class
+
+
+def insight_to_save(word2vec_class, save_flag=True):
+    vectors = word2vec_class.words_vectors
+    words = word2vec_class.words
+    word2int = word2vec_class.word2int
+    int2word = word2vec_class.int2word
+
+    from sklearn.manifold import TSNE
+
+    model = TSNE(n_components=2, random_state=0)
+    np.set_printoptions(suppress=True)
+    vectors = model.fit_transform(vectors)
+
+    from sklearn import preprocessing
+
+    normalizer = preprocessing.Normalizer()
+    vectors = normalizer.fit_transform(vectors, 'l2')
+
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    pt("words", words)
+    for word in words:
+        pt("Más cercano a " + word, int2word[find_closest(word2int[word], vectors)])
+        ax.annotate(word, (vectors[word2int[word]][0], vectors[word2int[word]][1]))
+
+    axes = plt.gca()
+    axes.set_xlim([-2, +2])
+    axes.set_ylim([-2, +2])
+    plt.show()
+
+    if save_flag:
+        pt("Se guardaría clase-->" + word2vec_class.name + " y question_id-->" + word2vec_class.question_id + "\n")
+        save = str(input("Para guardar vector escribir la letra \"s\"")).lower()
+        if save == "s":
+            word2vec_class.save(path=path_to_save_load)
+            pt("Generado y guardado con éxito")
+        else:
+            pt("No guardado")
+
+
+def process_answer(answer, word2vec_class):
+    """
+    A partir de una respuesta, la convierte en un vector y, después, lo transforma en un número entero.
+    """
+    pt("answer", answer)
+    answer_processed = process_for_senteces(answer)
+    words = get_words_set(answer_processed)
+    for word in words:
+        if word in word2vec_class.word2int.keys():
+            word_index =  word2vec_class.word2int[word]
+            word_vector = word2vec_class.words_vectors[word_index]
+            pt(word, word_vector)
+            fsakjdf
+        else:
+            pt("word", word)
+    asdfsi
+
+
+def test_results(word2vec_class, questions):
+    """
+    Realizamos las preguntas y contestamos, convirtiendo las respuestas en números a través de los vectores
+    """
+
+    for question in questions:
+        answer = input(questions)
+        answer2vector = process_answer(answer, word2vec_class)
 
 if __name__ == '__main__':
     #path_to_save = "D:\\Google Drive\Work\\ML_Kerox_Technology\\Corpus\\"
@@ -261,31 +328,6 @@ if __name__ == '__main__':
     else:
         # Generar vectores
         word2vec_class = main(name=Dialog.Estres.name, question_id=Dialog.Estres.id_pregunta_1,
-                              dimension_vector=100,trains=30000, sentences=Dialog.Estres.palabras_destacadas_pregunta_1)
-        word2vec_class.save(path=path_to_save_load)
-        raise ValueError("Generado y guardado con éxito")
-
-kjfgjkf
-
-#pt("Más cercano a king", int2word[find_closest(word2int['king'], vectors)])
-#pt("Más cercano a queen", int2word[find_closest(word2int['queen'], vectors)])
-#pt("Más cercano a royal", int2word[find_closest(word2int['royal'], vectors)])
-pt("Más cercano a nada", int2word[find_closest(word2int['nada'], vectors)])
-pt("Más cercano a yo", int2word[find_closest(word2int['yo'], vectors)])
-pt("Más cercano a estrés", int2word[find_closest(word2int['estrés'], vectors)])
-
-from sklearn.manifold import TSNE
-model = TSNE(n_components=2, random_state=0)
-np.set_printoptions(suppress=True)
-vectors = model.fit_transform(vectors)
-
-from sklearn import preprocessing
-normalizer = preprocessing.Normalizer()
-vectors =  normalizer.fit_transform(vectors, 'l2')
-
-import matplotlib.pyplot as plt
-fig, ax = plt.subplots()
-for word in words:
-    print(word, vectors[word2int[word]][1])
-    ax.annotate(word, (vectors[word2int[word]][0],vectors[word2int[word]][1] ))
-plt.show()
+                              dimension_vector=50,trains=100, sentences=Dialog.Estres.palabras_destacadas_pregunta_1)
+        test_results(word2vec_class, Dialog.Estres.preguntas)
+        insight_to_save(word2vec_class)
