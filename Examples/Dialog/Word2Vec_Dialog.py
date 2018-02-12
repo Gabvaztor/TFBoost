@@ -338,7 +338,7 @@ def test_results(word2vec_class, questions):
     """
     Realizamos las preguntas y contestamos, convirtiendo las respuestas en números a través de los vectores
     """
-
+    # TODO
     for question in questions:
         #answer = delete_accents_marks(str(input(questions)).lower())
         answer = "si, la verdad es que siempre"
@@ -350,6 +350,7 @@ def generate_guidelines(word2vec_class, questions_dict):
     """
     A partir del diccionario de palabras, crea las directrices para la clase word2vec
     """
+    # TODO
     for index in range(questions_dict.keys()):
         pass
 
