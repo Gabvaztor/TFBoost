@@ -58,12 +58,12 @@ def get_words_set(processes_sentences):
     A partir de frases preprocesadas, obtiene el conjunto de palabras (sin repetición) de las que se compone
     """
     words = []
-    to_delete_marks = [",", ".", ":", ";"]
+    to_delete_marks = [",", ".", ":", ";", "!", "¡", "?", "¿"]
     corpus = [item for sublist in processes_sentences for item in sublist]
     for word in corpus:
         if word not in to_delete_marks:
             words.append(word)
-    words = set(words)  # Removemos palabras repetidas
+    words = list(set(words))  # Removemos palabras repetidas
     pt("words",words)
     return words
 
@@ -166,15 +166,17 @@ def find_closest(word_index, vectors):
 
 class Word2Vec():
     words_vectors = []
-    words = ""
+    words = []
     word2int = {}
     int2word = {}
     vocab_size = 0
     question_id = "0"
     name = ""
+    guidelines_results = {}
     json_extension = ".json"
     numpy_extension = ".npy"
     words_vector_str = "-words_vector"
+
     def to_json(self):
         """
         Convert TFModel class to json with properties method.
@@ -182,8 +184,8 @@ class Word2Vec():
         :return: sort json from class properties.
         """
         self_dictionary = self.__dict__.copy()
-        pt("self_dictionary", self_dictionary)
         self_dictionary.pop("words_vectors")
+        pt("self_dictionary", self_dictionary)
         json_string =  json.dumps(self, default=lambda o: self_dictionary, sort_keys=True, indent=4)
         return json_string
 
@@ -288,24 +290,49 @@ def insight_to_save(word2vec_class, save_flag=True):
             pt("No guardado")
 
 
+def answer_processed(list_of_words):
+    words = []
+    for word in list_of_words:
+        split = word.split()
+        for word in split:
+            alpha_word = ''.join([i for i in word if i.isalpha()])
+            if alpha_word != "" and alpha_word != " ":
+                words.append(alpha_word)
+    return words
 def process_answer(answer, word2vec_class):
     """
     A partir de una respuesta, la convierte en un vector y, después, lo transforma en un número entero.
     """
-    # TODO
+    words_vector = []
+    words_to_return = []
     pt("answer", answer)
-    answer_processed = process_for_senteces(answer)
-    words = get_words_set(answer_processed)
+    words = answer_processed(answer.split(sep=" "))
+    pt("words", words)
     for word in words:
         if word in word2vec_class.word2int.keys():
             word_index =  word2vec_class.word2int[word]
             word_vector = word2vec_class.words_vectors[word_index]
-            pt(word, word_vector)
-            fsakjdf
+            pt("word: " + word + " índice", word_index)
+            pt("word: " + word + " vector", word_vector)
+            words_vector.append(word_vector)
+            words_to_return.append(word)
         else:
-            pt("word", word)
-    asdfsi
+            # word_vector = np.zeros(50,dtype=np.float32)
+            # No hacemos nada
+            pass
+    pt("words_vector", words_vector)
+    return words_vector, words_to_return
 
+
+def process_vector(answer2vector, words, word2vec_class):
+    total_words = float(len(words))
+    squared_vectors = []
+    for vector in answer2vector:
+        squared_vector = vector**2
+        squared_vectors.append(squared_vector)
+    sum_squared_vectors = np.sum(squared_vectors) / total_words
+    pt("sum_squared_vectors", sum_squared_vectors)
+    return sum_squared_vectors
 
 def test_results(word2vec_class, questions):
     """
@@ -313,22 +340,36 @@ def test_results(word2vec_class, questions):
     """
 
     for question in questions:
-        answer = input(questions)
-        answer2vector = process_answer(answer, word2vec_class)
+        #answer = delete_accents_marks(str(input(questions)).lower())
+        answer = "si, la verdad es que siempre"
+        answer2vector, words = process_answer(answer, word2vec_class)
+        result = process_vector(answer2vector, words, word2vec_class)
 
-if __name__ == '__main__':
+
+def generate_guidelines(word2vec_class, questions_dict):
+    """
+    A partir del diccionario de palabras, crea las directrices para la clase word2vec
+    """
+    for index in range(questions_dict.keys()):
+        pass
+
+
+def generate_chatbot_guidelines_vectors(category):
     #path_to_save = "D:\\Google Drive\Work\\ML_Kerox_Technology\\Corpus\\"
     path_to_save_load = "..\\Dialog\\Corpus\\"
-    load = False
+    load = True
     if load:
         # Para cargar
-        word2vec_class = Word2Vec().load(path=path_to_save_load, name=Dialog.Estres.name,
-                                         question_id=Dialog.Estres.id_pregunta_1)
-        pt("word2vec_class cargado", word2vec_class)
-        raise ValueError("Cargado con éxito")
+        word2vec_class = Word2Vec()
+        word2vec_class.load(path=path_to_save_load, name=category.name,
+                                         question_id=category.id_pregunta_1)
+        test_results(word2vec_class, category.preguntas)
+        insight_to_save(word2vec_class, save_flag=False)
+        pt("word2vec_class.words_vectors.shape", word2vec_class.words_vectors)
     else:
         # Generar vectores
-        word2vec_class = main(name=Dialog.Estres.name, question_id=Dialog.Estres.id_pregunta_1,
-                              dimension_vector=50,trains=100, sentences=Dialog.Estres.palabras_destacadas_pregunta_1)
-        test_results(word2vec_class, Dialog.Estres.preguntas)
+        word2vec_class = main(name=category.name, question_id=category.id_pregunta_1,
+                              dimension_vector=50,trains=10000, sentences=category.palabras_destacadas_pregunta_1)
+        word2vec_class.guidelines_results = generate_guidelines(word2vec_class, category.questions_dict)
+        test_results(word2vec_class, category.preguntas)
         insight_to_save(word2vec_class)

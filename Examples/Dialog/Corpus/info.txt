@@ -1,1 +1,13 @@
 Contiene todos los json de las clases y los arrays que representan los words embeddings de cada clase.
+
+Los números representan las categorías y la pregunta, e.g.:
+
+1_1 --> 1er Bloque (Estrés) y 1ª Pregunta
+
+Bloques:
+
+1: Estrés
+2: Fumar
+3: Dieta
+4: Actividad
+5: Sueño
