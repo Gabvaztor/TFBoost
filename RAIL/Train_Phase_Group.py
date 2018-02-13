@@ -74,7 +74,8 @@ end_event_learning_capture = "{ctrl}k{ctrl}k"
 path_save_restore_model = "../RAIL/Model_Saved/model.ckpt"
 # SE RECOGEN POR INPUT
 aquiles_file = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\logfiles20180123.csv"  # Aquiles
-enriched_file = "C:\\Users\Gabriel\Desktop\Proto1_v5\image_match.xlsx"  # Log enriquecido
+#enriched_file = "C:\\Users\Gabriel\Desktop\Proto1_v5\image_match.xlsx"  # Log enriquecido
+enriched_file = "C:\\Users\\Gabriel\\Desktop\\Proto1_v5\\image_match_first.xlsx"  # Log enriquecido
 # TODO Modificar en una futura versión
 images_aquiles_path = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\PRIMARY\imagenesCaracteristicas"
 images_aquiles_to_get_sign_path = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\PRIMARY\\"
@@ -261,6 +262,53 @@ def get_group_from_image(image_id, path_enriched_log):
 
 # Paso 6. Obtenemos las siguientes acciones a realizar a partir de los índices obtenidos previamente.
 # Se debe acceder al excel image_match con los ids de las imagenes para recoger el grupo de cada una de ellas.
+def get_first_action(tipo_evento, contenido, imagen, path_enriched_log, current_pos):
+    """
+    Recogemos la acción anterior a la posición primera posición "start_event"
+    "current_pos" contiene la posición del elemento "start_event"
+    """
+    action = None
+    index_before = 1
+    stop_flag = False
+    image_id = None
+    try:
+        while start_event_learning_capture not in contenido[current_pos - index_before] and not stop_flag:
+            actual_pos = current_pos - index_before
+            event_type = None
+            contenido_information = None
+            coordinate_x = None
+            coordinate_y = None
+            if tipo_evento[actual_pos].lower() == "cursor":
+                event_type = 0
+            elif tipo_evento[actual_pos].lower() == "keystrokes":
+                event_type = 1
+            pt("event_type", event_type)
+            contenido_information, coordinate_x, coordinate_y = get_click_and_coordinates(contenido[actual_pos])
+            if not image_id:
+                if str(type(imagen[actual_pos])) != "<class 'float'>":
+                    if (imagen[actual_pos] != '' and
+                                imagen[actual_pos].lower() != 'nan' and
+                                imagen[actual_pos].lower() != None):
+                        pt("imagen[element_index]hhghghfjhdfg", imagen[actual_pos])
+                        pt("Se actualiza image_id a imagen[element_index]")
+                        image_id = imagen[actual_pos]
+            pt("contenido", contenido_information)
+            pt("coordinate_x", coordinate_x)
+            pt("coordinate_y", coordinate_y)
+            pt("image_id and event_type and contenido_information and coordinate_x and coordinate_y",image_id and event_type and contenido_information and coordinate_x and coordinate_y)
+            elements_list = [image_id, event_type, contenido_information, coordinate_x, coordinate_y]
+            if [x for x in elements_list if x is not None] == elements_list:
+                group_image = get_group_from_image(image_id, path_enriched_log)
+                pt("group_image", group_image)
+                if group_image != -1:
+                    action = [event_type, contenido_information, coordinate_x, coordinate_y ,group_image]
+                    pt("action", action)
+                    stop_flag = True
+            if not stop_flag:
+                index_before += 1
+    except:
+        raise ValueError("No se ha conseguido obtener la acción anterior al start_event")
+    return action
 def get_next_actions(tipo_evento, contenido, imagen, path_enriched_log, starts_ends_indexes):
     next_actions = []  # Lista de listas de siguientes acciones. Cada lista contenida tiene el siguiente formato:
     # [Posición 0 --> 0 si "Tipo Evento" es Cursor y 1 si es Keystrokes,
@@ -275,10 +323,12 @@ def get_next_actions(tipo_evento, contenido, imagen, path_enriched_log, starts_e
         next_actions = []  # No hay siguientes acciones
     else:
         for index in range(len(starts_ends_indexes)):
+            first_action_flag = False
             current_learning = starts_ends_indexes[index]  # Contiene una lista con un número o un par de números
             pt("current_learning",current_learning)
             if (len(current_learning)) == 2:
-                if current_learning[1] - current_learning[0] + 1 > 1:  # Si hay más de una acción
+                if (current_learning[1] -1) - (current_learning[0] -1) -1 >= 1:  # Si hay más de una acción (contando con la
+                    # anterior)
                     # Añadimos una lista que contendrá las acciones para este intervalo entre entradas y salidas. Esta
                     # lista podrá ser vacía si no se cumple alguna de las lógicas de negocio de este método. Por ello,
                     # será necesario eliminar las listas que no contengan acciones.
@@ -290,39 +340,56 @@ def get_next_actions(tipo_evento, contenido, imagen, path_enriched_log, starts_e
                     except:
                         image_id = None
                     for element_index in range(current_learning[0]+1,current_learning[1]):
+                        """
                         pt("index", element_index+1)
                         pt("image_id", image_id)
                         pt("imagen[element_index]", imagen[element_index])
                         pt("type_imagen[element_index]",type(imagen[element_index]))
-                        if not image_id and not imagen[element_index]:
-                            pt("Se actualiza image_id a None")
-                            image_id = None
-                        elif imagen[element_index] != image_id :
-                            if str(type(imagen[element_index])) != "<class 'float'>":
-                                if (imagen[element_index] != '' and
-                                     imagen[element_index].lower() != 'nan' and
-                                     imagen[element_index].lower() != None):
-                                        pt("imagen[element_index]",imagen[element_index])
-                                        pt("Se actualiza image_id a imagen[element_index]")
-                                        image_id = imagen[element_index]
-                        if image_id:  # Si existe una imagen_id guardamos acción. Sino, pasamos a siguiente línea.
-                            pt("image_id", image_id)
-                            event_type = tipo_evento[element_index]
-                            if event_type == "Cursor": # Si es cursor es 0, si es keystrokes es 1.
-                                event_type = 0
+                        """
+                        if not first_action_flag:
+                            # Obtenemos la primera acción (justo la anterior a current_learning[0])
+                            first_action = get_first_action(tipo_evento, contenido, imagen,
+                                                            path_enriched_log=path_enriched_log,
+                                                            current_pos=current_learning[0])
+                            if first_action:
+                                next_actions[index].append(first_action)
+                                first_action_flag = True
                             else:
-                                event_type = 1
-                            # Obtenemos contenido_information (0 si es click izquierdo y 1 si es click derecho o el string
-                            # en sí si es keystroke). Además las coordenadas si es un evento de cursor. Sino, las
-                            # las coordenadas valen "-1".
-                            contenido_information, coordinate_x, \
-                            coordinate_y = get_click_and_coordinates(contenido[element_index])
-                            # Obtiene el grupo de la imagen
-                            group_image = get_group_from_image(image_id,path_enriched_log=path_enriched_log)
-                            if group_image:  # Si existe grupo de la imagen (debe existir) TODO Analizar este if
-                                action = [event_type, contenido_information, coordinate_x, coordinate_y, group_image]
-                                pt("action",action)
-                                next_actions[index].append(action)
+                                raise ValueError("No se ha podido obtener el primer elemento")
+                        if first_action_flag:
+                            if not image_id and not imagen[element_index]:
+                                pt("Se actualiza image_id a None")
+                                image_id = None
+                            elif imagen[element_index] != image_id :
+                                if str(type(imagen[element_index])) != "<class 'float'>":
+                                    if (imagen[element_index] != '' and
+                                         imagen[element_index].lower() != 'nan' and
+                                         imagen[element_index].lower() != None):
+                                            pt("imagen[element_index]",imagen[element_index])
+                                            pt("Se actualiza image_id a imagen[element_index]")
+                                            image_id = imagen[element_index]
+                            if image_id:  # Si existe una imagen_id guardamos acción. Sino, pasamos a siguiente línea.
+                                pt("image_id", image_id)
+                                event_type = tipo_evento[element_index]
+                                if event_type == "Cursor": # Si es cursor es 0, si es keystrokes es 1.
+                                    event_type = 0
+                                else:
+                                    event_type = 1
+                                # Obtenemos contenido_information (0 si es click izquierdo y 1 si es click derecho o el string
+                                # en sí si es keystroke). Además las coordenadas si es un evento de cursor. Sino, las
+                                # las coordenadas valen "-1".
+                                contenido_information, coordinate_x, \
+                                coordinate_y = get_click_and_coordinates(contenido[element_index])
+                                # Obtiene el grupo de la imagen
+                                group_image = get_group_from_image(image_id,path_enriched_log=path_enriched_log)
+                                if group_image:  # Si existe grupo de la imagen (debe existir) TODO Analizar este if
+                                    action = [event_type, contenido_information, coordinate_x, coordinate_y, group_image]
+                                    pt("action",action)
+                                    next_actions[index].append(action)
+                        else: # No se ha conseguido obtener la acción previa al "start_event" por lo que no hay acción de
+                            # partida
+                            raise ValueError("No se ha conseguido obtener la acción previa al start_event" +
+                                             "por lo que no hay acción de partida")
             else: # Solo tiene un elemento
                 if len(next_actions) == 0:
                     next_actions = []  # No recogemos nada (en esta versión)
@@ -444,7 +511,7 @@ def get_batch(batches, quantity=None):
             index_batch = 0
         return x_input, y_labels
 
-def main_train_phase(file_path_aquiles=None, enriched_file=None, start_all_flag=False, quantity=None):
+def main_train_phase(log_aquiles_path=None, enriched_file=None, start_all_flag=False, quantity=None):
     """
     Este método realiza todos las fases para retornar un batch de tamaño "quantity".
     Si "start_all_flag" es False, realiza todos los pasos para crear el batch y guardarlo en memoria. Una vez que ese
@@ -456,7 +523,7 @@ def main_train_phase(file_path_aquiles=None, enriched_file=None, start_all_flag=
     """
     global batches
     if start_all_flag:
-        tipo_evento, contenido, imagen = get_columns(file=file_path_aquiles)
+        tipo_evento, contenido, imagen = get_columns(file=log_aquiles_path)
         # normalize_columns_and_create_dataframe(tipo_evento=tipo_evento,contenido=contenido,imagen=imagen)
         starts_ends_indexes = get_images_from_keystrokes(contenido=contenido)
         next_actions = get_next_actions(tipo_evento=tipo_evento,contenido=contenido, imagen= imagen,
@@ -564,11 +631,6 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
     error = tf.losses.mean_squared_error(labels=y,predictions=pred)
     # Algoritmo de optimización
     optimizar = tf.train.AdamOptimizer(learning_rate=0.01).minimize(error)
-
-    # Evaluar el modelo
-    #pred_correcta = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
-    # Calcular la precisión
-    #acierto = tf.subtract(tf.constant(1.),error)
 
     sess = initialize_session()
     # Para guardar
@@ -678,12 +740,9 @@ def get_image_sign_processed(path_image):
     """
     image_signature = ImageSignature()
     sign_image = image_signature.generate_signature(path_image)
-    pt("sign_image", sign_image)
     sign_image_processed = str(sign_image).replace('\n', '*').replace('[ ', '').replace(']', '')
-    pt("sign_image_processed",sign_image_processed)
     # Procesamos la firma para que se obtenga de la misma forma que en el log enriquecido
     return sign_image_processed
-
 
 def get_group_comparing_hamming_distance(image_sign, enriched_file_path):
     """
@@ -773,9 +832,6 @@ def get_last_action(tipo_evento, contenido, imagen, enriched_file_path, robot_id
     except:
         raise ValueError("No se ha podido obtener la última acción para la predicción")
 
-
-
-
 def generate_test_input(log_aquiles_path, enriched_file_path, robot_id):
     """
     Recoge la última acción del log junto con la última imagen y se realiza la distancia hamming entre la firma de la
@@ -792,12 +848,12 @@ def generate_test_input(log_aquiles_path, enriched_file_path, robot_id):
 if __name__ == '__main__':
     restore_model = True  # Para saltarse el entrenamiento y cargar el modelo (se debe tener el modelo guardado)
     # Get batch algorithm
-    main_train_phase(aquiles_file, enriched_file, start_all_flag=True)
+    main_train_phase(log_aquiles_path=aquiles_file, enriched_file=enriched_file, start_all_flag=True)
     if not restore_model:
         save_path = create_restore_train_network(path_save_restore_model, restore_flag=False)
     else:
-        test_set_input = np.asarray([-1000., 500., 500., 3000.]).reshape(1,4)
-        test_set_input = generate_test_input(log_aquiles_path=aquiles_file, enriched_file_path=enriched_file, robot_id=2)
+        #test_set_input = np.asarray([-1000., 500., 500., 3000.]).reshape(1,4)
+        test_set_input = generate_test_input(log_aquiles_path=aquiles_file, enriched_file_path=enriched_file,robot_id=2)
         pt("test_set_input", test_set_input)
         create_restore_train_network(path_save_restore_model, restore_flag=True, test_input=test_set_input)
 
