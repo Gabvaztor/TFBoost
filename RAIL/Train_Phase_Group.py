@@ -673,7 +673,7 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
     saver = tf.train.Saver()
     if not restore_flag:
         start_time = time.time()
-        epochs = 5000
+        epochs = 15000
         trains = 10
         costs = []
         stop_train_flag = False
