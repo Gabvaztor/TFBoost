@@ -58,13 +58,44 @@ import pandas as pd
 # pip3 install --upgrade tensorflow-gpu
 import tensorflow as tf
 import numpy as np
-# Matplotlib para mostrar gráficas
-from matplotlib import pyplot
 # Para leer excel
 # Para instalar: pip3 install openpyxl
 import openpyxl
 # Para obtener la firma de las imágenes
 from image_match.goldberg import ImageSignature
+# Para recoger por parámetro
+import argparse
+# Just disables the warning, doesn't enable AVX/FMA
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+
+# El argumento -c debe ser el último elemento ya que se recoge un path, no un fullpath.
+ap = argparse.ArgumentParser()
+ap.add_argument("-i", "--log_aquiles", required = False,
+    help = "FullPath del archivo Aquiles")
+ap.add_argument("-t", "--log_enriquecido", required = False,
+    help = "FullPath del log enriquecido")
+ap.add_argument("-p", "--load_previous_train", required = False,
+    help = "S si quieres que se cargue el anterior modelo (para la predicción). Por defecto es False (No cargar)")
+ap.add_argument("-c", "--path_images_test", required = False,
+    help = "Path de la carpeta que contiene la imagen para obtener su grupo a partir de la distancia hamming (para la predicción)")
+
+args = vars(ap.parse_args())
+
+aquiles_file = args["log_aquiles"]
+enriched_file = args["log_enriquecido"]
+load_previous_model = args["load_previous_train"]
+images_aquiles_to_get_sign_path = args["path_images_test"]
+if images_aquiles_to_get_sign_path:
+    while images_aquiles_to_get_sign_path[-1] != "\"":
+        images_aquiles_to_get_sign_path = images_aquiles_to_get_sign_path[:-1]
+    images_aquiles_to_get_sign_path = images_aquiles_to_get_sign_path[:-1] + "\\"
+
+if load_previous_model == "S":
+    load_previous_model = True
+else:
+    load_previous_model = False
 
 # VARIABLES GROBALES
 # Keystrokes a tener en cuenta
@@ -73,18 +104,24 @@ end_event_learning_capture = "{ctrl}k{ctrl}k"
 # Path donde se guarda el modelo de la red neuronal
 path_save_restore_model = "../RAIL/Model_Saved/model.ckpt"
 # SE RECOGEN POR INPUT
-aquiles_file = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\logfiles20180123.csv"  # Aquiles
-#enriched_file = "C:\\Users\Gabriel\Desktop\Proto1_v5\image_match.xlsx"  # Log enriquecido
-enriched_file = "C:\\Users\\Gabriel\\Desktop\\Proto1_v5\\image_match_first.xlsx"  # Log enriquecido
+# Path de Aquiles
+if aquiles_file == None:
+    aquiles_file = "C:\\Users\\Gabriel\\Desktop\\02. Aquiles\\dist Aquiles 20171113\\20180214_train_log_test_v1\\logfiles20180214.csv"
+# Log enriquecido
+if enriched_file == None:
+    enriched_file = "C:\\Users\\Gabriel\\Desktop\\Proto1_v5\\image_match_first_test_la_escuela.xlsx"
+"""
+PARA LA FASE DE PREDICCIÓN
+"""
 # TODO Modificar en una futura versión
-images_aquiles_path = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\PRIMARY\imagenesCaracteristicas"
-images_aquiles_to_get_sign_path = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\PRIMARY\\"
+# Contiene la ruta de la carpeta donde está la imagen para obtener su grupo a partir de la distancia hamming
+if images_aquiles_to_get_sign_path == None:
+    images_aquiles_to_get_sign_path = "C:\\Users\Gabriel\Desktop\\02. Aquiles\dist Aquiles 20171113\\20180123\PRIMARY\\"
 
 
 """
 Funciones útiles
 """
-
 def numpy_fillna(data):
     """
     Esta función convierte todos los elementos en un array del mismo tamaño cada uno con ceros si faltan elementos.
@@ -289,8 +326,6 @@ def get_first_action(tipo_evento, contenido, imagen, path_enriched_log, current_
                     if (imagen[actual_pos] != '' and
                                 imagen[actual_pos].lower() != 'nan' and
                                 imagen[actual_pos].lower() != None):
-                        pt("imagen[element_index]hhghghfjhdfg", imagen[actual_pos])
-                        pt("Se actualiza image_id a imagen[element_index]")
                         image_id = imagen[actual_pos]
             pt("contenido", contenido_information)
             pt("coordinate_x", coordinate_x)
@@ -366,7 +401,6 @@ def get_next_actions(tipo_evento, contenido, imagen, path_enriched_log, starts_e
                                          imagen[element_index].lower() != 'nan' and
                                          imagen[element_index].lower() != None):
                                             pt("imagen[element_index]",imagen[element_index])
-                                            pt("Se actualiza image_id a imagen[element_index]")
                                             image_id = imagen[element_index]
                             if image_id:  # Si existe una imagen_id guardamos acción. Sino, pasamos a siguiente línea.
                                 pt("image_id", image_id)
@@ -526,7 +560,8 @@ def main_train_phase(log_aquiles_path=None, enriched_file=None, start_all_flag=F
         tipo_evento, contenido, imagen = get_columns(file=log_aquiles_path)
         # normalize_columns_and_create_dataframe(tipo_evento=tipo_evento,contenido=contenido,imagen=imagen)
         starts_ends_indexes = get_images_from_keystrokes(contenido=contenido)
-        next_actions = get_next_actions(tipo_evento=tipo_evento,contenido=contenido, imagen= imagen,
+        pt("starts_ends_indexes", starts_ends_indexes)
+        next_actions = get_next_actions(tipo_evento=tipo_evento,contenido=contenido, imagen=imagen,
                                         path_enriched_log=enriched_file,
                                         starts_ends_indexes=starts_ends_indexes)
         if not next_actions:
@@ -636,7 +671,7 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
     # Para guardar
     saver = tf.train.Saver()
     if not restore_flag:
-        epochs = 10000
+        epochs = 30000
         trains = 10
         costs = []
         stop_train_flag = False
@@ -652,15 +687,21 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
                 # Optimización por backprop y funcion de costo
                 _, actual_error, y_ = sess.run([optimizar, error,pred],
                                          feed_dict={x: x_train, y: y_train})
-                if train == 0:
+                # Para debug
+                if train == 0 and epoca % 10 == 0:
                     # imprimir información de entrenamiento
-                    pt("error",actual_error)
-                    costs.append(actual_error)
+                    #pt("error",actual_error)
+                    """
+                    Para debug
+                    """
+                    #costs.append(actual_error)
                     #precisiones.append(accuracy)
-                    pt("x_train",x_train)
-                    pt("y_train",y_train)
-                    pt("y", y_)
-                if actual_error < 0.1:  # Si error absoluto es menor a 0.1
+                    #pt("x_train",x_train)
+                    #pt("y_train",y_train)
+                    #pt("y", y_)
+                    pass
+                if actual_error < 0.00001:  # Si error absoluto es menor a 0.1
+                    pt("Actual error absoluto", actual_error)
                     min_error = actual_error
                     # Guarda las variables en un path
                     save_path = saver.save(sess, path_to_save_model)
@@ -673,12 +714,10 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
                     save_path = saver.save(sess, path_to_save_model)
                 #pt("costes",costes)
                 #pt("precisiones",precisiones)
-        pt("costes", costs)
-        pt("FINAL para 10000 épocas con 10 entrenamientos cada una.")
+        #pt("costes", costs)
+        pt("FINAL para " + str(epochs) + " épocas con " + str(trains) + " entrenamientos cada una.")
         pt("Con un error absoluto de aprendizaje de ", min_error)
         pt("Modelo guardado en", save_path)
-        #np.savetxt("W.csv", W_val, delimiter=",")
-        #np.savetxt("b.csv", b_val, delimiter=",")
         return save_path
     else:
         # Restauramos el modelo
@@ -687,42 +726,7 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
         # Si existe conjunto de testeo, predecir valir
         if test_input is not None:
             prediction = pred.eval(feed_dict={x: test_input})
-            pt("prediction", prediction)
-    # PARA LOS DATOS CREADOS POR DEFECTO
-    """
-    # Entrenamiento
-    for epoca in range(epochs):
-        if stop_train_flag:
-            break
-        for train in range(trains):
-            #pt("batches_[train][0].shape",batches_[train][0].shape)
-            # Get batch algorithm
-            x_train, y_train = main_train_phase(file_aquiles, file_mod2_3, False)
-            # Optimización por backprop y funcion de costo
-            _, actual_error, y_ = sess.run([optimizar, error,pred],
-                                     feed_dict={x: x_train[train].reshape(1,4), y: y_train[train].reshape(1,3)})
-            if train == 0:
-                pt("error",actual_error)
-                costes.append(actual_error)
-                #precisiones.append(accuracy)
-                pt("y", y_)
-            if actual_error < 0.00001:  # Si error absoluto es menor a 0.1
-                stop_train_flag = True
-                break
-        # imprimir información de entrenamiento
-        if epoca % 1 == 0:
-            pass
-            #pt("costes",costes)
-            #pt("precisiones",precisiones)
-    pt("inputs",inputs)
-    pt("labels",labels)
-    pt("test_set_input",test_set_input)
-    pt("costes", costes)
-    pt("FINAL para 10000 épocas con 10 entrenamientos cada una.")
-    pt("Y la salida es",pred.eval(feed_dict={x:test_set_input.reshape(1,4)}))
-    pt("Con un error absoluto de aprendizaje de ", costes[-1])
-    """
-
+            pt("Predicción", prediction)
 
 def get_path_from_robot_id_and_image_id(robot_id, image_id):
     """
@@ -771,8 +775,6 @@ def get_group_comparing_hamming_distance(image_sign, enriched_file_path):
             actual_group = float(actual_group) * 1000.
     except:
         ValueError("No se ha podido leer el log enriquecido")
-    pt("actual_hamming_distance", actual_hamming_distance)
-    pt("actual_group", actual_group)
     return actual_group
 def get_group_from_image_id_and_hamming_distance(image_id, enriched_file_path, robot_id):
     """
@@ -813,15 +815,19 @@ def get_last_action(tipo_evento, contenido, imagen, enriched_file_path, robot_id
                 if (imagen[-image_index] != '' and
                             imagen[-image_index].lower() != 'nan' and
                             imagen[-image_index].lower() != None):
-                    pt("imagen[element_index]", imagen[-image_index])
-                    pt("Se actualiza image_id a imagen[element_index]")
+                    pt("imagen", imagen[-image_index])
                     image_id = imagen[-image_index]
                     break
         # TODO Comprobar versión. Para esta versión cogemos solo cuando es Cursor
         for contenido_index in range(1, len(tipo_evento.values)):
-            if tipo_evento.values[-contenido_index].lower() == "cursor":
-                contenido_data = contenido.values[contenido_index]
-                break
+            if str(type(tipo_evento.values[-contenido_index])) != "<class 'float'>":
+                if (tipo_evento.values[-contenido_index] != '' and
+                            tipo_evento.values[-contenido_index].lower() != 'nan' and
+                            tipo_evento.values[-contenido_index].lower() != None):
+                    if tipo_evento.values[-contenido_index].lower() == "cursor":
+                        contenido_data = contenido.values[-contenido_index]
+                        pt("contenido_data", contenido_data)
+                        break
         # Devuelve tres elementos:
         # "contenido_information" contiene -1000 si es click izquierdo, 1000 si es click derecho o una secuencia str.
         # "coordinate_x" y "coordinate_y" son las coordeandas. Valdrán -1000 si "contenido_information" es string.
@@ -846,13 +852,21 @@ def generate_test_input(log_aquiles_path, enriched_file_path, robot_id):
     return np.asarray(last_action).reshape(1,4)
 
 if __name__ == '__main__':
-    restore_model = True  # Para saltarse el entrenamiento y cargar el modelo (se debe tener el modelo guardado)
+    restore_model = load_previous_model  # Para saltarse el entrenamiento y cargar el modelo (se debe tener el modelo guardado)
+    pt("")
+    pt("Comienzo del módulo 4")
+
+    print("log_aquiles-->", aquiles_file)
+    print("log_enriquecido-->", enriched_file)
+    print("images_aquiles_to_get_sign_path-->", images_aquiles_to_get_sign_path)
+    print("load_previous_model-->", load_previous_model)
+    pt("")
+    pt("¿Cargar modelo previo?", restore_model)
     # Get batch algorithm
-    main_train_phase(log_aquiles_path=aquiles_file, enriched_file=enriched_file, start_all_flag=True)
-    if not restore_model:
+    if not restore_model and not load_previous_model:
+        main_train_phase(log_aquiles_path=aquiles_file, enriched_file=enriched_file, start_all_flag=True)
         save_path = create_restore_train_network(path_save_restore_model, restore_flag=False)
     else:
-        #test_set_input = np.asarray([-1000., 500., 500., 3000.]).reshape(1,4)
         test_set_input = generate_test_input(log_aquiles_path=aquiles_file, enriched_file_path=enriched_file,robot_id=2)
         pt("test_set_input", test_set_input)
         create_restore_train_network(path_save_restore_model, restore_flag=True, test_input=test_set_input)
