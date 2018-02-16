@@ -68,7 +68,8 @@ import argparse
 # Just disables the warning, doesn't enable AVX/FMA
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
+# Para calcular el tiempo
+import time as time
 
 # El argumento -c debe ser el último elemento ya que se recoge un path, no un fullpath.
 ap = argparse.ArgumentParser()
@@ -464,7 +465,7 @@ def normalize_actions(next_actions):
                 del next_actions[actions_index][action_index][0]
     if recursive_flag:
         normalize_actions(next_actions=next_actions)
-    pt("next_actions_end",next_actions)
+    #pt("next_actions_end",next_actions)
     return next_actions
 # Paso 8
 def create_batches(normalized_actions):
@@ -506,11 +507,11 @@ def create_batches(normalized_actions):
             action_output = normalized_actions[actions_index][action_index+1][:3]
             inputs[actions_index].append(np.asarray(action_input))
             outputs[actions_index].append(np.asarray(action_output))
-    pt("inputs", inputs)
-    pt("outputs", outputs)
     batches.append(np.asarray(inputs))
     batches.append(np.asarray(outputs))
-    pt("batches", batches)
+    #pt("inputs", inputs)
+    #pt("outputs", outputs)
+    #pt("batches", batches)
     pt("batches.shape", len(batches))
     pt("batches[0]", np.asarray(batches[0]).shape)
     pt("batches[0][0]", np.asarray(batches[0][0]).shape)
@@ -671,7 +672,8 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
     # Para guardar
     saver = tf.train.Saver()
     if not restore_flag:
-        epochs = 30000
+        start_time = time.time()
+        epochs = 5000
         trains = 10
         costs = []
         stop_train_flag = False
@@ -709,6 +711,8 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
                     break
             if epoca % 10 == 0:
                 if actual_error < min_error:
+                    pt('Tiempo', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))) + "\n Entrenando...")
+                    pt("Actual error absoluto", actual_error)
                     min_error = actual_error
                     # Guarda las variables en un path
                     save_path = saver.save(sess, path_to_save_model)
@@ -716,6 +720,7 @@ def create_restore_train_network(path_to_save_model, restore_flag=False, test_in
                 #pt("precisiones",precisiones)
         #pt("costes", costs)
         pt("FINAL para " + str(epochs) + " épocas con " + str(trains) + " entrenamientos cada una.")
+        pt('Tiempo total de entrenamiento', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
         pt("Con un error absoluto de aprendizaje de ", min_error)
         pt("Modelo guardado en", save_path)
         return save_path
