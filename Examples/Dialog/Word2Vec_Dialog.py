@@ -9,7 +9,7 @@ import tensorflow as tf
 #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from UsefulTools.UtilsFunctions import *
 from UsefulTools.TensorFlowUtils import *
-from Examples.Dialog import Dialog
+from Examples.Dialog import *
 
 # Para eliminar tildes
 import unicodedata
@@ -41,7 +41,7 @@ def process_for_senteces(sentences):
 
 def create_dictionaries(words):
     """
-    Crea los diccionarios int2word y word2int a partir de las frases procesadas y las retorna en ese orden
+    Crea los diccionarios int2word y word2int a partir de las palabras y las retorna en ese orden
     """
     int2word = {}
     word2int = {}
@@ -250,7 +250,7 @@ def main(name, question_id, dimension_vector, trains, sentences=None):
     return word2vec_class
 
 
-def insight_to_save(word2vec_class, save_flag=True):
+def insight_to_save(word2vec_class, save_flag=True, path_to_save_load=None):
     vectors = word2vec_class.words_vectors
     words = word2vec_class.words
     word2int = word2vec_class.word2int
@@ -351,14 +351,15 @@ def generate_guidelines(word2vec_class, questions_dict):
     A partir del diccionario de palabras, crea las directrices para la clase word2vec
     """
     # TODO
+    pt("keys", questions_dict.keys())
     for index in range(questions_dict.keys()):
         pass
-
+    SADSD
 
 def generate_chatbot_guidelines_vectors(category):
     #path_to_save = "D:\\Google Drive\Work\\ML_Kerox_Technology\\Corpus\\"
     path_to_save_load = "..\\Dialog\\Corpus\\"
-    load = True
+    load = False
     if load:
         # Para cargar
         word2vec_class = Word2Vec()
@@ -370,7 +371,11 @@ def generate_chatbot_guidelines_vectors(category):
     else:
         # Generar vectores
         word2vec_class = main(name=category.name, question_id=category.id_pregunta_1,
-                              dimension_vector=50,trains=10000, sentences=category.palabras_destacadas_pregunta_1)
+                              dimension_vector=50,trains=100, sentences=category.palabras_destacadas_pregunta_1)
         word2vec_class.guidelines_results = generate_guidelines(word2vec_class, category.questions_dict)
         test_results(word2vec_class, category.preguntas)
-        insight_to_save(word2vec_class)
+        insight_to_save(word2vec_class, save_flag=True, path_to_save_load=path_to_save_load)
+
+
+
+
