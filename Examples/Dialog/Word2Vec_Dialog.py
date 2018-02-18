@@ -7,6 +7,7 @@ import numpy as np
 import tensorflow as tf
 #import os
 #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+from Examples.Dialog.Dialog import Estres
 from UsefulTools.UtilsFunctions import *
 from UsefulTools.TensorFlowUtils import *
 from Examples.Dialog import *
@@ -172,6 +173,8 @@ class Word2Vec():
     vocab_size = 0
     question_id = "0"
     name = ""
+    # Contiene, por cada pregunta, el número que corresponde al resultado de las operaciones* de los vectores en una
+    # frase
     guidelines_results = {}
     json_extension = ".json"
     numpy_extension = ".npy"
@@ -346,15 +349,25 @@ def test_results(word2vec_class, questions):
         result = process_vector(answer2vector, words, word2vec_class)
 
 
+def sentence_operation(phrase):
+    pass
+
+
 def generate_guidelines(word2vec_class, questions_dict):
     """
     A partir del diccionario de palabras, crea las directrices para la clase word2vec
     """
     # TODO
+    guidelines = {}
+
     pt("keys", questions_dict.keys())
-    for index in range(questions_dict.keys()):
-        pass
-    SADSD
+    for key in questions_dict.keys():
+        operational_list = []
+        for phrase in questions_dict[key]:
+            operational_list.append(sentence_operation(phrase))
+        operational_list = operation_final(operational_list)
+
+    return guidelines
 
 def generate_chatbot_guidelines_vectors(category):
     #path_to_save = "D:\\Google Drive\Work\\ML_Kerox_Technology\\Corpus\\"
@@ -376,6 +389,6 @@ def generate_chatbot_guidelines_vectors(category):
         test_results(word2vec_class, category.preguntas)
         insight_to_save(word2vec_class, save_flag=True, path_to_save_load=path_to_save_load)
 
-
+generate_chatbot_guidelines_vectors(category=Estres())
 
 
