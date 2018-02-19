@@ -5,8 +5,8 @@ This is Skip Gram form.
 
 import numpy as np
 import tensorflow as tf
-#import os
-#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from Examples.Dialog.Dialog import Estres
 from UsefulTools.UtilsFunctions import *
 from UsefulTools.TensorFlowUtils import *
@@ -293,7 +293,7 @@ def insight_to_save(word2vec_class, save_flag=True, path_to_save_load=None):
             pt("No guardado")
 
 
-def answer_processed(list_of_words):
+def phrase_processed(list_of_words):
     words = []
     for word in list_of_words:
         split = word.split()
@@ -309,7 +309,7 @@ def process_answer(answer, word2vec_class):
     words_vector = []
     words_to_return = []
     pt("answer", answer)
-    words = answer_processed(answer.split(sep=" "))
+    words = phrase_processed(answer.split(sep=" "))
     pt("words", words)
     for word in words:
         if word in word2vec_class.word2int.keys():
@@ -348,25 +348,41 @@ def test_results(word2vec_class, questions):
         answer2vector, words = process_answer(answer, word2vec_class)
         result = process_vector(answer2vector, words, word2vec_class)
 
+def operation_final(operational_list):
+    """
+    Realizamos las operaciones para retornar un número que representará a una pregunta de una categoría.
+    """
+    return np.mean(operational_list)
 
-def sentence_operation(phrase):
-    pass
-
+def sentence_operation(phrase, word2vec_class):
+    """
+    A partir de una frase, obtiene el vector de cada palabra y retorna una un número resultado de la operación a partir
+    de esos vectores.
+    """
+    list_of_words = phrase.split(sep=" ")
+    words = phrase_processed(list_of_words=list_of_words)
+    results_list = []
+    for word in words:
+        if word in word2vec_class.words:
+            # Obtenemos vector de la palabra
+            word_index = word2vec_class.word2int[word]
+            word_vector = word2vec_class.words_vectors[word_index]
+            results_list.append(np.mean((word_vector*28)**4))
+    return np.mean(results_list)
 
 def generate_guidelines(word2vec_class, questions_dict):
     """
     A partir del diccionario de palabras, crea las directrices para la clase word2vec
     """
-    # TODO
     guidelines = {}
 
     pt("keys", questions_dict.keys())
     for key in questions_dict.keys():
         operational_list = []
         for phrase in questions_dict[key]:
-            operational_list.append(sentence_operation(phrase))
-        operational_list = operation_final(operational_list)
-
+            operational_list.append(sentence_operation(phrase, word2vec_class))
+        key_number_representation = operation_final(operational_list)
+        guidelines[key] = key_number_representation
     return guidelines
 
 def generate_chatbot_guidelines_vectors(category):
@@ -384,11 +400,10 @@ def generate_chatbot_guidelines_vectors(category):
     else:
         # Generar vectores
         word2vec_class = main(name=category.name, question_id=category.id_pregunta_1,
-                              dimension_vector=50,trains=100, sentences=category.palabras_destacadas_pregunta_1)
+                              dimension_vector=100,trains=1000, sentences=category.palabras_destacadas_pregunta_1)
         word2vec_class.guidelines_results = generate_guidelines(word2vec_class, category.questions_dict)
+        pt("word2vec_class.guidelines_results", word2vec_class.guidelines_results)
         test_results(word2vec_class, category.preguntas)
         insight_to_save(word2vec_class, save_flag=True, path_to_save_load=path_to_save_load)
 
 generate_chatbot_guidelines_vectors(category=Estres())
-
-
