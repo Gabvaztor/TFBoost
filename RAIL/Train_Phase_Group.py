@@ -868,7 +868,7 @@ if __name__ == '__main__':
     pt("")
     pt("¿Cargar modelo previo?", restore_model)
     # Get batch algorithm
-    if not restore_model and not load_previous_model:
+    if not restore_model:
         main_train_phase(log_aquiles_path=aquiles_file, enriched_file=enriched_file, start_all_flag=True)
         save_path = create_restore_train_network(path_save_restore_model, restore_flag=False)
     else:
