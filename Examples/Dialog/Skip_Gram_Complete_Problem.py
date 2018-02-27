@@ -254,13 +254,19 @@ class Word2Vec():
         json_string =  json.dumps(self, default=lambda o: self_dictionary, sort_keys=True, indent=4)
         return json_string
 
-    def save(self, path):
+    def save(self, path, to_txt=False):
+        extension = self.numpy_extension
+        if to_txt:
+            extension = ".out"
         fullpath_json = path + self.name + "-" +  self.question_id + self.json_extension
-        fullpath_numpy = path + self.name + "-" + self.question_id + self.words_vector_str + self.numpy_extension
+        fullpath_save = path + self.name + "-" + self.question_id + self.words_vector_str + extension
         try:
             pt("To save", self.to_json())
             write_string_to_pathfile(self.to_json(), fullpath_json)
-            np.save(fullpath_numpy, self.words_vectors)
+            if to_txt:
+                np.savetxt(fullpath_save, self.words_vectors, delimiter=",")
+            else:
+                np.save(fullpath_save, self.words_vectors)
             pt("Clase Word2Vec guardada con éxito")
         except:
             raise ValueError("No se ha podido guardar la clase Word2Vec")
@@ -474,7 +480,7 @@ def operation_final(operational_list):
 
 def sentence_operation(phrase, word2vec_class):
     """
-    A partir de una frase, obtiene el vector de cada palabra y retorna una un número resultado de la operación a partir
+    A partir de una frase, obtiene el vector de cada palabra y retorna un número resultado de la operación a partir
     de esos vectores.
     """
     list_of_words = phrase.split(sep=" ")
@@ -482,10 +488,16 @@ def sentence_operation(phrase, word2vec_class):
     results_list = []
     for word in words:
         if word in word2vec_class.words:
-            # Obtenemos vector de la palabra
+            # Obtenemos el índice de la palabra
             word_index = word2vec_class.word2int[word]
+            # Obtenemos vector de la palabra a partir del índice
             word_vector = word2vec_class.words_vectors[word_index]
-            results_list.append(np.mean((word_vector*28)**4))
+            operation = np.mean((word_vector*28)**4)
+            pt("word", word)
+            pt("word_index", word_index)
+            pt("operation --> np.mean((word_vector*28)**4)", operation)
+            pt("word_vector", word_vector)
+            results_list.append(operation)
     return np.mean(results_list)
 
 def generate_guidelines(word2vec_class, questions_dict):
@@ -562,14 +574,15 @@ def execution(repetitions, train, force_save):
                                       question_dict=question_dict, repetitions=repetitions, train=train,
                                       force_save=force_save)
             word2vec = load_guidelines_chatbot(category=scheme, question_id=question_id)
+            word2vec.save(path="..\\Dialog\\Corpus\\", to_txt=True)
             #word2vec.test_category(questions_dict=question_dict)
             #word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
             # Para testear
             pt("scheme", name_scheme)
             pt("{0:no_se, 1:nunca, 2:algunas_veces, 3:bastantes_veces, 4: siempre} -->0", question_id)
-            word2vec.test_phrases()
+            #word2vec.test_phrases()
         # FUMAR
-        elif name_scheme == "Smoke":
+        elif name_scheme == "Smoke2":
             # Dos tipos de respuestas:
             # {0:no_se, 1:no, 2:si}
             # {0:no_se, 1:<10, 2:10-15, 3:>15}
@@ -586,14 +599,14 @@ def execution(repetitions, train, force_save):
                                           question_dict=question_dict, repetitions=repetitions, train=train,
                                           force_save=force_save)
                 word2vec = load_guidelines_chatbot(category=scheme, question_id=question_id)
-                word2vec.test_category(questions_dict=question_dict)
-                word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
+                #word2vec.test_category(questions_dict=question_dict)
+                #word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
                 # Para testear
                 pt("scheme", name_scheme)
                 pt("no o si --> 0, {0:no_se, 1:<10, 2:10-15, 3:>15} -->1", question_id)
-                word2vec.test_phrases()
+                #word2vec.test_phrases()
         # DIETA
-        elif name_scheme == "Diet":
+        elif name_scheme == "Diet2":
             # Un tipo de respuesta:
             # {0: no_se, 1:<1, 2:1-2, 3:3-5, 4:>5}
             question_id = scheme.id_pregunta_1
@@ -603,13 +616,13 @@ def execution(repetitions, train, force_save):
                                       question_dict=question_dict, repetitions=repetitions, train=train,
                                       force_save=force_save)
             word2vec = load_guidelines_chatbot(category=scheme, question_id=question_id)
-            word2vec.test_category(questions_dict=question_dict)
-            word2vec.test_phrases(input_sentence=False, sentences_list=["1"])
+            #word2vec.test_category(questions_dict=question_dict)
+            #word2vec.test_phrases(input_sentence=False, sentences_list=["1"])
             # Para testear
             pt("scheme", name_scheme)
-            word2vec.test_phrases()
+            #word2vec.test_phrases()
         # ACTIVIDAD
-        elif name_scheme == "Activity":
+        elif name_scheme == "Activity2":
             # Dos tipos de respuestas:
             # {0:no_se, 1:no, 2:si}
             # {0:no_se, 1:0-1, 2:2-3, 3:4-6 4:>6}
@@ -626,12 +639,12 @@ def execution(repetitions, train, force_save):
                                           question_dict=question_dict, repetitions=repetitions, train=train,
                                           force_save=force_save)
                 word2vec = load_guidelines_chatbot(category=scheme, question_id=question_id)
-                word2vec.test_category(questions_dict=question_dict)
-                word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
+                #word2vec.test_category(questions_dict=question_dict)
+                #word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
                 # Para testear
                 pt("scheme", name_scheme)
                 pt("no o si --> 0, {0:no_se, 1:0-1, 2:2-3, 3:4-6 4:>6} -->1", question_id)
-                word2vec.test_phrases()
+                #word2vec.test_phrases()
 
         # SUEÑO
         elif name_scheme == "Sleep":
@@ -651,17 +664,17 @@ def execution(repetitions, train, force_save):
                                           question_dict=question_dict, repetitions=repetitions, train=train,
                                           force_save=force_save)
                 word2vec = load_guidelines_chatbot(category=scheme, question_id=question_id)
-                word2vec.test_category(questions_dict=question_dict)
-                word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
+                #word2vec.test_category(questions_dict=question_dict)
+                #word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
                 # Para testear
                 pt("scheme", name_scheme)
                 pt("{0:no_se, 1:<5, 2:5-8, 3:>8} --> 0,"
                    " {0:no_se, 1:nunca, 2:algunas_veces, 3:bastantes_veces, 4: siempre} -->1", question_id)
-                word2vec.test_phrases()
-
+                #word2vec.test_phrases()
         else:
             pass
-            #raise ValueError("No se ha detectado categoría")
+
+
 
 if __name__ == '__main__':
     # Tener cuidado con la memoria
