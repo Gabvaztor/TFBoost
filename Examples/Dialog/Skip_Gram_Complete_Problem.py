@@ -574,15 +574,15 @@ def execution(repetitions, train, force_save):
                                       question_dict=question_dict, repetitions=repetitions, train=train,
                                       force_save=force_save)
             word2vec = load_guidelines_chatbot(category=scheme, question_id=question_id)
-            word2vec.save(path="..\\Dialog\\Corpus\\", to_txt=True)
+            #word2vec.save(path="..\\Dialog\\Corpus\\", to_txt=True)
             #word2vec.test_category(questions_dict=question_dict)
             #word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
             # Para testear
             pt("scheme", name_scheme)
             pt("{0:no_se, 1:nunca, 2:algunas_veces, 3:bastantes_veces, 4: siempre} -->0", question_id)
-            #word2vec.test_phrases()
+            word2vec.test_phrases()
         # FUMAR
-        elif name_scheme == "Smoke2":
+        elif name_scheme == "Smoke":
             # Dos tipos de respuestas:
             # {0:no_se, 1:no, 2:si}
             # {0:no_se, 1:<10, 2:10-15, 3:>15}
@@ -599,14 +599,15 @@ def execution(repetitions, train, force_save):
                                           question_dict=question_dict, repetitions=repetitions, train=train,
                                           force_save=force_save)
                 word2vec = load_guidelines_chatbot(category=scheme, question_id=question_id)
+                #word2vec.save(path="..\\Dialog\\Corpus\\", to_txt=True)
                 #word2vec.test_category(questions_dict=question_dict)
                 #word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
                 # Para testear
                 pt("scheme", name_scheme)
                 pt("no o si --> 0, {0:no_se, 1:<10, 2:10-15, 3:>15} -->1", question_id)
-                #word2vec.test_phrases()
+                word2vec.test_phrases()
         # DIETA
-        elif name_scheme == "Diet2":
+        elif name_scheme == "Diet":
             # Un tipo de respuesta:
             # {0: no_se, 1:<1, 2:1-2, 3:3-5, 4:>5}
             question_id = scheme.id_pregunta_1
@@ -616,13 +617,14 @@ def execution(repetitions, train, force_save):
                                       question_dict=question_dict, repetitions=repetitions, train=train,
                                       force_save=force_save)
             word2vec = load_guidelines_chatbot(category=scheme, question_id=question_id)
+            #word2vec.save(path="..\\Dialog\\Corpus\\", to_txt=True)
             #word2vec.test_category(questions_dict=question_dict)
             #word2vec.test_phrases(input_sentence=False, sentences_list=["1"])
             # Para testear
             pt("scheme", name_scheme)
-            #word2vec.test_phrases()
+            word2vec.test_phrases()
         # ACTIVIDAD
-        elif name_scheme == "Activity2":
+        elif name_scheme == "Activity":
             # Dos tipos de respuestas:
             # {0:no_se, 1:no, 2:si}
             # {0:no_se, 1:0-1, 2:2-3, 3:4-6 4:>6}
@@ -639,12 +641,13 @@ def execution(repetitions, train, force_save):
                                           question_dict=question_dict, repetitions=repetitions, train=train,
                                           force_save=force_save)
                 word2vec = load_guidelines_chatbot(category=scheme, question_id=question_id)
+                #word2vec.save(path="..\\Dialog\\Corpus\\", to_txt=True)
                 #word2vec.test_category(questions_dict=question_dict)
                 #word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
                 # Para testear
                 pt("scheme", name_scheme)
                 pt("no o si --> 0, {0:no_se, 1:0-1, 2:2-3, 3:4-6 4:>6} -->1", question_id)
-                #word2vec.test_phrases()
+                word2vec.test_phrases()
 
         # SUEÑO
         elif name_scheme == "Sleep":
@@ -664,13 +667,14 @@ def execution(repetitions, train, force_save):
                                           question_dict=question_dict, repetitions=repetitions, train=train,
                                           force_save=force_save)
                 word2vec = load_guidelines_chatbot(category=scheme, question_id=question_id)
+                #word2vec.save(path="..\\Dialog\\Corpus\\", to_txt=True)
                 #word2vec.test_category(questions_dict=question_dict)
                 #word2vec.test_phrases(input_sentence=False, sentences_list=["si"])
                 # Para testear
                 pt("scheme", name_scheme)
                 pt("{0:no_se, 1:<5, 2:5-8, 3:>8} --> 0,"
                    " {0:no_se, 1:nunca, 2:algunas_veces, 3:bastantes_veces, 4: siempre} -->1", question_id)
-                #word2vec.test_phrases()
+                word2vec.test_phrases()
         else:
             pass
 
