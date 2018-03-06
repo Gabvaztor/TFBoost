@@ -1,4 +1,4 @@
-Para ejecutar el archivo se debe abrir la consola de comandos, ir al path donde se encuentra el archivo python y ejectuarlo
+﻿Para ejecutar el archivo se debe abrir la consola de comandos, ir al path donde se encuentra el archivo python y ejectuarlo
 con diferentes opciones: 
 
 El parámetro -i se utiliza para recoger el fullpath del log de aquiles.
@@ -57,7 +57,7 @@ PARA PREDICCIÓN DIRECTORIO:
 
 Para predecir 1: Directorio-->log_aquiles:
 
-"C:\Users\Gabriel\Desktop\02. Aquiles\dist Aquiles 20171113\20180219\logfiles20180219_arreglado_directorio.csv"
+"C:\Users\Gabriel\Desktop\02. Aquiles\dist Aquiles 20171113\20180219_directorio\logfiles20180219_arreglado_directorio.csv"
 
 log_enriquecido:
 
@@ -65,7 +65,7 @@ log_enriquecido:
 
 Para predecir 1: Directorio-->path_images_test:
 
-"C:\Users\Gabriel\Desktop\02. Aquiles\dist Aquiles 20171113\20180219\PRIMARY\"
+"C:\Users\Gabriel\Desktop\02. Aquiles\dist Aquiles 20171113\20180219_directorio\PRIMARY\"
 
 ---------------------------------------------------------------------------------
 
