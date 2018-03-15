@@ -70,6 +70,8 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # Para calcular el tiempo
 import time as time
+#Para trabajar con json
+import json
 
 # El argumento -c debe ser el último elemento ya que se recoge un path, no un fullpath.
 ap = argparse.ArgumentParser()
@@ -645,7 +647,7 @@ def train_set_to_test():
     pt("labels",labels)
     pt("test_set_input",test_set_input)
     return input_batch, label_batch, test_set_input
-import json
+
 
 class Predicction():
     """
@@ -659,6 +661,7 @@ class Predicction():
         self.click_type = str(click_type)
         self.coordinate_x = str(coordinate_x)
         self.coordinate_y = str(coordinate_y)
+
     def save_json(self, filepath):
         dict_copy = self.__dict__.copy()
         json_string = json.dumps(self, default=lambda o: dict_copy, sort_keys=True, indent=4)
@@ -804,6 +807,14 @@ def get_image_sign_processed(path_image):
     # Procesamos la firma para que se obtenga de la misma forma que en el log enriquecido
     return sign_image_processed
 
+def hamdist(str1, str2):
+    """Count the # of differences between equal length strings str1 and str2"""
+    diffs = 0
+    for ch1, ch2 in zip(str1, str2):
+        if ch1 != ch2:
+            diffs += 1
+    return diffs
+
 def get_group_comparing_hamming_distance(image_sign, enriched_file_path):
     """
 
@@ -812,13 +823,7 @@ def get_group_comparing_hamming_distance(image_sign, enriched_file_path):
     """
     actual_group = None
     actual_hamming_distance = 900000000000
-    def hamdist(str1, str2):
-        """Count the # of differences between equal length strings str1 and str2"""
-        diffs = 0
-        for ch1, ch2 in zip(str1, str2):
-            if ch1 != ch2:
-                diffs += 1
-        return diffs
+
     try:
         enriched_log = openpyxl.load_workbook(filename=enriched_file_path)
         sheet = enriched_log.get_sheet_by_name("Agrupacion")
@@ -907,7 +912,8 @@ def generate_test_input(log_aquiles_path, enriched_file_path, robot_id):
     return np.asarray(last_action).reshape(1,4)
 
 if __name__ == '__main__':
-    restore_model = load_previous_model  # Para saltarse el entrenamiento y cargar el modelo (se debe tener el modelo guardado)
+    restore_model = load_previous_model  # Para saltarse el entrenamiento y cargar el modelo
+    # (se debe tener el modelo guardado)
     pt("")
     pt("Comienzo del módulo 4")
 
