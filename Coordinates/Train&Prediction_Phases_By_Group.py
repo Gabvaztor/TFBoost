@@ -105,9 +105,9 @@ else:
 start_event_learning_capture = "{ctrl}k{ctrl}k"
 end_event_learning_capture = "{ctrl}k{ctrl}k"
 # Path donde se guarda el modelo de la red neuronal
-path_save_restore_model = "../RAIL/Model_Saved/model.ckpt"
+path_save_restore_model = "../Coordinates/Model_Saved/model.ckpt"
 # Path donde se guarda el json de la predicción
-path_save_json = "../RAIL/Model_Saved/prediction"
+path_save_json = "../Coordinates/Model_Saved/prediction"
 # SE RECOGEN POR INPUT
 # Path de Aquiles
 if aquiles_file == None:
