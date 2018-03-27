@@ -16,13 +16,18 @@ Seguir estructura del código
      de aquiles). En ese caso, para esa imagen hay que buscarle al grupo que pertenece (esto se hace asociando los ids
      (nombre de la imagen) de los archivos image_match (que es el log enriquecido) y del log de aquiles).
      Se debe retornar algo así por cada acción:
-     [Posición 0 --> 0 si "Tipo Evento" es Cursor y 1 si es Keystrokes,
+     [Posición 0 --> -1000 si "Tipo Evento" es Cursor y 1000 si es Keystrokes,
      Posición 1 --> (A partir de "Contenido") 0 si es click izquierdo ,1 si es click derecho o "la cadena string" si
      es Keystrokes,
      Posición 2 --> Primera coordenada,
      Posición 3 --> Segunda coordenada,
-     Posición 4 --> Grupo de la imagen de la fila del contenido en la que está. Si esa fila no tiene imagen asociada,
+     Posición 4 --> Grupo de la imagen de la fila del contenido en la que está por 1000. Si esa fila no tiene imagen asociada,
      se utilizará el grupo de la imagen anterior]
+          (((NOTA IMPORTANTE)))
+     '''Se debe tener en cuenta que los datos de entradas y salidas de la red neuronal están normalizados ya que el
+     algoritmo que se utiliza para el entrenamiento calcula, en esta versión, el error cuadrático medio con los valores
+     de la predicción. Así, la posición del click izquierdo tiene un valor de -1000 para que el algoritmo de aprendizaje
+     calcule de una forma más óptima el error que se está cometiendo. TENER ESTO EN CUENTA EN FUTURAS VERSIONES.'''
 -7º. Se transforman todas las acciones(por acción) en un formato adecuado. El formato para
      las acciones debe quedar:
      [tipo_de_click, coordenada x, coordenada y, grupo]
@@ -817,7 +822,6 @@ def hamdist(str1, str2):
 
 def get_group_comparing_hamming_distance(image_sign, enriched_file_path):
     """
-
     A partir de la firma de una imagen, compara la firma con todas las firmas existentes en el log enriquecido y
     obtiene el grupo de la que haya obtenido la distancia hamming menor.
     """
@@ -839,9 +843,7 @@ def get_group_comparing_hamming_distance(image_sign, enriched_file_path):
     return actual_group
 def get_group_from_image_id_and_hamming_distance(image_id, enriched_file_path, robot_id):
     """
-
     Obtiene el grupo de la imagen a partir de la "image_id", el "robot_id" y el log enriquecido
-
     """
     # Path de la imagen para obtener la firma
     # TODO Para futura versión
