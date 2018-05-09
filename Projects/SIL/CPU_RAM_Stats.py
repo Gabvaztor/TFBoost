@@ -62,10 +62,16 @@ def mem_usage():
     print('Used Memory = ' + used_m + ' MB')
     print('Free Memory = ' + free_m + ' MB')
 
+total_time = time.time()
+
 start_time = time.time()
 #cpu_usage()
 #mem_usage()
 print('Total Time1', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
+
+start_time = time.time()
+print(psutil.cpu_percent())
+print('Total Time normal CPU', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
 
 start_time = time.time()
 print(psutil.cpu_percent(interval=1))
@@ -83,3 +89,16 @@ print(psutil.cpu_times())
 print(psutil.cpu_times_percent())
 print(psutil.virtual_memory())
 print('Total Time4', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
+
+print('Total FINAL Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - total_time)))))
+
+from subprocess import PIPE, Popen
+# import RPi.GPIO as GPIO Not necessary for now
+def get_cpu_temperature():
+    """get cpu temperature using vcgencmd"""
+    process = Popen(['vcgencmd', 'measure_temp'], stdout=PIPE)
+    output, _error = process.communicate()
+    return float(output[output.index('=') + 1:output.rindex("'")])
+print("Temperature is:")
+print(str(get_cpu_temperature()))
+
