@@ -103,7 +103,7 @@ class TFModels():
         self._input_batch = None
         self._label_batch = None
         # CONFIGURATION VARIABLES
-        self._restore_model = True # Labels and logits info.
+        self._restore_model = False # Labels and logits info.
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
         # 'should_save'
@@ -111,7 +111,7 @@ class TFModels():
         # the information.json has been saved.
         self._ask_to_continue_creating_model_without_exist = False  # If True and 'restore_model' is True,
         # ask to continues save model at first if there isn't a model to restore
-        self._show_advanced_info = True  # Labels and logits info.
+        self._show_advanced_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
         self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path.
         self._shuffle_data = False  # If True, then the train and validation data will be shuffled separately.
@@ -120,10 +120,10 @@ class TFModels():
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
         # the framework will save a graph
         # TRAIN MODEL VARIABLES
-        self._input_rows_numbers = None
-        self._input_columns_numbers = None
-        self._kernel_size = [3, 3]  # Kernel patch size
-        self._epoch_numbers = 999  # Epochs number
+        self._input_rows_numbers = 30  # For example, in german problem, number of row pixels
+        self._input_columns_numbers = 30  # For example, in german problem, number of column pixels
+        self._kernel_size = [5, 5]  # Kernel patch size
+        self._epoch_numbers = 100  # Epochs number
         self._batch_size = 256  # Batch size
         if self.input is not None:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
@@ -135,14 +135,14 @@ class TFModels():
             self._validation_size = validation.shape[0] # Change if necessary
         else:
             self._validation_size = None
-        if self.test:
+        if self.test is not None:
             self._test_size = len(test) # Change if necessary
         else:
             self._test_size = None
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
         self._first_label_neurons = 64
-        self._second_label_neurons = None
-        self._third_label_neurons = None
+        self._second_label_neurons = 32
+        self._third_label_neurons = 16
         self._learning_rate = 1e-3  # Learning rate
         self._number_epoch_to_change_learning_rate = 15  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
@@ -160,7 +160,7 @@ class TFModels():
         #               - First position: "string_option" --> unique string to represent problem in question
         #               - Others positions: all variables you need to process each input and label elements
         # noinspection PyUnresolvedReferences
-        self._options = [option_problem]
+        self._options = option_problem
         # RESTART TRAINING
         self._save_and_restart = False  # All history and metadata will be saved in a different folder and the execution
         # will be restarted
@@ -597,6 +597,7 @@ class TFModels():
         self_dictionary = self.properties(attributes_to_delete)
         json_string =  json.dumps(self, default=lambda o: self_dictionary, sort_keys=True, indent=4)
         return json_string
+
     @timed
     def rnn_lstm_web_traffic_time(self, *args, **kwargs):
         """
@@ -744,7 +745,6 @@ class TFModels():
         self.generate_predictions_web_traffic_time_problem(dictionary_train=complete_dictionary,
                                                            dictionary_test=complete_dictionary_test)
 
-
     def RNN(self, input, keep_probably, weights, biases):
 
         # Prepare data shape to match `rnn` function requirements
@@ -868,7 +868,13 @@ class TFModels():
                 if last_train_accuracy and last_validation_accuracy:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
                     if self.validation_accuracy and last_validation_accuracy:
-                        if self.validation_accuracy < last_validation_accuracy:  # Save checking validation
+                        if self.validation_accuracy >= last_validation_accuracy:  # Save checking validation
+                            #  accuracies in this moment
+                            should_save = True
+                elif last_train_accuracy and last_test_accuracy:
+                    # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
+                    if self.test_accuracy and last_test_accuracy:
+                        if self.test_accuracy >= last_test_accuracy:  # Save checking test
                             #  accuracies in this moment
                             should_save = True
                 else:
@@ -1211,9 +1217,10 @@ class TFModels():
                 feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
                                            keep_probably: self.train_dropout}
                 # Setting values
+
+                train_step.run(feed_dict_train_dropout)
                 # TODO(@gabvaztor) Add validation_accuracy to training
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
-                train_step.run(feed_dict_train_dropout)
                 self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
                 cross_entropy_train = cross_entropy.eval(feed_dict_train_100)
                 cross_entropy_test = cross_entropy.eval(feed_dict_test_100)
@@ -1223,14 +1230,23 @@ class TFModels():
                 accuracies_test.append(self.test_accuracy)
                 loss_train.append(cross_entropy_train)
                 loss_test.append(cross_entropy_test)
-                with tf.device('/cpu:1'):
+                with tf.device('/cpu:0'):
+                    numpy_arrays = [accuracies_train, accuracies_test, loss_train, loss_test]
+                    numpy_names = ["accuracies_train", "accuracies_test", "loss_train", "loss_test"]
+                    save_numpy_arrays_generic(folder_to_save=self.settings_object.accuracies_losses_path,
+                                              numpy_files=numpy_arrays,
+                                              names=numpy_names)
+                    '''
                     save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
                                                         train_accuracies=accuracies_train,
                                                         validation_accuracies=accuracies_test,
                                                         train_losses=loss_train,
                                                         validation_losses=loss_test)
+                    '''
 
-                if num_train % 10 == 0:
+
+                if num_train % 2 == 0:
+                    y_pre = y_prediction.eval(feed_dict_train_100)
                     percent_advance = str(num_train * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
@@ -1239,6 +1255,8 @@ class TFModels():
                     pt('cross_entropy_train', cross_entropy_train)
                     pt('test_accuracy', self.test_accuracy)
                     pt('self.index_buffer_data', self.index_buffer_data)
+                    # DEBUG MODE
+                    pt("y_pre", y_pre)
 
                 # Update indexes
                 # Update num_epochs_counts
@@ -1275,6 +1293,7 @@ class TFModels():
         self.make_predictions()
 
     def make_predictions(self):
+        # TODO (@gabvaztor) Finish method
         pass
 
     def create_input_and_label_data(self):

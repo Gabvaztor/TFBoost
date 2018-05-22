@@ -95,8 +95,8 @@ class Reader(object):
     number_classes = None  # Represent number of columns in csv without labels
     reader_features = None  # ReaderFeatures Object
 
-    def __init__(self, reader_features=None, paths_to_read=None, number_of_classes=None, delimiter=";",
-                 type_problem=None, labels_set=None, is_unique_file=None, known_data_type=None,
+    def __init__(self, type_problem, reader_features=None, paths_to_read=None, number_of_classes=None, delimiter=";",
+                 labels_set=None, is_unique_file=None, known_data_type=None,
                  percentages_sets=None):
         """
         :param reader_features: 
@@ -121,6 +121,8 @@ class Reader(object):
         if reader_features:
             if self.reader_features.is_unique_csv:
                 self.unique_data_file(type_problem)
+            else:
+                self.multiple_data_files(type_problem)
         elif self.is_unique_file:
             self.unique_data_file(type_problem)
         else:

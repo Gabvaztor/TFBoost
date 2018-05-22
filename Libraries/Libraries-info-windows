@@ -38,7 +38,7 @@ To install: pip install tflearn
 ########################################################################################
 '''
  Sklearn(scikit-learn): Simple and efficient tools for data mining and data analysis
- To install: pip install -U scikit-learn
+ To install: pip3 install -U scikit-learn
 '''
 from sklearn.model_selection import train_test_split
 ########################################################################################

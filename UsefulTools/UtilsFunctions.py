@@ -271,6 +271,7 @@ def load_numpy_arrays_generic(path_to_load, names):
         else:
             raise Exception("File does not exist")
     return files_to_return
+
 def load_accuracies_and_losses(path_to_load, flag_restore_model=False):
     """
     

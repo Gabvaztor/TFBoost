@@ -72,7 +72,7 @@ import numpy as np
 # You need to install the 64bit version of Scipy, at least on Windows.
 # It is mandatory to install 'Numpy+MKL' before scipy.
 # http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
-# We can find scipy in the url: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy'''
+# We can find scipi in the url: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy'''
 import scipy.io as sio
 
 ''' Matlab URL: http://matplotlib.org/users/installing.html
@@ -81,7 +81,7 @@ import matplotlib.pyplot as plt
 
 ''' TFLearn library. License MIT.
 Git Clone : https://github.com/tflearn/tflearn.git
-    To install: pip install tflearn'''
+    To install: pip3 install tflearn'''
 import tflearn
 '''
  Sklearn(scikit-learn): Simple and efficient tools for data mining and data analysis
@@ -116,58 +116,68 @@ import pandas as pd
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 
-
-# Setting object
-setting_object_web_traffic = SettingsObject.Settings(Dictionary.string_settings_web_traffic)
-# Option problem
-option_problem_web_traffic = Dictionary.string_option_web_traffic_problem
-# Number of classes
-number_of_classes_web_traffic = 1
-# Path Train: Must be a list
-path_train_validation_test_sets_web_traffic  = [setting_object_web_traffic.train_path,
-                                                setting_object_web_traffic.test_path,
-                                                setting_object_web_traffic.model_path,
-                                                setting_object_web_traffic.submission_path]
-# Labels_set
-labels_set_web_traffic = None
-# Sets_Percentages
-percentages_sets_web_traffic = [0.7,0.2,0.1]
-# Is unique
-is_an_unique_csv_web_traffic = False  # If this variable is true, then only one CSV file will be passed and it will be treated like
+"""
+Creating Reader Features
+"""
+setting_object = SettingsObject.Settings(Dictionary.string_settings_german_signal_path)
+option_problem = Dictionary.string_option_signals_images_problem
+options = [option_problem, 0, 30, 30]
+path_train_and_test_images = [setting_object.train_path,setting_object.test_path]
+number_of_classes = 59 # Start in 0
+percentages_sets = None  # Example
+labels_set = [Dictionary.string_labels_type_option_hierarchy]
+is_an_unique_csv = False  # If this variable is true, then only one CSV file will be passed and it will be treated like
 # trainSet, validationSet(if necessary) and testSet
-known_data_type_web_traffic = None  # Contains the type of data if the data file contains an unique type of data. Examples: # Number
+known_data_type = ''  # Contains the type of data if the data file contains an unique type of data. Examples: # Number
+# or Chars.
+"""
+Creating Reader Features
+"""
+reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images, number_of_classes = number_of_classes,
+                                      labels_set = labels_set,
+                                      is_unique_csv = is_an_unique_csv, known_data_type = known_data_type,
+                                      percentages_sets = percentages_sets)
 
-tf_reader_web_traffic = tfr.Reader(delimiter=Dictionary.string_char_comma,
-                                   paths_to_read=path_train_validation_test_sets_web_traffic,
-                                   number_of_classes=number_of_classes_web_traffic,
-                                   labels_set=labels_set_web_traffic,
-                                   is_unique_file=is_an_unique_csv_web_traffic,
-                                   known_data_type=known_data_type_web_traffic,
-                                   percentages_sets=percentages_sets_web_traffic,
-                                   type_problem=option_problem_web_traffic)  # Reader Object with all information
+"""
+Creating Reader from ReaderFeatures
+"""
 
-validation_set_web_traffic = tf_reader_web_traffic.validation_set  # Test Set
-train_set_web_traffic  = tf_reader_web_traffic.train_set  # Train Set
+tf_reader = tfr.Reader(type_problem=option_problem, reader_features=reader_features)  # Reader Object with all information
 
-del tf_reader_web_traffic
+"""
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# ---- DATA MINING ----
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+"""
 
-names_of_data = ["input_data", "validation_data", "inputs_labels", "validation_labels"]
-names_of_data_updated = ["input_data_updated", "validation_data_updated", "inputs_labels", "validation_labels"]
-names_dictionaries = ["input_validation_dictionary"]
-# Load input, validation and labels from updated arrays where inputs are [number, float] where number is
-# the page id and float is the visits' number
+"""
+Manipulate Reader with DataMining and update it.
+"""
 
-input_data, validation, input_labels, validation_labels = \
-    load_numpy_arrays_generic(path_to_load=setting_object_web_traffic.accuracies_losses_path,
-                              names=names_of_data_updated)
-models_zillow_price = models.TFModels(input_data=input_data,
-                                      input_labels=input_labels,
-                                      validation=validation,
-                                      validation_labels=validation_labels,
-                                      number_of_classes=number_of_classes_web_traffic,
-                                      setting_object=setting_object_web_traffic,
-                                      option_problem=option_problem_web_traffic,
-                                      load_model_configuration=False)
-#with tf.device('/gpu:0'):
-models_zillow_price.rnn_lstm_web_traffic_time()
+"""
+Getting train, validation (if necessary) and test set.
+"""
+train_set = tf_reader.train_set  # Train Set
+test_set = tf_reader.test_set  # Test Set
+
+del reader_features
+del tf_reader
+
+pt(train_set[0].shape)
+pt(train_set[1].shape)
+pt(test_set[0].shape)
+pt(test_set[1].shape)
+
+models = models.TFModels(setting_object=setting_object, option_problem=options,
+                         input_data=train_set[0],test=test_set[0],
+                         input_labels=train_set[1],test_labels=test_set[1],
+                         number_of_classes=number_of_classes, type=None,
+                         validation=None, validation_labels=None,
+                         load_model_configuration=False)
+
+models.convolution_model_image()
+
+
 

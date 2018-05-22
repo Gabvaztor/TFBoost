@@ -1,11 +1,12 @@
 {
-  "TRAIN_DATA_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\DITS-classification\\classification_train\\",
-  "MODEL_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Models\\model",
-  "TEST_DATA_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\DITS-classification\\classification_test\\",
-  "SUBMISSION_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Predictions\\",
-  "CONFIGURATION_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Models\\configuration_model.json",
-  "INFORMATION_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Models\\information_model.json",
-  "ACCURACIES_LOSSES_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Models\\History_Information\\Accuracies_Losses\\",
-  "HISTORY_INFORMATION_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Models\\History_Information\\Information\\",
-  "HISTORY_CONFIGURATION_PATH": "D:\\Machine_Learning\\Competitions\\German_Signal\\Models\\History_Information\\Configuration\\"
+  "TRAIN_DATA_PATH": "E:\\Data_Science\\Data\\German_Signal\\DITS-classification\\classification_train\\",
+  "MODEL_PATH": "E:\\Data_Science\\Data\\German_Signal\\Models\\model",
+  "TEST_DATA_PATH": "E:\\Data_Science\\Data\\German_Signal\\DITS-classification\\classification_test\\",
+  "SUBMISSION_PATH": "E:\\Data_Science\\Data\\German_Signal\\Predictions\\",
+  "CONFIGURATION_PATH": "E:\\Data_Science\\Data\\German_Signal\\Models\\configuration_model.json",
+  "INFORMATION_PATH": "E:\\Data_Science\\Data\\German_Signal\\Models\\information_model.json",
+  "ACCURACIES_LOSSES_PATH": "E:\\Data_Science\\Data\\German_Signal\\Models\\History_Information\\Accuracies_Losses\\",
+  "HISTORY_INFORMATION_PATH": "E:\\Data_Science\\Data\\German_Signal\\Models\\History_Information\\Information\\",
+  "HISTORY_CONFIGURATION_PATH": "E:\\Data_Science\\Data\\German_Signal\\Models\\History_Information\\Configuration\\"
 }
+
