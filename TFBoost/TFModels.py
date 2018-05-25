@@ -984,7 +984,6 @@ class TFModels():
             folder = get_directory_from_filepath(folder_to_save)
             complete_name = folder + "\\graph_accuracy" + Dictionary.string_extension_png
             if self.save_graphs_images or is_new_epoch_flag:
-                plt.show()
                 plt.savefig(complete_name)
         if (accuracies_train or accuracies_validation or accuracies_test) and show_graphs:
             accuracy_plot.show()
