@@ -43,7 +43,9 @@ def initialize_session():
     Initialize interactive session and all local and global variables
     :return: Session
     """
-    sess = tf.InteractiveSession()
+    config = tf.ConfigProto(allow_soft_placement=True,
+                            log_device_placement=True)
+    sess = tf.InteractiveSession(config=config)
     sess.run(tf.local_variables_initializer())
     sess.run(tf.global_variables_initializer())
     return sess
