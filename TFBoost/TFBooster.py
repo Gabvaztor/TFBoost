@@ -177,8 +177,8 @@ models = models.TFModels(setting_object=setting_object, option_problem=options,
                          number_of_classes=number_of_classes, type=None,
                          validation=None, validation_labels=None,
                          load_model_configuration=False)
-
-models.convolution_model_image()
+with tf.device('/gpu:0'):
+    models.convolution_model_image()
 
 
 
