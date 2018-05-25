@@ -25,7 +25,7 @@ def weight_variable(shape):
 
 
 def bias_variable(shape):
-    initial = tf.constant(0.01, shape=shape)
+    initial = tf.truncated_normal(shape=shape, stddev=0.01)
     return tf.Variable(initial)
 
 

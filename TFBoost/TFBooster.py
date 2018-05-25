@@ -119,9 +119,10 @@ import pandas as pd
 """
 Creating Reader Features
 """
+import cv2
 setting_object = SettingsObject.Settings(Dictionary.string_settings_german_signal_path)
 option_problem = Dictionary.string_option_signals_images_problem
-options = [option_problem, 0, 30, 30]
+options = [option_problem, cv2.IMREAD_GRAYSCALE, 60, 60]
 path_train_and_test_images = [setting_object.train_path,setting_object.test_path]
 number_of_classes = 59 # Start in 0
 percentages_sets = None  # Example

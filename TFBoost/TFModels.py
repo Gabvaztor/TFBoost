@@ -120,9 +120,9 @@ class TFModels():
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
         # the framework will save a graph
         # TRAIN MODEL VARIABLES
-        self._input_rows_numbers = 30  # For example, in german problem, number of row pixels
-        self._input_columns_numbers = 30  # For example, in german problem, number of column pixels
-        self._kernel_size = [5, 5]  # Kernel patch size
+        self._input_rows_numbers = 60 # For example, in german problem, number of row pixels
+        self._input_columns_numbers = 60  # For example, in german problem, number of column pixels
+        self._kernel_size = [6, 6]  # Kernel patch size
         self._epoch_numbers = 100  # Epochs number
         self._batch_size = 256  # Batch size
         if self.input is not None:  # Change if necessary
@@ -140,9 +140,9 @@ class TFModels():
         else:
             self._test_size = None
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
-        self._first_label_neurons = 64
-        self._second_label_neurons = 32
-        self._third_label_neurons = 16
+        self._first_label_neurons = 32
+        self._second_label_neurons = 64
+        self._third_label_neurons = 512
         self._learning_rate = 1e-3  # Learning rate
         self._number_epoch_to_change_learning_rate = 15  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
@@ -599,172 +599,6 @@ class TFModels():
         return json_string
 
     @timed
-    def rnn_lstm_web_traffic_time(self, *args, **kwargs):
-        """
-        LSTM solve to WEB_TRAFFIC_TIME problem
-        """
-        self.update_batch(is_test=False)
-        # TODO After that, create lstm network and feed with batches.
-
-        # Network Parameters
-        n_input = 28  # MNIST data input (img shape: 28*28)
-        n_steps = 28  # timesteps
-        n_hidden = 128  # hidden layer num of features
-        n_classes = 1
-
-        # TENSORFLOW --------------------------------------
-        tf.reset_default_graph()
-        # TODO (@gabvaztor) Continue creating x placeholder to "be a sequence"
-        # tf Graph input
-        x = tf.placeholder(tf.float32, shape=[None, 2])
-        # x = tf.decode_raw(x, tf.float32)
-        y_labels = tf.placeholder(tf.float32, [None, 1])
-        keep_probably = tf.placeholder(tf.float32)
-
-        # Define weights
-        #weights = tf.Variable(tf.random_normal([100, 1]))
-        weights = tf.Variable(tf.truncated_normal([2, 1], stddev=0.01))
-        biases =  tf.Variable(tf.constant(0.01, shape=[1]))
-        y_prediction = tf.matmul(x, weights) + biases
-
-        # Define loss and optimizer
-        error = tf.reduce_mean(tf.contrib.keras.losses.mean_absolute_error(y_labels, y_prediction))
-        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(error)
-
-        # Evaluate model
-        #correct_prediction = smape(y_true=y_labels, y_prediction=y_prediction)
-        #accuracy = tf.reduce_mean(smape(y_true=y_labels, y_prediction=y_prediction))
-        #accuracy = tf.reduce_mean(tf.contrib.keras.losses.mean_absolute_percentage_error(y_labels, y_prediction))
-        accuracy = tf.reduce_mean(mean_difference_percentages(y_labels, y_prediction))
-
-        # Initializing the variables and session
-        sess = initialize_session()
-        # Saver session
-        saver = tf.train.Saver()  # Saver
-        # To restore model
-        if self.restore_model:
-            self.load_and_restore_model(sess)
-
-        # TRAIN ----------------------------------------------
-
-        pt("input.shape", self.input.shape)
-        pt("input_labels.shape", self.input_labels.shape)
-        pt("validation.shape", self.validation.shape)
-        pt("validation_labels.shape", self.validation_labels.shape)
-        x_validation_feed, y_validation_feed = self.validation, self.validation_labels
-
-        # TRAIN VARIABLES
-        start_time = time.time()  # Start time
-
-        # TO STATISTICS
-        # To load accuracies and losses
-
-        accuracies_train, accuracies_validation, loss_train, loss_validation = load_accuracies_and_losses(
-            self.settings_object.accuracies_losses_path, self.restore_model)
-
-        # Folders and file where information and configuration files will be saved.
-        filepath_save = None
-        # Reformat dimensions
-        # x = tf.squeeze(x, [1])
-        # Update test feeds ( will be not modified during training)
-        feed_dict_validation_100 = {x: x_validation_feed, y_labels: y_validation_feed, keep_probably: 1.}
-        # Update real num_train:
-        num_train_start = int(self.num_trains_count % self.trains)
-        if num_train_start == self.trains:
-            num_train_start = 0
-        is_new_epoch_flag = False  # Represent if training come into a new epoch. With this, a graph will be saved each
-        # new epoch
-        # START  TRAINING
-        for epoch in range(self.num_epochs_count, self.epoch_numbers):  # Start with load value or 0
-            for num_train in range(num_train_start, self.trains):  # Start with load value or 0
-                # Update feeds
-
-                feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
-                feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
-                                           keep_probably: self.train_dropout}
-                # Setting values
-                self.train_accuracy = float(str(accuracy.eval(feed_dict_train_100)))
-                optimizer.run(feed_dict_train_dropout)
-                self.validation_accuracy = float(str(accuracy.eval(feed_dict_validation_100)))
-                error_train = error.eval(feed_dict_train_100)
-                error_validation = error.eval(feed_dict_validation_100)
-
-                # To generate statistics
-                accuracies_train.append(self.train_accuracy)
-                accuracies_validation.append(self.test_accuracy)
-                loss_train.append(error_train)
-                loss_validation.append(error_validation)
-
-                save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
-                                                    numpy_file_1=accuracies_train,
-                                                    numpy_file_2=accuracies_validation,
-                                                    numpy_file_3=loss_train,
-                                                    numpy_file_4=loss_validation)
-
-                if num_train % self.print_information == 0:
-                    percent_advance = str(num_train * 100 / self.trains)
-                    pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
-                    pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
-                       str(epoch) + ": " + percent_advance + '%')
-                    pt('train_error_percent', self.train_accuracy)
-                    pt('error_train', error_train)
-                    pt('validation_error_percent', self.validation_accuracy)
-                    pt('self.index_buffer_data', self.index_buffer_data)
-
-                # Update indexes
-                # Update num_epochs_counts
-                if num_train + 1 == self.trains:  # +1 because start in 0
-                    self.num_epochs_count += 1
-                    is_new_epoch_flag = True
-                # To decrement learning rate during training
-                if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
-                        and self.num_epochs_count != 1 and self.index_buffer_data == 0:
-                    self.learning_rate = float(self.learning_rate / 10.)
-                if self.should_save():
-                    filepath_save = self.save(saver=saver, session=sess)
-                if self.show_advanced_info and num_train % self.print_information == 0:
-                    self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
-                                                   feed_dict=feed_dict_train_100)
-
-                if (self.save_graphs_images and filepath_save) or (is_new_epoch_flag and filepath_save):
-                    self.show_save_statistics(accuracies_train=accuracies_train,
-                                              accuracies_test=accuracies_validation,
-                                              loss_train=loss_train, loss_test=loss_validation,
-                                              folder_to_save=filepath_save, show_graphs=False,
-                                              is_new_epoch_flag=is_new_epoch_flag)
-                    is_new_epoch_flag = False
-
-                # Update num_trains_count and num_epoch_count
-                self.num_trains_count += 1
-                # Update batches values
-                self.update_batch()
-                if self.save_model_configuration:
-                    # Save configuration to that results
-                    self._save_json_configuration(Constant.attributes_to_delete_configuration)
-
-        self.generate_predictions_web_traffic_time_problem(dictionary_train=complete_dictionary,
-                                                           dictionary_test=complete_dictionary_test)
-
-    def RNN(self, input, keep_probably, weights, biases):
-
-        # Prepare data shape to match `rnn` function requirements
-        # Current data input shape: (batch_size, n_steps, n_input)
-        # Required shape: 'n_steps' tensors list of shape (batch_size, n_input)
-
-        # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
-        #x = tf.unstack(input, n_steps, 1)
-
-        # Define a lstm cell with tensorflow
-        lstm_cell = rnn.BasicLSTMCell(self.first_label_neurons, forget_bias=1.0)
-        input = tf.unstack(input, 1, 1)
-        # Get lstm cell output
-        outputs, states = rnn.static_rnn(lstm_cell, input, dtype=tf.string)
-        dropout = tf.nn.dropout(outputs[-1], keep_probably)
-        # Linear activation, using rnn inner loop last output
-        y_prediction = tf.matmul(dropout, weights) + biases
-        return y_prediction
-
-    @timed
     def convolution_model_image(self):
         """
         Generic convolutional model
@@ -994,7 +828,8 @@ class TFModels():
         :return: Inputs, labels and others placeholders
         """
         # Placeholders
-        x = tf.placeholder(tf.float32, shape=[None, self.input_columns_after_reshape])  # All images will be 24*24 = 574
+        #x = tf.placeholder(tf.float32, shape=[None, self.input_columns_after_reshape])  # All images will be 24*24 = 574
+        x = tf.placeholder(tf.float32, shape=[None, self.input_rows_numbers, self.input_columns_numbers])  # All images will be 24*24 = 574
         y_ = tf.placeholder(tf.float32, shape=[None, self.number_of_classes])  # Number of labels
         keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
         return x, y_, keep_probably
@@ -1009,31 +844,43 @@ class TFModels():
         # First Convolutional Layer
         convolution_1 = tf.layers.conv2d(
             inputs=input,
-            filters=self.third_label_neurons,
+            filters=self.first_label_neurons,
             kernel_size=self.kernel_size,
-            padding="same",
-            activation=tf.nn.relu)
+            padding="same")
         # Pool Layer 1 and reshape images by 2
-        pool1 = tf.layers.max_pooling2d(inputs=convolution_1, pool_size=[2, 2], strides=2)
+        pool1 = tf.layers.max_pooling2d(inputs=convolution_1,
+                                        pool_size=[2, 2],
+                                        strides=2)
+        dropout1 = tf.nn.dropout(pool1, keep_dropout)
         # Second Convolutional Layer
         convolution_2 = tf.layers.conv2d(
-            inputs=pool1,
-            filters=self.third_label_neurons,
-            kernel_size=self.kernel_size,
+            inputs=dropout1,
+            filters=self.second_label_neurons,
+            kernel_size=[4,4],
             padding="same",
             activation=tf.nn.relu)
         # # Pool Layer 2 nd reshape images by 2
-        pool2 = tf.layers.max_pooling2d(inputs=convolution_2, pool_size=[2, 2], strides=2)
+        pool2 = tf.layers.max_pooling2d(inputs=convolution_2,
+                                        pool_size=[2, 2],
+                                        strides=2)
+        dropout2 = tf.nn.dropout(pool2, keep_dropout)
+        convolution_3 = tf.layers.conv2d(
+            inputs=dropout2,
+            filters=64,
+            kernel_size=[3, 3],
+            padding="same")
+
+        dropout3 = tf.nn.dropout(convolution_3, keep_dropout)
         # Dense Layer
         # TODO Checks max pools numbers
-        pool2_flat = tf.reshape(pool2, [-1, int(self._input_rows_numbers / 4) * int(self._input_columns_numbers / 4)
-                                        * self.third_label_neurons])
-        dense = tf.layers.dense(inputs=pool2_flat, units=self.third_label_neurons, activation=tf.nn.relu)
-        dropout = tf.nn.dropout(dense, keep_dropout)
+        pool2_flat = tf.reshape(dropout3, [-1, int(self._input_rows_numbers / 4) * int(self._input_columns_numbers / 4)
+                                        * 64])
+        dense = tf.layers.dense(inputs=pool2_flat, units=self.third_label_neurons)
+        #dropout = tf.nn.dropout(dense, keep_dropout)
         # Readout Layer
         w_fc2 = weight_variable([self.third_label_neurons, self.number_of_classes])
         b_fc2 = bias_variable([self.number_of_classes])
-        y_convolution = (tf.matmul(dropout, w_fc2) + b_fc2)
+        y_convolution = (tf.matmul(dense, w_fc2) + b_fc2)
         return y_convolution
 
     def model_evaluation(self, y_labels, y_prediction, *args, **kwargs):
@@ -1045,12 +892,12 @@ class TFModels():
         """
         # Evaluate model
         cross_entropy = tf.reduce_mean(
-            tf.nn.softmax_cross_entropy_with_logits(labels=y_labels,
+            tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_labels,
                                                     logits=y_prediction))
 
-        # train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entropy)  # Adadelta Optimizer
+        #train_step = tf.train.AdadeltaOptimizer(self.learning_rate).minimize(cross_entropy)  # Adadelta Optimizer
         train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cross_entropy)  # Adam Optimizer
-        # train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)  # Adam Optimizer
+        #train_step = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(cross_entropy)  # Adam Optimizer
 
         # Sure is axis = 1
         correct_prediction = tf.equal(tf.argmax(y_prediction, axis=1),
@@ -1246,7 +1093,6 @@ class TFModels():
 
 
                 if num_train % 2 == 0:
-                    y_pre = y_prediction.eval(feed_dict_train_100)
                     percent_advance = str(num_train * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
@@ -1256,7 +1102,8 @@ class TFModels():
                     pt('test_accuracy', self.test_accuracy)
                     pt('self.index_buffer_data', self.index_buffer_data)
                     # DEBUG MODE
-                    pt("y_pre", y_pre)
+                    #y_pre = y_prediction.eval(feed_dict_train_100)
+                    #pt("y_pre", y_pre)
 
                 # Update indexes
                 # Update num_epochs_counts
@@ -1295,68 +1142,6 @@ class TFModels():
     def make_predictions(self):
         # TODO (@gabvaztor) Finish method
         pass
-
-    def create_input_and_label_data(self):
-        """
-        Create input and label data by problem
-        """
-        if self.options[0] == Dictionary.string_option_web_traffic_problem:
-            path_to_read_trains = self.settings_object.train_path
-            # Read csv trains
-            csv = Dictionary.string_csv_extension
-            csv_files_list = []
-            for number_file in range(1, 10):
-                path_to_read = path_to_read_trains + str(number_file) + csv
-                csv_files_list.append(path_to_read)
-            filename_queue = tf.train.string_input_producer(csv_files_list)
-            line_reader = tf.TextLineReader(skip_header_lines=1)
-            _, csv_row = line_reader.read(filename_queue)
-            # Default values, in case of empty columns. Also specifies the type of the
-            # decoded result.
-            record_defaults = [[""], [3.0]]
-            page_date, visits = tf.decode_csv(csv_row, record_defaults=record_defaults)
-            features = tf.stack(page_date)
-            sess = initialize_session()
-            # Start populating the filename queue.
-            coord = tf.train.Coordinator()
-            threads = tf.train.start_queue_runners(coord=coord)
-            self.input, self.validation = np.array([[]]), np.array([[]])
-            self.input_labels, self.validation_labels = np.array([]), np.array([])
-            self.input_size = 145062  # Change if necessary
-            self.trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
-            percent_80_input_size = int(self.input_size * 0.8)
-            pt("Generating input and validation data...")
-            is_first = True
-            is_validation = False
-            is_first_validation = True
-            for i in range(self.input_size):
-                # Retrieve a single instance:
-                input, label = sess.run([features, visits])
-                input_resized = np.asarray([[input.decode("utf-8")]])
-                label_resized = np.asarray([[label]])
-                if is_first and not is_validation:
-                    self.input = input_resized
-                    self.input_labels = label_resized
-                    is_first = False
-                    pt("input_shape", self.input.shape)
-                    pt("input_labels_shape", self.input_labels.shape)
-                    pt("input_resized_shape", input_resized.shape)
-                    pt("label_resized_shape", label_resized.shape)
-
-                if i < percent_80_input_size:
-                    self.input = np.concatenate((self.input, input_resized))
-                    self.input_labels = np.concatenate((self.input_labels, label_resized))
-                else:
-                    is_validation = True
-                    if is_first_validation:
-                        self.validation = input_resized
-                        self.validation_labels = label_resized
-                        is_first_validation = False
-                    else:
-                        self.validation = np.concatenate((self.validation, input_resized))
-                        self.validation_labels = np.concatenate((self.validation_labels, label_resized))
-            coord.request_stop()
-            coord.join(threads)
 """
 STATIC METHODS: Not need "self" :argument
 """
@@ -1425,11 +1210,10 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
                                    left=to_crop_width,
                                    right=to_crop_width,
                                    borderType=cv2.BORDER_CONSTANT)
-    image = image.reshape(-1)
-    # cv2.imshow('image', image)
-    # cv2.waitKey(0)  # Wait until press key to destroy image
+    #image = image.reshape(-1)
+    #cv2.imshow('image', image)
+    #cv2.waitKey(0)  # Wait until press key to destroy image
     return image
-
 
 def process_test_set(test, test_labels, options):
     """
