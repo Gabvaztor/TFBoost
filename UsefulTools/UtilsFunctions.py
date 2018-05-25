@@ -401,19 +401,19 @@ def is_json(my_json):
     return True
 
 """MATPLOTLIB"""
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib import style
 
-style.use('fivethirtyeight')
-fig = plt.figure()
-ax1 = fig.add_subplot(1, 1, 1)
 def animate():
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+    from matplotlib import style
 
+    style.use('fivethirtyeight')
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1, 1, 1)
     ax1.clear()
-    ax1.plot(x_data, y_data)
+    #ax1.plot(x_data, y_data)
+    #ani = animation.FuncAnimation(fig, animate, interval=1000)
 
 
-ani = animation.FuncAnimation(fig, animate, interval=1000)
 
 
