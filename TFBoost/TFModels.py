@@ -35,7 +35,7 @@ To upgrade TensorFlow to last version:
 *GPU: pip3 install --upgrade tensorflow-gpu
 '''
 import tensorflow as tf
-from tensorflow.contrib import rnn
+
 
 # noinspection PyUnresolvedReferences
 print("TensorFlow: " + tf.__version__)
@@ -114,7 +114,7 @@ class TFModels():
         self._show_advanced_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
         self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path.
-        self._shuffle_data = False  # If True, then the train and validation data will be shuffled separately.
+        self._shuffle_data = True  # If True, then the train and validation data will be shuffled separately.
         self._generate_predictions = False  # If true, it tries to generate a prediction
         self._save_graphs_images = False  # If True, then save graphs images from statistical values. NOTE that this will
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
@@ -663,6 +663,14 @@ class TFModels():
                 x, y = process_input_unity_generic(self.input[self.index_buffer_data],
                                                    self.input_labels[self.index_buffer_data],
                                                    options)
+                """
+                # Debug
+                cv2.imshow(str(y), x)
+                pt("Image Path", x)
+                pt("Image Label", y)
+                pt("Image Label", np.amax(y) - 1.0)
+                cv2.waitKey(0)  # Wait until press key to destroy image
+                """
                 x_batch.append(x)
                 y_batch.append(y)
                 self.index_buffer_data += 1
@@ -1199,8 +1207,9 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
     # 4- Return image
     image = cv2.imread(image, image_type)
     image = cv2.resize(image, (height, width))
-    image = cv2.equalizeHist(image)
-    image = cv2.equalizeHist(image)
+    #image = cv2.equalizeHist(image)
+    #image = cv2.equalizeHist(image)
+    """
     if not is_test:
         random_percentage = random.randint(3, 20)
         to_crop_height = int((random_percentage * height) / 100)
@@ -1211,6 +1220,7 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
                                    left=to_crop_width,
                                    right=to_crop_width,
                                    borderType=cv2.BORDER_CONSTANT)
+    """
     #image = image.reshape(-1)
     #cv2.imshow('image', image)
     #cv2.waitKey(0)  # Wait until press key to destroy image
