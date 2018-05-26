@@ -23,7 +23,7 @@ Style: "Google Python Style Guide"
 https://google.github.io/styleguide/pyguide.html
 
 Notes:
-    * This file use TensorFlow version 1.0.
+    * This file use TensorFlow version >1.0.
 """
 
 """
@@ -42,13 +42,14 @@ Here you can download the library: https://pypi.python.org/pypi/easygui#download
 It had been used the version: 0.98.1
 '''
 
-import TFBoost.TFEasyGui as eg
 import TFBoost.TFReader as tfr
 import TFBoost.TFDataMining as tfd
 from TFBoost.TFEncoder import Dictionary
 from UsefulTools.UtilsFunctions import *
 import TFBoost.TFModels as models
 import SettingsObject
+
+
 ''' TensorFlow: https://www.tensorflow.org/
 To upgrade TensorFlow to last version:
 *CPU: pip3 install --upgrade tensorflow
@@ -75,16 +76,22 @@ import numpy as np
 import scipy.io as sio
 
 ''' Matlab URL: http://matplotlib.org/users/installing.html
-To install python -m pip install matplotlib'''
+python -m pip3 install matplotlib'''
 import matplotlib.pyplot as plt
 
 ''' TFLearn library. License MIT.
 Git Clone : https://github.com/tflearn/tflearn.git
-To install: pip install tflearn
-If, when you update tf, you have a problem with this module you must to reinstall it'''
+    To install: pip3 install tflearn'''
 import tflearn
-
+'''
+ Sklearn(scikit-learn): Simple and efficient tools for data mining and data analysis
+ To install: pip3 install -U scikit-learn
+'''
+from sklearn.model_selection import train_test_split
 """
+To install pandas: pip3 install pandas
+"""
+import pandas as pd
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # ---- GLOBAL VARIABLES ----
@@ -92,19 +99,13 @@ import tflearn
 # --------------------------------------------------------------------------
 """
 
-trainSetCSV = ''
-validationSetCSV = ''
-testSetCSV = ''
-
 """
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # ---- USER INTERFACE ----
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-"""
-
-'''Creating user interface'''
+"""Creating user interface
 #properties = eg.EasyGui()
 #uf.pt("Typos GUI",properties.types)
 
@@ -114,13 +115,14 @@ testSetCSV = ''
 # ---- READING DATA ----
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-"""
 
 """
 Creating Reader Features
 """
+import cv2
 setting_object = SettingsObject.Settings(Dictionary.string_settings_german_signal_path)
-
+option_problem = Dictionary.string_option_signals_images_problem
+options = [option_problem, cv2.IMREAD_GRAYSCALE, 60, 60]
 path_train_and_test_images = [setting_object.train_path,setting_object.test_path]
 number_of_classes = 59 # Start in 0
 percentages_sets = None  # Example
@@ -129,29 +131,53 @@ is_an_unique_csv = False  # If this variable is true, then only one CSV file wil
 # trainSet, validationSet(if necessary) and testSet
 known_data_type = ''  # Contains the type of data if the data file contains an unique type of data. Examples: # Number
 # or Chars.
-
-reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images,number_of_classes = number_of_classes,
+"""
+Creating Reader Features
+"""
+reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images, number_of_classes = number_of_classes,
                                       labels_set = labels_set,
-                                      is_unique_csv = is_an_unique_csv,known_data_type = known_data_type,
+                                      is_unique_csv = is_an_unique_csv, known_data_type = known_data_type,
                                       percentages_sets = percentages_sets)
 
 """
 Creating Reader from ReaderFeatures
 """
-tf_reader = tfr.Reader(reader_features = reader_features)  # Reader Object with all information
+
+tf_reader = tfr.Reader(type_problem=option_problem, reader_features=reader_features)  # Reader Object with all information
+
+"""
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# ---- DATA MINING ----
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+"""
+
+"""
+Manipulate Reader with DataMining and update it.
+"""
 
 """
 Getting train, validation (if necessary) and test set.
 """
-test_set = tf_reader.test_set  # Test Set
 train_set = tf_reader.train_set  # Train Set
+test_set = tf_reader.test_set  # Test Set
+
 del reader_features
 del tf_reader
 
-option_problem = Dictionary.string_option_signals_images_problem
+pt(train_set[0].shape)
+pt(train_set[1].shape)
+pt(test_set[0].shape)
+pt(test_set[1].shape)
 
-models = models.TFModels(input=train_set[0],test=test_set[0],
+
+models = models.TFModels(setting_object=setting_object, option_problem=options,
+                         input_data=train_set[0],test=test_set[0],
                          input_labels=train_set[1],test_labels=test_set[1],
-                         number_of_classes=number_of_classes, setting_object=setting_object,
-                         option_problem=option_problem, load_model_configuration=True)
-models.convolution_model_image()
+                         number_of_classes=number_of_classes, type=None,
+                         validation=None, validation_labels=None,
+                         load_model_configuration=False)
+
+with tf.device('/gpu:0'):
+    models.convolution_model_image()
