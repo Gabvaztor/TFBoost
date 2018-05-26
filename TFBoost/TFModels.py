@@ -123,7 +123,7 @@ class TFModels():
         self._input_rows_numbers = 60 # For example, in german problem, number of row pixels
         self._input_columns_numbers = 60  # For example, in german problem, number of column pixels
         self._kernel_size = [6, 6]  # Kernel patch size
-        self._epoch_numbers = 100  # Epochs number
+        self._epoch_numbers = 500  # Epochs number
         self._batch_size = 256  # Batch size
         if self.input is not None:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
@@ -142,9 +142,9 @@ class TFModels():
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
         self._first_label_neurons = 32
         self._second_label_neurons = 64
-        self._third_label_neurons = 512
+        self._third_label_neurons = 1024
         self._learning_rate = 1e-3  # Learning rate
-        self._number_epoch_to_change_learning_rate = 15  #You can choose a number to change the learning rate. Number
+        self._number_epoch_to_change_learning_rate = 60  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
         self._print_information = 100  # How many trains are needed to print information
         # INFORMATION VARIABLES
@@ -159,7 +159,6 @@ class TFModels():
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
         #               - Others positions: all variables you need to process each input and label elements
-        # noinspection PyUnresolvedReferences
         self._options = option_problem
         # RESTART TRAINING
         self._save_and_restart = False  # All history and metadata will be saved in a different folder and the execution
@@ -697,7 +696,7 @@ class TFModels():
 
     def should_save(self):
         """
-        Get last configuration from path
+        Check if must save from validation/test accuracy/error
         
         :return: if should save 
         """
@@ -708,13 +707,13 @@ class TFModels():
                 last_train_accuracy = actual_information._train_accuracy
                 last_test_accuracy = actual_information._test_accuracy
                 last_validation_accuracy = actual_information._validation_accuracy
-                if last_train_accuracy and last_validation_accuracy:
+                if last_train_accuracy and last_validation_accuracy and not self.ask_to_save_model_information:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
                     if self.validation_accuracy and last_validation_accuracy:
                         if self.validation_accuracy >= last_validation_accuracy:  # Save checking validation
                             #  accuracies in this moment
                             should_save = True
-                elif last_train_accuracy and last_test_accuracy:
+                elif last_train_accuracy and last_test_accuracy and not self.ask_to_save_model_information:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
                     if self.test_accuracy and last_test_accuracy:
                         if self.test_accuracy >= last_test_accuracy:  # Save checking test
@@ -724,8 +723,10 @@ class TFModels():
                     if self.ask_to_save_model_information:
                         pt("last_train_accuracy", last_train_accuracy)
                         pt("last_test_accuracy", last_test_accuracy)
+                        pt("last_validation_accuracy", last_validation_accuracy)
                         pt("actual_train_accuracy", self.train_accuracy)
                         pt("actual_test_accuracy", self.test_accuracy)
+                        pt("actual_validation_accuracy", self.validation_accuracy)
                         option_choosed = recurrent_ask_to_save_model()
                     else:
                         option_choosed = True
@@ -987,7 +988,6 @@ class TFModels():
                 plt.savefig(complete_name)
         if (accuracies_train or accuracies_validation or accuracies_test) and show_graphs:
             accuracy_plot.show()
-
         loss_plot = plt.figure(1)
         plt.title("LOSS")
         plt.xlabel("ITERATIONS | Batch Size=" + str(self.batch_size) + " | Trains for epoch: " + str(self.trains))
