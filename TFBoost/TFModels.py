@@ -1207,8 +1207,7 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
     # 4- Return image
     image = cv2.imread(image, image_type)
     image = cv2.resize(image, (height, width))
-    #image = cv2.equalizeHist(image)
-    #image = cv2.equalizeHist(image)
+    image = cv2.equalizeHist(image)
     """
     if not is_test:
         random_percentage = random.randint(3, 20)
