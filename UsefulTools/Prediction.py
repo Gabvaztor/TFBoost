@@ -5,6 +5,8 @@
 import TFBoost.TFEncoder as tfencoder
 import UsefulTools.UtilsFunctions as utils
 
+import json
+
 class Prediction():
     """
 
@@ -36,3 +38,4 @@ class GermanSignal(Prediction):
     def save_json(self, save_fullpath):
         json = self._to_json()
         utils.write_string_to_pathfile(json, save_fullpath)
+

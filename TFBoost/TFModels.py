@@ -631,7 +631,7 @@ class TFModels():
                 x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options)
                 fullpath_saved = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
                                                       x_input_pred=x_input_pred, keep_probably=keep_probably,
-                                                      real_label=np.argmax(real_label))
+                                                      real_label=int(np.argmax(real_label)))
 
     def test_prediction(self, sess, x_input_tensor, y_prediction, x_input_pred, keep_probably, real_label=None):
         # Restore model
@@ -651,7 +651,7 @@ class TFModels():
             information = "German Signal prediction"
             try:
                 prediction_class = GermanSignal(information=information, real_label=real_label, image_fullpath=None,
-                                                prediction_label=np.argmax(prediction))
+                                                prediction_label=int(np.argmax(prediction)))
                 prediction_class.save_json(save_fullpath=self.settings_object.submission_path)
             except Exception as e:
                 pt(Errors.error, e)
