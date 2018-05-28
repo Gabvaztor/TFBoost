@@ -446,7 +446,7 @@ def object_to_json(object, attributes_to_delete=None):
     :param attributes_to_delete: String set with all attributes' names to delete from properties method
     :return: sort json from class properties.
     """
-    object_dictionary = class_properties(object=object, attributes_to_delete=["information", "image_fullpath", "softmax_labels"])
+    object_dictionary = class_properties(object=object, attributes_to_delete=None)
     pt("object_dictionary", object_dictionary)
     json_string = json.dumps(object, default=lambda m: object_dictionary, sort_keys=True, indent=4)
     return json_string

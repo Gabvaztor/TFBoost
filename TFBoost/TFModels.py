@@ -128,7 +128,7 @@ class TFModels():
         self._input_rows_numbers = 60 # For example, in german problem, number of row pixels
         self._input_columns_numbers = 60  # For example, in german problem, number of column pixels
         self._kernel_size = [6, 6]  # Kernel patch size
-        self._epoch_numbers = 400  # Epochs number
+        self._epoch_numbers = 250  # Epochs number
         self._batch_size = 256  # Batch size
         if self.input is not None:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
@@ -735,6 +735,7 @@ class TFModels():
         
         :return: if should save 
         """
+        # TODO (@gabvaztor) Detect when stop learning. From 60% to 10% validation/test
         should_save = False
         if self.save_model_information:
             actual_information = self.settings_object.load_actual_information()
