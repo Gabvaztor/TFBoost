@@ -27,6 +27,7 @@ from UsefulTools.UtilsFunctions import *
 from UsefulTools.TensorFlowUtils import *
 from TFBoost.TFEncoder import Dictionary as dict
 from TFBoost.TFEncoder import Constant as const
+from UsefulTools.Prediction import *
 import SettingsObject
 
 ''' TensorFlow: https://www.tensorflow.org/
@@ -127,7 +128,7 @@ class TFModels():
         self._input_rows_numbers = 60 # For example, in german problem, number of row pixels
         self._input_columns_numbers = 60  # For example, in german problem, number of column pixels
         self._kernel_size = [6, 6]  # Kernel patch size
-        self._epoch_numbers = 100  # Epochs number
+        self._epoch_numbers = 400  # Epochs number
         self._batch_size = 256  # Batch size
         if self.input is not None:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
@@ -583,12 +584,6 @@ class TFModels():
         if attributes_to_delete:
             for x in attributes_to_delete:
                 del dict_copy[x]
-        """
-        for k, v in dict_copy.items():
-            if isinstance(v, np.float32):  # Transform type np.float32 into float.
-                new_value = float(str(v))
-                dict_copy[k] = new_value
-        """
         return dict_copy
 
     def to_json(self, attributes_to_delete=None):
@@ -633,11 +628,12 @@ class TFModels():
                 input_path = self.input[0]
                 label = self.input_labels[0]
                 pt("label", np.argmax(label))
-                x_input_pred, y_label_pred = process_input_unity_generic(input_path, label, self.options)
+                x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options)
                 fullpath_saved = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
-                                                      x_input_pred=x_input_pred, keep_probably=keep_probably, y_label_pred=y_label_pred)
+                                                      x_input_pred=x_input_pred, keep_probably=keep_probably,
+                                                      real_label=np.argmax(real_label))
 
-    def test_prediction(self, sess, x_input_tensor, y_prediction, x_input_pred, keep_probably, y_label_pred=None):
+    def test_prediction(self, sess, x_input_tensor, y_prediction, x_input_pred, keep_probably, real_label=None):
         # Restore model
         self.load_and_restore_model(session=sess)
 
@@ -652,13 +648,14 @@ class TFModels():
             prediction = y_prediction.eval(feed_dict=feed_dict_prediction)
             pt("Prediction", np.argmax(prediction))
             path_saved = None
-            """
-            type_click = prediction[0][0]
-            coordinate_x = prediction[0][1]
-            coordinate_y = prediction[0][2]
-            prediction_class = Predicction(click_type=type_click, coordinate_x=coordinate_x, coordinate_y=coordinate_y)
-            prediction_class.save_json(filepath=path_save_json)
-            """
+            information = "German Signal prediction"
+            try:
+                prediction_class = GermanSignal(information=information, real_label=real_label, image_fullpath=None,
+                                                prediction_label=np.argmax(prediction))
+                prediction_class.save_json(save_fullpath=self.settings_object.submission_path)
+            except Exception as e:
+                pt(Errors.error, e)
+                raise ValueError("Can not save prediction json")
         else:
             raise ValueError("Can not predict the test")
         return path_saved
@@ -1245,8 +1242,8 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
     # 4- Return image
     image = cv2.imread(image, image_type)
     image = cv2.resize(image, (height, width))
-    image = cv2.equalizeHist(image)
-    """
+    #image = cv2.equalizeHist(image)
+
     if not is_test:
         random_percentage = random.randint(3, 20)
         to_crop_height = int((random_percentage * height) / 100)
@@ -1257,7 +1254,7 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
                                    left=to_crop_width,
                                    right=to_crop_width,
                                    borderType=cv2.BORDER_CONSTANT)
-    """
+
     #image = image.reshape(-1)
     #cv2.imshow('image', image)
     #cv2.waitKey(0)  # Wait until press key to destroy image

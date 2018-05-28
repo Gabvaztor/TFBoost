@@ -62,6 +62,8 @@ class Dictionary(object):
     string_npy_extension = '.npy'
     # Format zip
     string_zip_extension = '.zip'
+    # Format json
+    string_json_extension = '.json'
     # Train String
     string_train = 'train'
     # Test String

@@ -2,7 +2,7 @@
   "TRAIN_DATA_PATH": "E:\\Data_Science\\Data\\German_Signal\\DITS-classification\\classification_train\\",
   "MODEL_PATH": "E:\\Data_Science\\Data\\German_Signal\\Models\\model",
   "TEST_DATA_PATH": "E:\\Data_Science\\Data\\German_Signal\\DITS-classification\\classification_test\\",
-  "SUBMISSION_PATH": "E:\\Data_Science\\Data\\German_Signal\\Predictions\\",
+  "SUBMISSION_PATH": "E:\\Data_Science\\Data\\German_Signal\\Predictions\\prediction.json",
   "CONFIGURATION_PATH": "E:\\Data_Science\\Data\\German_Signal\\Models\\configuration_model.json",
   "INFORMATION_PATH": "E:\\Data_Science\\Data\\German_Signal\\Models\\information_model.json",
   "ACCURACIES_LOSSES_PATH": "E:\\Data_Science\\Data\\German_Signal\\Models\\History_Information\\Accuracies_Losses\\",

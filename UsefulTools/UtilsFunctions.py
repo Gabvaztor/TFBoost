@@ -52,6 +52,7 @@ def pt(title=None, text=None):
         title += ':'
     print(str(title) + " \n " + str(text))
 
+
 def timed(method):
     """
     This method print a method name and the execution time.
@@ -70,8 +71,10 @@ def timed(method):
 
     return inner
 
+
 def clear_console():
     os.system('cls')
+
 
 def number_neurons(total_input_size, input_sample_size, output_size, alpha=1):
     """
@@ -97,6 +100,7 @@ def write_string_to_pathfile(string, filepath):
         file.write(str(string))
     except:
         raise ValueError(Errors.write_string_to_file)
+
 
 def write_json_to_pathfile(json, filepath):
     """
@@ -141,6 +145,7 @@ def recurrent_ask_to_save_model():
                                                    method=method)
     return response
 
+
 def recurrent_ask_to_continue_without_load_model():
     """
     Wait user to get response to save a model
@@ -150,6 +155,7 @@ def recurrent_ask_to_continue_without_load_model():
     response = recurrent_method_pass_true_or_false(question=Dictionary.string_want_to_continue_without_load,
                                                    method=method)
     return response
+
 
 def file_exists_in_path_or_create_path(filepath):
     """
@@ -166,6 +172,7 @@ def file_exists_in_path_or_create_path(filepath):
     except:
         raise ValueError(Errors.check_dir_exists_and_create)
 
+
 def factorial(num):
     """
     Factorial of a number. Recursive.
@@ -175,6 +182,7 @@ def factorial(num):
     if num > 1:
         num = num * factorial(num - 1)
     return num
+
 
 def create_directory_from_fullpath(fullpath):
     """
@@ -186,6 +194,7 @@ def create_directory_from_fullpath(fullpath):
         os.makedirs(directory)
     return directory
 
+
 def create_file_from_fullpath(fullpath):
     """
     Create file from a fullpath if it not exists.
@@ -194,6 +203,7 @@ def create_file_from_fullpath(fullpath):
     if not os.path.exists(fullpath):  # To create file
         file = open(fullpath, 'w+')
         file.close()
+
 
 def create_historic_folder(filepath, type_file, test_accuracy=""):
     """
@@ -211,15 +221,18 @@ def create_historic_folder(filepath, type_file, test_accuracy=""):
         low_stripe = "_"
     information_folder = "\\History_Information\\" + type_file + "\\" + str(test_accuracy) + low_stripe + \
                          actual_time + "\\"
-    folder = directory+information_folder
+    folder = directory + information_folder
     create_directory_from_fullpath(folder)
-    return folder+filename
+    return folder + filename
+
 
 def get_directory_from_filepath(filepath):
     return os.path.dirname(filepath)
 
+
 def get_filename_from_filepath(filepath):
     return os.path.basename(filepath)
+
 
 def preprocess_lists(lists, index_to_eliminate=2):
     """
@@ -231,12 +244,13 @@ def preprocess_lists(lists, index_to_eliminate=2):
     """
     processed_lists = []
     for list_to_process in lists:
-        if list_to_process and len(list_to_process)>index_to_eliminate:
+        if list_to_process and len(list_to_process) > index_to_eliminate:
             process_list = [i for i in list_to_process if list_to_process.index(i) % index_to_eliminate == 0]
             processed_lists.append(process_list)
         else:
             processed_lists.append(list_to_process)
     return processed_lists
+
 
 def save_numpy_arrays_generic(folder_to_save, numpy_files, names=None):
     """
@@ -254,7 +268,8 @@ def save_numpy_arrays_generic(folder_to_save, numpy_files, names=None):
             np.save(folder_to_save + names[index], numpy_files[index])
         else:
             name_file = Dictionary.filename_numpy_default
-            np.save(folder_to_save + name_file+str(index+1), numpy_files[index])
+            np.save(folder_to_save + name_file + str(index + 1), numpy_files[index])
+
 
 def load_numpy_arrays_generic(path_to_load, names):
     """
@@ -273,6 +288,7 @@ def load_numpy_arrays_generic(path_to_load, names):
             raise Exception("File does not exist")
     return files_to_return
 
+
 def load_accuracies_and_losses(path_to_load, flag_restore_model=False):
     """
     
@@ -284,15 +300,15 @@ def load_accuracies_and_losses(path_to_load, flag_restore_model=False):
     if flag_restore_model:
         try:
             npy_extension = Dictionary.string_npy_extension
-            filename_train_accuracies = Dictionary.filename_train_accuracies+npy_extension
-            filename_validation_accuracies = Dictionary.filename_validation_accuracies+npy_extension
-            filename_train_losses = Dictionary.filename_train_losses+npy_extension
-            filename_validation_losses = Dictionary.filename_validation_losses+npy_extension
-            if file_exists_in_path_or_create_path(path_to_load+filename_train_accuracies):
-                accuracies_train = list(np.load(path_to_load+filename_train_accuracies))
-                accuracies_validation = list(np.load(path_to_load+filename_validation_accuracies))
-                loss_train = list(np.load(path_to_load+filename_train_losses))
-                loss_validation = list(np.load(path_to_load+filename_validation_losses))
+            filename_train_accuracies = Dictionary.filename_train_accuracies + npy_extension
+            filename_validation_accuracies = Dictionary.filename_validation_accuracies + npy_extension
+            filename_train_losses = Dictionary.filename_train_losses + npy_extension
+            filename_validation_losses = Dictionary.filename_validation_losses + npy_extension
+            if file_exists_in_path_or_create_path(path_to_load + filename_train_accuracies):
+                accuracies_train = list(np.load(path_to_load + filename_train_accuracies))
+                accuracies_validation = list(np.load(path_to_load + filename_validation_accuracies))
+                loss_train = list(np.load(path_to_load + filename_train_losses))
+                loss_validation = list(np.load(path_to_load + filename_validation_losses))
         except Exception:
             pt("Could not load accuracies and losses")
             accuracies_train, accuracies_validation, loss_train, loss_validation = [], [], [], []
@@ -303,7 +319,7 @@ def load_accuracies_and_losses(path_to_load, flag_restore_model=False):
 def load_4_numpy_files(path_to_load, names_to_load_4):
     # TODO (@gabvaztor) Docs
     npy_extension = Dictionary.string_npy_extension
-    for i in range (0,4):
+    for i in range(0, 4):
         file_exists_in_path_or_create_path(path_to_load + names_to_load_4[i])
     file_1 = np.load(path_to_load + names_to_load_4[0] + npy_extension)
     file_2 = np.load(path_to_load + names_to_load_4[1] + npy_extension)
@@ -320,15 +336,17 @@ def save_and_restart(path_to_backup):
     """
     actual_time = str(time.strftime("%Y-%m-%d_%Hh%Mm%Ss", time.gmtime(time.time())))
     to_copy = get_directory_from_filepath(path_to_backup) + "\\"
-    to_paste = get_directory_from_filepath(get_directory_from_filepath(to_copy)) + "\\" + "Models_Backup(" + actual_time + ")"
+    to_paste = get_directory_from_filepath(
+        get_directory_from_filepath(to_copy)) + "\\" + "Models_Backup(" + actual_time + ")"
     pt("Doing Models backup ...")
     # Do backup
-    make_archive(to_paste, 'zip',  to_copy)
+    make_archive(to_paste, 'zip', to_copy)
     pt("Backup done successfully")
     # Do remove
     pt("Removing Models folder...")
     rmtree(to_copy)
     pt("Models removed successfully")
+
 
 def convert_to_decimal(percentages_sets):
     """
@@ -344,6 +362,7 @@ def convert_to_decimal(percentages_sets):
     total_sum = sum(values)
     return total_sum
 
+
 @timed
 def save_submission_to_csv(path_to_save, dictionary):
     print('Saving submission...')
@@ -356,34 +375,40 @@ def save_submission_to_csv(path_to_save, dictionary):
     submission.to_csv(path_to_save, index=False, encoding='utf-8')
     pt("Save successfully")
 
+
 def smape(y_true, y_prediction):
     tot = tf.reduce_sum(y_true)
     map = tf.truediv((tf.subtract(tf.abs(y_prediction), tf.abs(y_true))),
-               (tf.add(tf.abs(y_true), tf.abs(y_prediction))) / 2.0)
+                     (tf.add(tf.abs(y_true), tf.abs(y_prediction))) / 2.0)
     smape = tf.realdiv(100 * map, tot)
     return smape
+
 
 def mean_difference_percentages(y_true, y_prediction):
     # Total from real
     total_real = tf.reduce_sum(y_true)
     # For each element, we calculate the abs difference and, after that, we calculate the percent respect total.
     difference = tf.abs(tf.subtract(y_true, y_prediction))
-    mean_difference = tf.truediv((difference * 100),total_real)
+    mean_difference = tf.truediv((difference * 100), total_real)
     return mean_difference
+
 
 def rmse(y_true, y_prediction):
     return tf.sqrt(tf.reduce_mean(tf.square(tf.subtract(y_true, y_prediction))))
+
 
 def mape(y_true, y_prediction):
     tot = tf.reduce_sum(y_true)
     wmape = tf.realdiv(tf.reduce_sum(tf.abs(tf.subtract(y_true, y_prediction))), tot) * 100  # /tot
     return (wmape)
 
+
 def mae(y_true, y_prediction, batch_size):
     total_sum_y_true = tf.reduce_sum(y_true)
     total_sum_y_prediction = tf.reduce_sum(y_prediction)
     error = tf.sqrt(tf.abs((tf.subtract(y_true, y_prediction))))
     return error
+
 
 def convert_to_numpy_array(to_convert_to_numpy_array_list):
     to_return = []
@@ -393,6 +418,7 @@ def convert_to_numpy_array(to_convert_to_numpy_array_list):
             to_return.append(element)
     return to_return
 
+
 def is_json(my_json):
     try:
         json_object = json.loads(str(my_json))
@@ -400,7 +426,34 @@ def is_json(my_json):
         return False
     return True
 
+
+def class_properties(object, attributes_to_delete=None):
+    """
+    Return a string with actual object features without not necessaries
+    :param attributes_to_delete: represent witch attributes set must be deleted.
+    :return: A copy of class.__dic__ without deleted attributes
+    """
+    dict_copy = object.__dict__.copy()  # Need to be a copy to not get original class' attributes.
+    # Remove all not necessaries values
+    if attributes_to_delete:
+        for x in attributes_to_delete:
+            del dict_copy[x]
+    return dict_copy
+
+def object_to_json(object, attributes_to_delete=None):
+    """
+    Convert class to json with properties method.
+    :param attributes_to_delete: String set with all attributes' names to delete from properties method
+    :return: sort json from class properties.
+    """
+    object_dictionary = class_properties(object=object, attributes_to_delete=["information", "image_fullpath", "softmax_labels"])
+    pt("object_dictionary", object_dictionary)
+    json_string = json.dumps(object, default=lambda m: object_dictionary, sort_keys=True, indent=4)
+    return json_string
+
+
 """MATPLOTLIB"""
+
 
 def animate():
     import matplotlib.pyplot as plt
@@ -411,9 +464,5 @@ def animate():
     fig = plt.figure()
     ax1 = fig.add_subplot(1, 1, 1)
     ax1.clear()
-    #ax1.plot(x_data, y_data)
-    #ani = animation.FuncAnimation(fig, animate, interval=1000)
-
-
-
-
+    # ax1.plot(x_data, y_data)
+    # ani = animation.FuncAnimation(fig, animate, interval=1000)
