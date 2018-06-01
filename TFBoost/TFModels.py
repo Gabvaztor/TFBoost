@@ -37,7 +37,6 @@ To upgrade TensorFlow to last version:
 '''
 import tensorflow as tf
 
-
 # noinspection PyUnresolvedReferences
 print("TensorFlow: " + tf.__version__)
 
@@ -81,10 +80,6 @@ import numbers
 """ To work with types"""
 import types
 
-
-
-
-
 class TFModels():
     """
     Long Docs ...
@@ -93,7 +88,7 @@ class TFModels():
     # TODO Docs
     def __init__(self, setting_object, option_problem, input_data=None, test=None, input_labels=None, test_labels=None,
                  number_of_classes=None , type=None, validation=None, validation_labels=None,
-                 load_model_configuration=False, *args , **kwargs):
+                 load_model_configuration=False, predict_flag=False, *args , **kwargs):
         # TODO(@gabvaztor) Show and save graphs during all training asking before
         # NOTE: IF YOU LOAD_MODEL_CONFIGURATION AND CHANGE SOME TENSORFLOW ATTRIBUTE AS NEURONS, THE TRAIN WILL START
         # AGAIN
@@ -108,7 +103,9 @@ class TFModels():
         self._input_batch = None
         self._label_batch = None
         # CONFIGURATION VARIABLES
-        self._restore_model = False # Labels and logits info.
+        self._debug_level = 0 # TODO (@gabvaztor) Explain debug levels
+        self._restore_model = False # Labels and logits info. Load only to continue training.
+        self._restore_to_predict = predict_flag  # Load pretrained model to do a prediction. Restrictive
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
         # 'should_save'
@@ -130,7 +127,7 @@ class TFModels():
         self._kernel_size = [6, 6]  # Kernel patch size
         self._epoch_numbers = 250  # Epochs number
         self._batch_size = 256  # Batch size
-        if self.input is not None:  # Change if necessary
+        if self.input is not None and not self.restore_to_predict:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
             self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
         else:
@@ -168,17 +165,17 @@ class TFModels():
         # RESTART TRAINING
         self._save_and_restart = False  # All history and metadata will be saved in a different folder and the execution
         # will be restarted
-        if self.save_and_restart:
+        if self.save_and_restart and not self.restore_to_predict:
             save_and_restart(self.settings_object.model_path)
         # SAVE AND LOAD MODEL
         # If load_model_configuration is True, then it will load a configuration from settings_object method
-        if load_model_configuration:
+        if load_model_configuration and not self.restore_to_predict:
             # And restore time too.
             if self.restore_model:
                 # input("You will load model configuration but no restore the tensorflow model, do you want to continue?")
                 pt("Loading model configuration", self.settings_object.configuration_path)
                 self._load_model_configuration(self.settings_object.load_actual_configuration())
-        if self.save_model_configuration:
+        if self.save_model_configuration and not self.restore_to_predict:
             # Save model configuration in a json file
             pt("Saving model configuration...")
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
@@ -563,6 +560,22 @@ class TFModels():
     def test(self, value):
         self._test = value
 
+    @property
+    def restore_to_predict(self):
+        return self._restore_to_predict
+
+    @restore_to_predict.setter
+    def restore_to_predict(self, value):
+        self._restore_to_predict = value
+
+    @property
+    def debug_level(self):
+        return self._debug_level
+
+    @debug_level.setter
+    def debug_level(self, value):
+        self._debug_level = value
+
     def _save_json_configuration(self, attributes_to_delete_configuration):
         try:
             self._save_model_configuration_to_json(self.settings_object.configuration_path,
@@ -572,32 +585,8 @@ class TFModels():
             pt(Errors.error, e)
             traceback.print_exc()
 
-
-    def properties(self, attributes_to_delete=None):
-        """
-        Return a string with actual features without not necessaries
-        :param attributes_to_delete: represent witch attributes set must be deleted.
-        :return: A copy of class.__dic__ without deleted attributes
-        """
-        dict_copy = self.__dict__.copy()  # Need to be a copy to not get original class' attributes.
-        # Remove all not necessaries values
-        if attributes_to_delete:
-            for x in attributes_to_delete:
-                del dict_copy[x]
-        return dict_copy
-
-    def to_json(self, attributes_to_delete=None):
-        """
-        Convert TFModel class to json with properties method.
-        :param attributes_to_delete: String set with all attributes' names to delete from properties method
-        :return: sort json from class properties.
-        """
-        self_dictionary = self.properties(attributes_to_delete)
-        json_string =  json.dumps(self, default=lambda o: self_dictionary, sort_keys=True, indent=4)
-        return json_string
-
     @timed
-    def convolution_model_image(self, restore_to_predict=False):
+    def convolution_model_image(self):
         """
         Generic convolutional model
         """
@@ -614,43 +603,49 @@ class TFModels():
             cross_entropy, train_step, correct_prediction, accuracy = self.model_evaluation(y_labels=y_labels,
                                                                                             y_prediction=y_prediction)
             # Session
-            sess = initialize_session()
+            sess = initialize_session(self.debug_level)
             # Saver session
             saver = tf.train.Saver()  # Saver
             # Batching values and labels from input and labels (with batch size)
-            if not restore_to_predict:
+            if not self.restore_to_predict:
                 self.update_batch()
                 # To restore model
                 if self.restore_model:
                     self.load_and_restore_model(sess)
                 self.train_model(args=None, kwargs=locals())
             else:
+                # Todo (@gabvaztor) Get path via parameter.
                 input_path = self.input[0]
-                label = self.input_labels[0]
-                pt("label", np.argmax(label))
+                label = None
+                if self.input_labels is not None:
+                    label = self.input_labels[0]
                 x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options)
                 fullpath_saved = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
                                                       x_input_pred=x_input_pred, keep_probably=keep_probably,
-                                                      real_label=int(np.argmax(real_label)))
+                                                      real_label=int(np.argmax(real_label)), input_path=input_path)
 
-    def test_prediction(self, sess, x_input_tensor, y_prediction, x_input_pred, keep_probably, real_label=None):
+    def test_prediction(self, sess, x_input_tensor, y_prediction, x_input_pred, keep_probably, real_label=None,
+                        input_path=None):
         # Restore model
         self.load_and_restore_model(session=sess)
 
-        pt("x_input", x_input_tensor)
-        pt("x_input.shape", x_input_tensor.shape)
-        pt("x_input_pred", x_input_pred)
-        pt("x_input_pred", x_input_pred.shape)
+        if self.debug_level > 0:
+            pt("x_input", x_input_tensor)
+            pt("x_input.shape", x_input_tensor.shape)
+            pt("x_input_pred", x_input_pred)
+            pt("x_input_pred", x_input_pred.shape)
+
         x_input_pred = np.asarray([x_input_pred])
-        pt("x_input_pred_array", x_input_pred.shape)
         feed_dict_prediction = {x_input_tensor: x_input_pred, keep_probably: 1.0}
         if x_input_pred is not None:
             prediction = y_prediction.eval(feed_dict=feed_dict_prediction)
             pt("Prediction", np.argmax(prediction))
+            pt("Real Label", real_label)
             path_saved = None
             information = "German Signal prediction"
             try:
-                prediction_class = GermanSignal(information=information, real_label=real_label, image_fullpath=None,
+                prediction_class = GermanSignal(information=information, real_label=real_label,
+                                                image_fullpath=input_path,
                                                 prediction_label=int(np.argmax(prediction)))
                 prediction_class.save_json(save_fullpath=self.settings_object.submission_path)
             except Exception as e:
@@ -697,14 +692,6 @@ class TFModels():
                 x, y = process_input_unity_generic(self.input[self.index_buffer_data],
                                                    self.input_labels[self.index_buffer_data],
                                                    options)
-                """
-                # Debug
-                cv2.imshow(str(y), x)
-                pt("Image Path", x)
-                pt("Image Label", y)
-                pt("Image Label", np.amax(y) - 1.0)
-                cv2.waitKey(0)  # Wait until press key to destroy image
-                """
                 x_batch.append(x)
                 y_batch.append(y)
                 self.index_buffer_data += 1
@@ -813,6 +800,8 @@ class TFModels():
             self._print_information = configuration._print_information
             self._validation_size = configuration._validation_size
             self._problem_information = configuration._problem_information
+            self._restore_to_predict = configuration._restore_to_predict
+            self._debug_level = configuration._debug_level
             # If you don't restore model then you won't load train number and epochs number
             if self.restore_model:
                 self._num_trains_count = configuration._num_trains_count
@@ -829,7 +818,7 @@ class TFModels():
         accuracy = ""
         if "accuracy" in kwargs:
             accuracy = kwargs["accuracy"]
-        json = self.to_json(attributes_to_delete)
+        json = object_to_json(attributes_to_delete)
         write_string_to_pathfile(json, fullpath)
         filepath = create_historic_folder(fullpath, type_file, accuracy)
         write_string_to_pathfile(json, filepath)
@@ -1128,15 +1117,6 @@ class TFModels():
                     save_numpy_arrays_generic(folder_to_save=self.settings_object.accuracies_losses_path,
                                               numpy_files=numpy_arrays,
                                               names=numpy_names)
-                    '''
-                    save_accuracies_and_losses_training(folder_to_save=self.settings_object.accuracies_losses_path,
-                                                        train_accuracies=accuracies_train,
-                                                        validation_accuracies=accuracies_test,
-                                                        train_losses=loss_train,
-                                                        validation_losses=loss_test)
-                    '''
-
-
                 if num_train % 2 == 0:
                     percent_advance = str(num_train * 100 / self.trains)
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))

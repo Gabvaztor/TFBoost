@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Author: @gabvaztor
 StartDate: 04/03/2017

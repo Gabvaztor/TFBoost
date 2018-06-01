@@ -1,5 +1,5 @@
+# -*- coding: utf-8 -*-
 import tensorflow as tf
-
 
 def weighted_mape_tf(y_true, y_prediction):
     tot = tf.reduce_sum(y_true)
@@ -38,13 +38,16 @@ def max_pool_2x2(x):
                           strides=[1, 2, 2, 1], padding='SAME')
 
 
-def initialize_session():
+def initialize_session(debug_level=None):
     """
     Initialize interactive session and all local and global variables
     :return: Session
     """
-    config = tf.ConfigProto(allow_soft_placement=True,
-                            log_device_placement=True)
+    if debug_level == 3 or debug_level == 2 or debug_level == 1 :
+        config = tf.ConfigProto(allow_soft_placement=True,
+                                log_device_placement=True)
+    else:
+        config = tf.ConfigProto(allow_soft_placement=True)
     sess = tf.InteractiveSession(config=config)
     sess.run(tf.local_variables_initializer())
     sess.run(tf.global_variables_initializer())

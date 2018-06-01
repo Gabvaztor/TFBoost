@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Author: @gabvaztor
 StartDate: 04/03/2017
@@ -166,11 +167,6 @@ test_set = tf_reader.test_set  # Test Set
 del reader_features
 del tf_reader
 
-pt(train_set[0].shape)
-pt(train_set[1].shape)
-pt(test_set[0].shape)
-pt(test_set[1].shape)
-
 models = models.TFModels(setting_object=setting_object, option_problem=options,
                          input_data=train_set[0],test=test_set[0],
                          input_labels=train_set[1],test_labels=test_set[1],
@@ -178,4 +174,4 @@ models = models.TFModels(setting_object=setting_object, option_problem=options,
                          validation=None, validation_labels=None,
                          load_model_configuration=False)
 with tf.device('/gpu:0'):
-    models.convolution_model_image(restore_to_predict=True)
+    models.convolution_model_image()

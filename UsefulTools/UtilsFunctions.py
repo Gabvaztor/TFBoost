@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 This class contains useful functions
 """
@@ -60,15 +61,14 @@ def timed(method):
     :param A method
     :return: The method called
     """
-
     def inner(*args, **kwargs):
         start = time.time()
         try:
             return method(*args, **kwargs)
         finally:
             methodStr = str(method)
-            pt("Running time method:" + str(methodStr[9:-23]), time.time() - start)
-
+            pt("Running time method:" + str(methodStr[9:-23]),
+               str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start)))))
     return inner
 
 
@@ -446,11 +446,13 @@ def object_to_json(object, attributes_to_delete=None):
     :param attributes_to_delete: String set with all attributes' names to delete from properties method
     :return: sort json from class properties.
     """
-    object_dictionary = class_properties(object=object, attributes_to_delete=None)
-    pt("object_dictionary", object_dictionary)
+    object_dictionary = class_properties(object=object, attributes_to_delete=attributes_to_delete)
     json_string = json.dumps(object, default=lambda m: object_dictionary, sort_keys=True, indent=4)
     return json_string
 
+def show_actual_path():
+    pt("Actual Path", os.path.dirname(os.path.abspath(__file__)))
+    pt("Actual Path", os.getcwd())
 
 """MATPLOTLIB"""
 
