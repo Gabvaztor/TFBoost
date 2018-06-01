@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Author: @gabvaztor
@@ -614,14 +615,28 @@ class TFModels():
                     self.load_and_restore_model(sess)
                 self.train_model(args=None, kwargs=locals())
             else:
-                input_path = self.input[0]
-                label = None
-                if self.input_labels is not None:
-                    label = self.input_labels[0]
-                x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options)
-                fullpath_saved = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
-                                                      x_input_pred=x_input_pred, keep_probably=keep_probably,
-                                                      real_label=int(np.argmax(real_label)), input_path=input_path)
+                try:
+                    input_path = self.input[0]
+                    label = None
+                    if self.input_labels is not None:
+                        label = self.input_labels[0]
+                    x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options)
+                    fullpath_saved = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
+                                                          x_input_pred=x_input_pred, keep_probably=keep_probably,
+                                                          real_label=int(np.argmax(real_label)), input_path=input_path)
+                except Exception as err:
+                    self.write_log_error(err)
+
+
+    def write_log_error(self, err):
+        import sys
+        exc_type, exc_obj, exc_tb = sys.exc_info()  # this is to get error line number and description.
+        file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]  # to get File Name.
+        error_string = "ERROR : Error Msg:{},File Name : {}, Line no : {}\n".format(err, file_name,
+                                                                                    exc_tb.tb_lineno)
+        file_log = open("python_prediction_error_log.log", "a")
+        file_log.write(error_string + "\n\n" + str(err))
+        file_log.close()
 
     def test_prediction(self, sess, x_input_tensor, y_prediction, x_input_pred, keep_probably, real_label=None,
                         input_path=None):
@@ -1165,6 +1180,10 @@ class TFModels():
     def make_predictions(self):
         # TODO (@gabvaztor) Finish method
         pass
+
+
+
+
 """
 STATIC METHODS: Not need "self" :argument
 """

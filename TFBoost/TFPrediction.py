@@ -78,6 +78,5 @@ models = models.TFModels(setting_object=setting_object, option_problem=options,
                          number_of_classes=number_of_classes, type=None,
                          validation=None, validation_labels=None,
                          load_model_configuration=False, predict_flag=predict_flag)
-
 models.convolution_model_image()
 
