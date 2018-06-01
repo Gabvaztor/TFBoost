@@ -614,7 +614,6 @@ class TFModels():
                     self.load_and_restore_model(sess)
                 self.train_model(args=None, kwargs=locals())
             else:
-                # Todo (@gabvaztor) Get path via parameter.
                 input_path = self.input[0]
                 label = None
                 if self.input_labels is not None:
@@ -634,7 +633,6 @@ class TFModels():
             pt("x_input.shape", x_input_tensor.shape)
             pt("x_input_pred", x_input_pred)
             pt("x_input_pred", x_input_pred.shape)
-
         x_input_pred = np.asarray([x_input_pred])
         feed_dict_prediction = {x_input_tensor: x_input_pred, keep_probably: 1.0}
         if x_input_pred is not None:
