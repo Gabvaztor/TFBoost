@@ -6,7 +6,7 @@ StartDate: 04/03/2017
 
 This file contains samples and overrides deep learning algorithms.
 
-Style: "Google Python Style Guide" 
+Style: "Google Python Style Guide"
 https://google.github.io/styleguide/pyguide.html
 
 """
@@ -618,7 +618,7 @@ class TFModels():
                 try:
                     input_path = self.input[0]
                     label = None
-                    if self.input_labels is not None:
+                    if self.input_labels is not None and self.input_labels:
                         label = self.input_labels[0]
                     x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options)
                     fullpath_saved = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
@@ -687,7 +687,7 @@ class TFModels():
         :param shuffle_data: If it is necessary shuffle data.
         :param batch_size: The batch size.
         :param is_test: if the inputs are the test set.
-        :param options: options       
+        :param options: options
         :return: Two numpy arrays (x_batch and y_batch) with input data and input labels data batch_size like shape.
         """
         x_batch = []
@@ -732,8 +732,8 @@ class TFModels():
     def should_save(self):
         """
         Check if must save from validation/test accuracy/error
-        
-        :return: if should save 
+
+        :return: if should save
         """
         # TODO (@gabvaztor) Detect when stop learning. From 60% to 10% validation/test
         should_save = False
@@ -775,11 +775,11 @@ class TFModels():
     def _load_model_configuration(self, configuration):
         """
         Load previous configuration to class Model (self).
-        
+
         This will update all class' attributes with the configuration in a json file.
-        
+
         If configuration is None, the file will be created after this method if save_configuration attribute is True
-        :param configuration: the json class 
+        :param configuration: the json class
         """
         if configuration:
             # TODO Add to docs WHEN it is necessary to add more attributes = Do documentation
@@ -871,7 +871,7 @@ class TFModels():
 
     def placeholders(self, *args, **kwargs):
         """
-        This method will contains all TensorFlow code about placeholders (variables which will be modified during 
+        This method will contains all TensorFlow code about placeholders (variables which will be modified during
         process)
         :return: Inputs, labels and others placeholders
         """
@@ -884,8 +884,8 @@ class TFModels():
 
     def network_structure(self, input, *args, **kwargs):
         """
-        This method will contains all TensorFlow code about your network structure. 
-        :param input: inputs 
+        This method will contains all TensorFlow code about your network structure.
+        :param input: inputs
         :return: The prediction (network output)
         """
         keep_dropout = kwargs['keep_probably']
@@ -933,7 +933,7 @@ class TFModels():
 
     def model_evaluation(self, y_labels, y_prediction, *args, **kwargs):
         """
-        This methods will contains all TensorFlow about model evaluation. 
+        This methods will contains all TensorFlow about model evaluation.
         :param y_labels: Labels
         :param y_prediction: The prediction
         :return: The output must contains all necessaries variables that it used during training
@@ -1208,7 +1208,7 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
     Generic method that process input and label across a if else statement witch contains a string that represent
     the option (option = how process data)
     :param x_input: A single input
-    :param y_label: A single input label 
+    :param y_label: A single input label
     :param options: All attributes to process data. First position must to be the option.
     :param is_test: Sometimes you don't want to do some operation to test set.
     :return: x_input and y_label processed
@@ -1232,7 +1232,7 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
     :param height: image height
     :param width: image width
     :param is_test: flag with True if image is in test set
-    :return: 
+    :return:
     """
     # 1- Get image in GrayScale
     # 2- Modify intensity and contrast
