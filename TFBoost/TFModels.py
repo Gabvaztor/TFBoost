@@ -617,13 +617,17 @@ class TFModels():
             else:
                 try:
                     input_path = self.input[0]
-                    label = None
+                    label = 99
                     if self.input_labels is not None and self.input_labels:
                         label = self.input_labels[0]
                     x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options)
+                    if label == 99:
+                        real_label=None
+                    else:
+                        real_label = int(np.argmax(real_label))
                     fullpath_saved = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
                                                           x_input_pred=x_input_pred, keep_probably=keep_probably,
-                                                          real_label=int(np.argmax(real_label)), input_path=input_path)
+                                                          real_label=real_label, input_path=input_path)
                 except Exception as err:
                     self.write_log_error(err)
 
@@ -653,7 +657,8 @@ class TFModels():
         if x_input_pred is not None:
             prediction = y_prediction.eval(feed_dict=feed_dict_prediction)
             pt("Prediction", np.argmax(prediction))
-            pt("Real Label", real_label)
+            if real_label:
+                pt("Real Label", real_label)
             path_saved = None
             information = "German Signal prediction"
             try:

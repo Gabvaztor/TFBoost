@@ -35,6 +35,13 @@ Future Versions:
 All project use "Google Python Style Guide":
 https://google.github.io/styleguide/pyguide.html
 
+**TensorFlow Boost Web example (NEW):**
+
+<div align="center">
+<img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/tfboost-framework-web-example.png"><br>
+<br>
+</div>
+
 **TensorFlow Boost works as follows:**
 
 <div align="center">
