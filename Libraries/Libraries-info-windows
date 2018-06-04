@@ -32,6 +32,11 @@ import scipy.io as sio
 To install python -m pip install matplotlib
 import matplotlib.pyplot as plt
 ########################################################################################
+''' Pillow URL: https://pillow.readthedocs.io/en/5.1.x/'''
+Problem with OpenCV on Raspbian. Installed Pillow.
+To install: pip3 install pillow
+from PIL import Image
+########################################################################################
 ''' TFLearn library. License MIT. '''
 Git Clone : https://github.com/tflearn/tflearn.git
 To install: pip install tflearn

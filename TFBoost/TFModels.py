@@ -52,6 +52,13 @@ import numpy as np
 
 ''' Matlab URL: http://matplotlib.org/users/installing.html'''
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
+''' Pillow URL: https://pillow.readthedocs.io/en/5.1.x/
+Problem with OpenCV on Raspbian. Installed Pillow. '''
+
+import PIL.Image as Image
+import PIL
 
 ''' TFLearn library. License MIT.
 Git Clone : https://github.com/tflearn/tflearn.git
@@ -59,8 +66,9 @@ To install: pip3 install tflearn'''
 import tflearn
 
 '''"Best image library"
-pip3 install opencv-python'''
-import cv2
+pip3 install opencv-python
+Imported by petition (variable flag) beacuse of problem on raspberry. Used PILLOW instead'''
+# import cv2
 
 """Python libraries"""
 """ Random to shuffle lists """
@@ -638,6 +646,7 @@ class TFModels():
         file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]  # to get File Name.
         error_string = "ERROR : Error Msg:{},File Name : {}, Line no : {}\n".format(err, file_name,
                                                                                     exc_tb.tb_lineno)
+        pt(error_string)
         file_log = open("python_prediction_error_log.log", "a")
         file_log.write(error_string + "\n\n" + str(err))
         file_log.close()
@@ -1229,7 +1238,7 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
 
 
 # noinspection PyUnresolvedReferences
-def process_image_signals_problem(image, image_type, height, width, is_test=False):
+def process_image_signals_problem(image, image_type, height, width, is_test=False, cv2_flag=False, debug_mode=False):
     """
     Process signal image
     :param image: The image to change
@@ -1239,28 +1248,79 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
     :param is_test: flag with True if image is in test set
     :return:
     """
-    # 1- Get image in GrayScale
-    # 2- Modify intensity and contrast
-    # 3- Transform to gray scale
-    # 4- Return image
-    image = cv2.imread(image, image_type)
-    image = cv2.resize(image, (height, width))
-    #image = cv2.equalizeHist(image)
+    # TODO (@gabvaztor) Doc method
+    if not cv2_flag and not debug_mode:
+        image = Image.open(image).convert('L')
+        image = np.array(image.resize((height, width)))
+        #pil_image_resized_antialias = np.array(image.resize((height, width), PIL.Image.ANTIALIAS))
 
-    if not is_test:
-        random_percentage = random.randint(3, 20)
-        to_crop_height = int((random_percentage * height) / 100)
-        to_crop_width = int((random_percentage * width) / 100)
-        image = image[to_crop_height:height - to_crop_height, to_crop_width:width - to_crop_width]
-        image = cv2.copyMakeBorder(image, top=to_crop_height,
-                                   bottom=to_crop_height,
-                                   left=to_crop_width,
-                                   right=to_crop_width,
-                                   borderType=cv2.BORDER_CONSTANT)
+    elif not cv2_flag and debug_mode:
+        import cv2
+        image_ = cv2.imread(image, image_type)
+        image_2 = cv2.resize(image_, (height, width))
 
-    #image = image.reshape(-1)
-    #cv2.imshow('image', image)
-    #cv2.waitKey(0)  # Wait until press key to destroy image
+        cv_image = np.array(image_)
+        cv_image_resized = np.array(image_2)
+
+        image = Image.open(image).convert('L')
+
+        pil_image = np.array(image)
+        pil_image_resized = np.array(image.resize((height, width)))
+        pil_image_resized_antialias = np.array(image.resize((height, width), PIL.Image.ANTIALIAS))
+
+        pt("image_shape", pil_image.shape)
+        pt("image_shape", pil_image_resized.shape)
+        pt("image", pil_image_resized_antialias.shape)
+
+        cv_image_sum = np.sum(cv_image_resized, axis=1)
+        pil_image_sum = np.sum(pil_image, axis=1)
+        pil_image_resized_sum = np.sum(pil_image_resized, axis=1)
+        pil_image_resized_antialias_sum = np.sum(pil_image_resized_antialias, axis=1)
+
+        pt("cv_image_sum", cv_image_sum)
+        pt("pil_image_sum", pil_image_sum)
+        pt("pil_image_resized_sum", pil_image_resized_sum)
+        pt("pil_image_resized_antialias_sum", pil_image_resized_antialias_sum)
+
+        pt("cv_image_resized", np.sum(cv_image_resized))
+        pt("pil_image_resized_sum", np.sum(pil_image_resized_sum))
+        pt("pil_image_resized_antialias_sum", np.sum(pil_image_resized_antialias_sum))
+
+        if np.array_equal(cv_image, pil_image):
+            pt("YES")
+        if np.array_equal(cv_image_resized, pil_image_resized):
+            pt("YES")
+        if np.array_equal(cv_image_resized, pil_image_resized_antialias):
+            pt("YES")
+
+        pt("image", pil_image)
+        pt("image", pil_image_resized)
+        pt("image", pil_image_resized_antialias)
+
+    else:
+        # 1- Get image in GrayScale
+        # 2- Modify intensity and contrast
+        # 3- Transform to gray scale
+        # 4- Return image
+        import cv2
+        image = cv2.imread(image, image_type)
+        image = cv2.resize(image, (height, width))
+        #image = cv2.equalizeHist(image)
+
+        if not is_test:
+            random_percentage = random.randint(3, 20)
+            to_crop_height = int((random_percentage * height) / 100)
+            to_crop_width = int((random_percentage * width) / 100)
+            image = image[to_crop_height:height - to_crop_height, to_crop_width:width - to_crop_width]
+            image = cv2.copyMakeBorder(image, top=to_crop_height,
+                                       bottom=to_crop_height,
+                                       left=to_crop_width,
+                                       right=to_crop_width,
+                                       borderType=cv2.BORDER_CONSTANT)
+
+        #image = image.reshape(-1)
+        #cv2.imshow('image', image)
+        #cv2.waitKey(0)  # Wait until press key to destroy image
     return image
 
 def process_test_set(test, test_labels, options):
@@ -1280,7 +1340,6 @@ def process_test_set(test, test_labels, options):
     x_test = np.asarray(x_test)
     y_test = np.asarray(y_test)
     return x_test, y_test
-
 
 def process_german_prizes_csv(x_input, is_test=False):
     return x_input
