@@ -76,6 +76,9 @@ import random
 
 """ Time """
 import time
+""" Datetime"""
+import datetime
+
 
 """ To serialize object"""
 import json
@@ -653,9 +656,10 @@ class TFModels():
 
     def test_prediction(self, sess, x_input_tensor, y_prediction, x_input_pred, keep_probably, real_label=None,
                         input_path=None):
+        start_time_load_model = datetime.datetime.now()
         # Restore model
         self.load_and_restore_model(session=sess)
-
+        pt('Time to load model', (datetime.datetime.now()- start_time_load_model).total_seconds())
         if self.debug_level > 0:
             pt("x_input", x_input_tensor)
             pt("x_input.shape", x_input_tensor.shape)
@@ -663,11 +667,17 @@ class TFModels():
             pt("x_input_pred", x_input_pred.shape)
         x_input_pred = np.asarray([x_input_pred])
         feed_dict_prediction = {x_input_tensor: x_input_pred, keep_probably: 1.0}
+        i = 0
         if x_input_pred is not None:
-            prediction = y_prediction.eval(feed_dict=feed_dict_prediction)
-            pt("Prediction", np.argmax(prediction))
-            if real_label:
-                pt("Real Label", real_label)
+            while i < 15:
+                start_datetime_ = datetime.datetime.now()
+                i += 1
+                prediction = y_prediction.eval(feed_dict=feed_dict_prediction)
+                pt("Prediction " + str(i), np.argmax(prediction))
+                if real_label:
+                    pt("Real Label", real_label)
+                delta = datetime.datetime.now() - start_datetime_
+                pt("Time to do inference " + str(i), delta.total_seconds())
             path_saved = None
             information = "German Signal prediction"
             try:
