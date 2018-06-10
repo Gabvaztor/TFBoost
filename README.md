@@ -13,7 +13,7 @@ Update Version 0.1:
   - See json information by time in two different ways: "Information" and "Configuration".
   - See graphs progress during training. After each epoch it will be saved a graph. 
   - You can decide if you want to save graphs after validation/test accuracies are surpass your limit.
-  - You can reset the configuration making backups.  
+  - You can reset the configuration making   backups.
   - You can change dropout during training easily.
   - You can restore previous tensorflow models easily.
   - You have a method by problem: for each problem you can solve, you could created a method to process each input in a different way.
@@ -21,7 +21,8 @@ Update Version 0.1:
   - You can see loss and accuracies in graphs and printed in the console.
   - You can easily change the epochs and batch sizes.
   - You have a **CNN example** treating a signal problem.
-  
+  - You have a **Framework web** to test models trained with **TFBoost**.
+
 Next Version:
 
   - You will be able to do all this with a simple and beautiful user interface (in curse).
