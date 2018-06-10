@@ -79,7 +79,6 @@ import time
 """ Datetime"""
 import datetime
 
-
 """ To serialize object"""
 import json
 
@@ -96,8 +95,7 @@ class TFModels():
     """
     Long Docs ...
     """
-
-    # TODO Docs
+    # TODO (@gabvaztor) Docs
     def __init__(self, setting_object, option_problem, input_data=None, test=None, input_labels=None, test_labels=None,
                  number_of_classes=None , type=None, validation=None, validation_labels=None,
                  load_model_configuration=False, predict_flag=False, *args , **kwargs):
@@ -605,7 +603,8 @@ class TFModels():
         # Print actual configuration
         self.print_actual_configuration()
         # TODO Try python EVAL method to do multiple variable neurons
-        with tf.device('/gpu:0'):
+        with tf.device('/cpu:0'):  # CPU
+        #with tf.device('/gpu:0'):  # GPU
             # Placeholders
             x_input, y_labels, keep_probably = self.placeholders(args=None, kwargs=None)
             # Reshape x placeholder into a specific tensor
@@ -641,7 +640,6 @@ class TFModels():
                                                           real_label=real_label, input_path=input_path)
                 except Exception as err:
                     self.write_log_error(err)
-
 
     def write_log_error(self, err):
         import sys
@@ -855,7 +853,7 @@ class TFModels():
         accuracy = ""
         if "accuracy" in kwargs:
             accuracy = kwargs["accuracy"]
-        json = object_to_json(attributes_to_delete)
+        json = object_to_json(object=self, attributes_to_delete=attributes_to_delete)
         write_string_to_pathfile(json, fullpath)
         filepath = create_historic_folder(fullpath, type_file, accuracy)
         write_string_to_pathfile(json, filepath)

@@ -120,10 +120,9 @@ import pandas as pd
 """
 Creating Reader Features
 """
-import cv2
 setting_object = SettingsObject.Settings(Dictionary.string_settings_german_signal_path)
 option_problem = Dictionary.string_option_signals_images_problem
-options = [option_problem, cv2.IMREAD_GRAYSCALE, 60, 60]
+options = [option_problem, 0, 60, 60]
 path_train_and_test_images = [setting_object.train_path,setting_object.test_path]
 number_of_classes = 59 # Start in 0
 percentages_sets = None  # Example
@@ -173,5 +172,6 @@ models = models.TFModels(setting_object=setting_object, option_problem=options,
                          number_of_classes=number_of_classes, type=None,
                          validation=None, validation_labels=None,
                          load_model_configuration=False)
-with tf.device('/gpu:0'):
+with tf.device('/cpu:0'):  # CPU
+#with tf.device('/gpu:0'):  # GPU
     models.convolution_model_image()
