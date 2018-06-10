@@ -37,7 +37,7 @@ https://google.github.io/styleguide/pyguide.html
 
 **TensorFlow Boost Web example (NEW):**
 
-[I'm an inline-style link](http://tfboost-framework.ddns.net)
+[http://tfboost-framework.ddns.net](http://tfboost-framework.ddns.net)
 
 <div align="center">
 <img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/tfboost-framework-web-example.png"><br>
