@@ -603,8 +603,8 @@ class TFModels():
         # Print actual configuration
         self.print_actual_configuration()
         # TODO Try python EVAL method to do multiple variable neurons
-        with tf.device('/cpu:0'):  # CPU
-        #with tf.device('/gpu:0'):  # GPU
+        #with tf.device('/cpu:0'):  # CPU
+        with tf.device('/gpu:0'):  # GPU
             # Placeholders
             x_input, y_labels, keep_probably = self.placeholders(args=None, kwargs=None)
             # Reshape x placeholder into a specific tensor

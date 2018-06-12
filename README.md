@@ -38,9 +38,9 @@ https://google.github.io/styleguide/pyguide.html
 
 **TensorFlow Boost Web example (NEW):**
 
-[http://tfboost.ddns.net/](http://tfboost.ddns.net) 
+[http://tfboost.ddns.net](http://tfboost.ddns.net)
 OR
-[http://tfboost-framework.ddns.net](http://tfboost-framework.ddns.net)
+[http://tfboostframework.ddns.net](http://tfboostframework.ddns.net)
 
 
 <div align="center">

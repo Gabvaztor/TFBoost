@@ -172,6 +172,6 @@ models = models.TFModels(setting_object=setting_object, option_problem=options,
                          number_of_classes=number_of_classes, type=None,
                          validation=None, validation_labels=None,
                          load_model_configuration=False)
-with tf.device('/cpu:0'):  # CPU
-#with tf.device('/gpu:0'):  # GPU
+#with tf.device('/cpu:0'):  # CPU
+with tf.device('/gpu:0'):  # GPU
     models.convolution_model_image()
