@@ -96,7 +96,7 @@ class Reader(object):
     number_classes = None  # Represent number of columns in csv without labels
     reader_features = None  # ReaderFeatures Object
 
-    def __init__(self, type_problem, reader_features=None, paths_to_read=None, number_of_classes=None, delimiter=";",
+    def __init__(self, type_problem, reader_features=None, settings=None, paths_to_read=None, number_of_classes=None, delimiter=";",
                  labels_set=None, is_unique_file=None, known_data_type=None,
                  percentages_sets=None):
         """
@@ -109,6 +109,7 @@ class Reader(object):
         :param is_unique_file: 
         :param known_data_type: 
         :param percentages_sets: 
+        :param settings:
         """
         # TODO (@gabvaztor) DOCs
         self.paths_to_read = paths_to_read
@@ -119,6 +120,7 @@ class Reader(object):
         self.there_is_validation, self.train_validation_test_percentages = self.calculate_percentages(percentages_sets)
         self.reader_features = reader_features
         self.delimiter = delimiter
+        self.settings = settings
         if reader_features:
             if self.reader_features.is_unique_csv:
                 self.unique_data_file(type_problem)
@@ -149,11 +151,17 @@ class Reader(object):
         if type_problem == Dictionary.string_option_signals_images_problem:
             # TODO(@gabvaztor) Change this to use new structure
             features = self.reader_features
-            tf_search = Searcher(features=features)
+            tf_search = Searcher(features=features, reader=self)
             tf_search.find_train_and_test_sets_from_path_signals()
             self.load_sets(test=True)
         elif type_problem == Dictionary.string_option_web_traffic_problem:
             self.read_web_traffic_data_and_create_files(is_necessary_create_files=False)
+        elif type_problem == Dictionary.string_retinopathy_k_problem:
+            features = self.reader_features
+            tf_search = Searcher(features=features, reader=self)
+            tf_search.get_fullpath_and_execute_problem_operation(problem=type_problem)
+            self.load_sets(test=True)
+
     def load_sets(self, validation=False, test=False):
         self.train_set.append(np.asarray(self.x_train))
         self.train_set.append(np.asarray(self.y_train))
@@ -163,6 +171,7 @@ class Reader(object):
         if validation:
             self.validation_set.append(np.asarray(self.x_validation))
             self.validation_set.append(np.asarray(self.y_validation))
+
     def calculate_percentages(self, percentages_sets):
         """
         
@@ -340,12 +349,54 @@ class ReaderFeatures():
 
 
 class Searcher(Reader):
-    path_to_read = ''
 
-    def __init__(self,features):
+    def __init__(self, features, reader):
         super(Reader, self).__init__()
         self.path_to_read = features.set_data_files
         self.features = features
+        self.reader = reader
+
+    def get_fullpath_and_execute_problem_operation(self, problem):
+        """
+        Generic class to find a fullpath and do an specific operation (function) to a given problem.
+        """
+        setting_object = self.reader.settings
+
+        dataframe_labels = None
+
+        if setting_object.labels_path:
+            labels_path = setting_object.labels_path
+            if problem == Dictionary.string_retinopathy_k_problem:
+                # Read CSV Labels
+                # TODO (@gabvaztor) Do generic import if more than one problem use it
+                import pandas as pd
+                dataframe_labels = pd.read_csv(filepath_or_buffer=labels_path)
+
+        for path in self.path_to_read:
+            for root, dirs, files in os.walk(path):
+                for file_name in files:
+                    if problem == Dictionary.string_retinopathy_k_problem:
+                        if (file_name.endswith(Dictionary.string_extension_jpeg)):
+                            full_path = os.path.join(root, file_name)
+                            labels = np.zeros(self.features.number_of_classes, dtype=np.float32)
+                            name = os.path.splitext(file_name)[0]
+                            pt("name", name)
+                            if dataframe_labels["image"].str.contains(name).any():
+                                pt(dataframe_labels["image"], type(index))
+                                pt(dataframe_labels.index.get_loc(name), type(index))
+                                index = dataframe_labels["image"].index.get_loc(name)
+                                label = dataframe_labels.loc[[index]]["level"]
+                                pt("index", index)
+                                pt("label", label)
+                                pt("index", type(index))
+                                pt("label", type(label))
+                                sads
+                                # To save
+                                if Dictionary.string_train in path:
+                                    self.y_train.append(list(labels))
+
+                    elif problem == Dictionary.string_option_signals_images_problem:
+                        self.find_train_and_test_sets_from_path_signals()
 
     def find_train_and_test_sets_from_path_signals(self):
         """

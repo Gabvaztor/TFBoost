@@ -120,11 +120,11 @@ import pandas as pd
 """
 Creating Reader Features
 """
-setting_object = SettingsObject.Settings(Dictionary.string_settings_german_signal_path)
-option_problem = Dictionary.string_option_signals_images_problem
-options = [option_problem, 0, 60, 60]
-path_train_and_test_images = [setting_object.train_path,setting_object.test_path]
-number_of_classes = 59 # Start in 0
+option_problem = Dictionary.string_retinopathy_k_problem
+setting_object = SettingsObject.Settings(Dictionary.string_settings_retinopathy_k)
+options = [option_problem, 1, 60, 720]
+path_train_and_test_images = [setting_object.train_path, setting_object.test_path]
+number_of_classes = 4 # Start in 0
 percentages_sets = None  # Example
 labels_set = [Dictionary.string_labels_type_option_hierarchy]
 is_an_unique_csv = False  # If this variable is true, then only one CSV file will be passed and it will be treated like
@@ -143,7 +143,8 @@ reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images
 Creating Reader from ReaderFeatures
 """
 
-tf_reader = tfr.Reader(type_problem=option_problem, reader_features=reader_features)  # Reader Object with all information
+tf_reader = tfr.Reader(type_problem=option_problem, reader_features=reader_features,
+                       settings=setting_object)  # Reader Object with all information
 
 """
 # --------------------------------------------------------------------------

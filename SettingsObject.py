@@ -15,6 +15,7 @@ class Settings():
     _accuracies_losses_path= ""
     _history_information_path = ""
     _history_configuration_path = ""
+    _labels_path = ""
     _path = "SETTINGS.json"
     string_train_path = "TRAIN_DATA_PATH"
     string_test_path = "TEST_DATA_PATH"
@@ -25,6 +26,7 @@ class Settings():
     string_accuracies_losses_path = "ACCURACIES_LOSSES_PATH"
     string_history_information_path = "HISTORY_INFORMATION_PATH"
     string_history_configuration_path = "HISTORY_CONFIGURATION_PATH"
+    string_labels_path = "LABELS_PATH"
 
     # TODO (@gabvaztor) Configure with new paths
     @property
@@ -87,6 +89,12 @@ class Settings():
     @history_configuration_path.setter
     def history_configuration_path(self, value): self._history_configuration_path=value
 
+    @property
+    def labels_path(self): return self._labels_path
+
+    @labels_path.setter
+    def labels_path(self, value): self._labels_path=value
+
     def __init__(self, path):
         self._path = path
         self._load_settings()
@@ -98,6 +106,7 @@ class Settings():
                               self.string_model_path,
                               self.model_path,
                               self.string_submission_path,
+                              self.labels_path,
                               self.submission_path])
         return to_print
     def _load_settings(self):
@@ -113,6 +122,7 @@ class Settings():
             self.accuracies_losses_path=settings[self.string_accuracies_losses_path]
             self.history_information_path=settings[self.string_history_information_path]
             self.history_configuration_path=settings[self.string_history_configuration_path]
+            self.labels_path=settings[self.string_labels_path]
 
     def load_actual_information(self):
         """

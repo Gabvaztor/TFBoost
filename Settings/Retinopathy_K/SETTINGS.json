@@ -1,13 +1,12 @@
 {
-  "TRAIN_DATA_PATH": "Z:\\Data_Science\\Data\\Rethinopaty\\train_v2\\train_v2_removed_pixels\\",
-  "MODEL_PATH": "Z:\\Data_Science\\Conciences\\Framework\\Models\\Retinopathy.1\\models\\",
-  "TEST_DATA_PATH": "Z:\\Data_Science\\Data\\Rethinopaty\\test_removed_pixels_imaginary\\test_removed_pixels_imaginary_removed_pixels\\",
-  "SUBMISSION_PATH": "Z:\\Data_Science\\Conciences\\Framework\\Models\\Retinopathy.1\\models\\submissions\\prediction.json",
-  "CONFIGURATION_PATH": "Z:\\Data_Science\\Conciences\\Framework\\Models\\Retinopathy.1\\models\\configuration_model.json",
-  "INFORMATION_PATH": "Z:\\Data_Science\\Conciences\\Framework\\Models\\Retinopathy.1\\models\\information_model.json",
-  "ACCURACIES_LOSSES_PATH": "Z:\\Data_Science\\Conciences\\Framework\\Models\\Retinopathy.1\\models\\History_Information\\Accuracies_Losses\\",
-  "HISTORY_INFORMATION_PATH": "Z:\\Data_Science\\Conciences\\Framework\\Models\\Retinopathy.1\\models\\History_Information\\Information\\",
-  "HISTORY_CONFIGURATION_PATH": "Z:\\Data_Science\\Conciences\\Framework\\Models\\Retinopathy.1\\models\\History_Information\\Configuration\\",
-  "LABELS_PATH": "Z:\\Data_Science\\Data\\Rethinopaty\\labels\\labels_modified.csv",
-  "SAVED_DATASET_PATH": "Z:\\Data_Science\\Conciences\\Framework\\Models\\Retinopathy.1\\models\\saved_data\\"
+  "TRAIN_DATA_PATH": "E:\\Data_Science\\Data\\Retinopathy\\train\\",
+  "MODEL_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\model",
+  "TEST_DATA_PATH": "E:\\Data_Science\\Data\\Retinopathy\\test\\",
+  "SUBMISSION_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Predictions\\prediction.json",
+  "CONFIGURATION_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\configuration_model.json",
+  "INFORMATION_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\information_model.json",
+  "ACCURACIES_LOSSES_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\History_Information\\Accuracies_Losses\\",
+  "HISTORY_INFORMATION_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\History_Information\\Information\\",
+  "HISTORY_CONFIGURATION_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\History_Information\\Configuration\\",
+  "LABELS_PATH": "E:\\Data_Science\\Data\\Retinopathy\\labels\\labels.csv"
 }
