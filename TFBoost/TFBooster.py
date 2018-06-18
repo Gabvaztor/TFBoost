@@ -122,7 +122,7 @@ Creating Reader Features
 """
 option_problem = Dictionary.string_option_retinopathy_k_problem
 setting_object = SettingsObject.Settings(Dictionary.string_settings_retinopathy_k)
-options = [option_problem, 1, 1280, 720]
+options = [option_problem, 1, 720, 1280]
 path_train_and_test_images = [setting_object.train_path, setting_object.test_path]
 number_of_classes = 5 # Start in 0
 percentages_sets = None  # Example
@@ -148,10 +148,6 @@ if load_dataset:
     y_train = np.load(file=path_to_load + y_train_string)
     x_test = np.load(file=path_to_load + x_test_string)
     y_test = np.load(file=path_to_load + y_test_string)
-    pt("x_train", x_train)
-    pt("y_train", y_train)
-    pt("x_test", x_test)
-    pt("y_test", y_test)
 else:
     """
     Creating Reader Features
@@ -178,6 +174,14 @@ else:
     y_train = None
     x_test = None
     y_test = None
+
+pt("x_train", x_train.shape)
+pt("y_train", y_train.shape)
+pt("x_test", x_test.shape)
+pt("y_test", y_test.shape)
+
+# TO create imges
+x_test = x_train
 
 models = models.TFModels(setting_object=setting_object, option_problem=options,
                          input_data=x_train,test=x_test,

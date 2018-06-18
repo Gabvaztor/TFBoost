@@ -91,6 +91,9 @@ import numbers
 """ To work with types"""
 import types
 
+""" To recollect python rash"""
+import gc
+
 class TFModels():
     """
     Long Docs ...
@@ -132,8 +135,8 @@ class TFModels():
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
         # the framework will save a graph
         # TRAIN MODEL VARIABLES
-        self._input_rows_numbers = 1280 # For example, in german problem, number of row pixels
-        self._input_columns_numbers = 720  # For example, in german problem, number of column pixels
+        self._input_rows_numbers = option_problem[2] # For example, in german problem, number of row pixels
+        self._input_columns_numbers = option_problem[3]  # For example, in german problem, number of column pixels
         self._kernel_size = [6, 6]  # Kernel patch size
         self._epoch_numbers = 250  # Epochs number
         self._batch_size = 2  # Batch size
@@ -648,7 +651,7 @@ class TFModels():
                 real_label = None
             else:
                 real_label = int(np.argmax(real_label))
-            fullpath_saved = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
+            self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
                                                   x_input_pred=x_input_pred, keep_probably=keep_probably,
                                                   real_label=real_label, input_path=input_path)
         except Exception as err:
@@ -1096,7 +1099,7 @@ class TFModels():
                                                                                 inputs_labels=self.input_labels,
                                                                                 shuffle_data=self.shuffle_data,
                                                                                 batch_size=self.batch_size,
-                                                                                is_test=False,
+                                                                                is_test=True,
                                                                                 options=self.options)
         elif is_test:
             x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
@@ -1239,15 +1242,40 @@ def get_inputs_and_labels_shuffled(inputs, inputs_labels):
     return inputs_processed, labels_processed
 
 
-def image_process_retinopathy(image, image_type, height, width, is_test=False, cv2_flag=False, debug_mode=False):
-
+def image_process_retinopathy(image, image_type, height, width, is_test=False, cv2_flag=False, debug_mode=False,
+                              to_save=False):
+    fullpath_image = image
     if not cv2_flag and not debug_mode:
         if image_type == 0:  # GrayScale
             image = Image.open(image).convert('L')
         else:
             image = Image.open(image)
-        image = np.array(image.resize((width, height)))
         #pil_image_resized_antialias = np.array(image.resize((height, width), PIL.Image.ANTIALIAS))
+        # Save resized
+        if to_save:
+            # Resize image and modify
+            image_array = np.asarray(image)[:, 140:-127, :]
+            image = Image.fromarray(image_array)
+            width2, height2 = image.size
+            pt("width2", width2)
+            pt("height2", height2)
+            image = np.array(image.resize((width, height)))
+            pt("image", image.shape)
+
+            # TODO (@gabvaztor) Create new place in SETTINGS to save new datasets
+            # Image path
+            path_to_save = os.path.dirname(fullpath_image)
+            filename = os.path.basename(fullpath_image)[:-5]
+            if is_test:
+                folder = "\\test\\"
+                pass  # We have already save test images
+            else:
+                folder = "\\train\\"
+            fullpath_to_save = path_to_save + folder + filename
+            create_directory_from_fullpath(fullpath=fullpath_to_save)
+            Image.fromarray(image).save(fullpath_to_save + ".jpeg")
+        else:
+            image = np.asarray(image)
         return image
 
 
@@ -1270,7 +1298,8 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
             x_input = process_german_prizes_csv(x_input, is_test=is_test)
         if option == Dictionary.string_option_retinopathy_k_problem:
             x_input = image_process_retinopathy(image=x_input, image_type=options[1], height=options[2],
-                                                    width=options[3], is_test=is_test, cv2_flag=False, debug_mode=False)
+                                                width=options[3], is_test=is_test, to_save=True,
+                                                cv2_flag=False, debug_mode=False)
     return x_input, y_label
 
 
@@ -1373,6 +1402,8 @@ def process_test_set(test, test_labels, options):
     x_test = []
     y_test = []
     for i in range(len(test)):
+        if i == 100:
+            gc.collect()
         x, y = process_input_unity_generic(test[i], test_labels[i], options, is_test=True)
         x_test.append(x)
         y_test.append(y)
