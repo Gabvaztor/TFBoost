@@ -133,7 +133,7 @@ class Dictionary(object):
     # Option Breast Cancer Wisconsin problem
     string_breast_cancer_wisconsin_problem = 'web_traffic_problem'
     # Option Retinopathy_K problem
-    string_retinopathy_k_problem = "retinopathy_k_problem"
+    string_option_retinopathy_k_problem = "retinopathy_k_problem"
 
 class Errors(object):
     """

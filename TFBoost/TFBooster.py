@@ -56,8 +56,8 @@ To upgrade TensorFlow to last version:
 *CPU: pip3 install --upgrade tensorflow
 *GPU: pip3 install --upgrade tensorflow-gpu
 '''
-import tensorflow as tf
-print("TensorFlow: " + tf.__version__)
+#import tensorflow as tf
+#print("TensorFlow: " + tf.__version__)
 
 
 ''' Numpy is an extension to the Python programming language, adding support for large,
@@ -120,56 +120,68 @@ import pandas as pd
 """
 Creating Reader Features
 """
-option_problem = Dictionary.string_retinopathy_k_problem
+option_problem = Dictionary.string_option_retinopathy_k_problem
 setting_object = SettingsObject.Settings(Dictionary.string_settings_retinopathy_k)
-options = [option_problem, 1, 60, 720]
+options = [option_problem, 1, 1280, 720]
 path_train_and_test_images = [setting_object.train_path, setting_object.test_path]
-number_of_classes = 4 # Start in 0
+number_of_classes = 5 # Start in 0
 percentages_sets = None  # Example
 labels_set = [Dictionary.string_labels_type_option_hierarchy]
 is_an_unique_csv = False  # If this variable is true, then only one CSV file will be passed and it will be treated like
 # trainSet, validationSet(if necessary) and testSet
 known_data_type = ''  # Contains the type of data if the data file contains an unique type of data. Examples: # Number
 # or Chars.
-"""
-Creating Reader Features
-"""
-reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images, number_of_classes = number_of_classes,
-                                      labels_set = labels_set,
-                                      is_unique_csv = is_an_unique_csv, known_data_type = known_data_type,
-                                      percentages_sets = percentages_sets)
 
-"""
-Creating Reader from ReaderFeatures
-"""
+# TODO (@gabvaztor) Check if file exist automatically
+load_dataset = True
+if load_dataset:
+    # TODO (@gabvaztor) Create new path in setting with "DATASET_PATH"
+    # By defect, saves in model path (without "model") string
+    path_to_load = setting_object.model_path  # path\\model --> path\\
+    path_to_load = path_to_load[0:-5]
+    x_train_string = "x_train.npy"
+    y_train_string = "y_train.npy"
+    x_test_string = "x_test.npy"
+    y_test_string = "y_test.npy"
 
-tf_reader = tfr.Reader(type_problem=option_problem, reader_features=reader_features,
-                       settings=setting_object)  # Reader Object with all information
+    x_train = np.load(file=path_to_load + x_train_string)
+    y_train = np.load(file=path_to_load + y_train_string)
+    x_test = np.load(file=path_to_load + x_test_string)
+    y_test = np.load(file=path_to_load + y_test_string)
+    pt("x_train", x_train)
+    pt("y_train", y_train)
+    pt("x_test", x_test)
+    pt("y_test", y_test)
+else:
+    """
+    Creating Reader Features
+    """
+    reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images, number_of_classes = number_of_classes,
+                                          labels_set = labels_set,
+                                          is_unique_csv = is_an_unique_csv, known_data_type = known_data_type,
+                                          percentages_sets = percentages_sets)
 
-"""
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# ---- DATA MINING ----
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-"""
+    """
+    Creating Reader from ReaderFeatures
+    """
 
-"""
-Manipulate Reader with DataMining and update it.
-"""
+    tf_reader = tfr.Reader(type_problem=option_problem, reader_features=reader_features,
+                           settings=setting_object)  # Reader Object with all information
 
-"""
-Getting train, validation (if necessary) and test set.
-"""
-train_set = tf_reader.train_set  # Train Set
-test_set = tf_reader.test_set  # Test Set
 
-del reader_features
-del tf_reader
+    train_set = tf_reader.train_set  # Train Set
+    test_set = tf_reader.test_set  # Test Set
+
+    del reader_features
+    del tf_reader
+    x_train = None
+    y_train = None
+    x_test = None
+    y_test = None
 
 models = models.TFModels(setting_object=setting_object, option_problem=options,
-                         input_data=train_set[0],test=test_set[0],
-                         input_labels=train_set[1],test_labels=test_set[1],
+                         input_data=x_train,test=x_test,
+                         input_labels=y_train,test_labels=y_test,
                          number_of_classes=number_of_classes, type=None,
                          validation=None, validation_labels=None,
                          load_model_configuration=False)

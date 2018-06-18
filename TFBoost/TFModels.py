@@ -132,11 +132,11 @@ class TFModels():
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
         # the framework will save a graph
         # TRAIN MODEL VARIABLES
-        self._input_rows_numbers = 60 # For example, in german problem, number of row pixels
-        self._input_columns_numbers = 60  # For example, in german problem, number of column pixels
+        self._input_rows_numbers = 1280 # For example, in german problem, number of row pixels
+        self._input_columns_numbers = 720  # For example, in german problem, number of column pixels
         self._kernel_size = [6, 6]  # Kernel patch size
         self._epoch_numbers = 250  # Epochs number
-        self._batch_size = 256  # Batch size
+        self._batch_size = 2  # Batch size
         if self.input is not None and not self.restore_to_predict:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
             self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
@@ -154,7 +154,8 @@ class TFModels():
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
         self._first_label_neurons = 32
         self._second_label_neurons = 64
-        self._third_label_neurons = 1024
+        self._third_label_neurons = 64
+        self._fourth_label_neurons = 64
         self._learning_rate = 1e-3  # Learning rate
         self._number_epoch_to_change_learning_rate = 60  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
@@ -507,6 +508,14 @@ class TFModels():
         self._third_label_neurons = value
 
     @property
+    def fourth_label_neurons(self):
+        return self._fourth_label_neurons
+
+    @fourth_label_neurons.setter
+    def fourth_label_neurons(self, value):
+        self._fourth_label_neurons = value
+
+    @property
     def trains(self):
         return self._trains
 
@@ -625,21 +634,25 @@ class TFModels():
                     self.load_and_restore_model(sess)
                 self.train_model(args=None, kwargs=locals())
             else:
-                try:
-                    input_path = self.input[0]
-                    label = 99
-                    if self.input_labels is not None and self.input_labels:
-                        label = self.input_labels[0]
-                    x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options)
-                    if label == 99:
-                        real_label=None
-                    else:
-                        real_label = int(np.argmax(real_label))
-                    fullpath_saved = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
-                                                          x_input_pred=x_input_pred, keep_probably=keep_probably,
-                                                          real_label=real_label, input_path=input_path)
-                except Exception as err:
-                    self.write_log_error(err)
+                self.prediction(x_input=x_input, y_prediction=y_prediction, keep_probably=keep_probably, sess=sess)
+
+
+    def prediction(self, x_input, y_prediction, keep_probably, sess):
+        try:
+            input_path = self.input[0]
+            label = 99
+            if self.input_labels is not None and self.input_labels:
+                label = self.input_labels[0]
+            x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options)
+            if label == 99:
+                real_label = None
+            else:
+                real_label = int(np.argmax(real_label))
+            fullpath_saved = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
+                                                  x_input_pred=x_input_pred, keep_probably=keep_probably,
+                                                  real_label=real_label, input_path=input_path)
+        except Exception as err:
+            self.write_log_error(err)
 
     def write_log_error(self, err):
         import sys
@@ -837,6 +850,7 @@ class TFModels():
             self._problem_information = configuration._problem_information
             self._restore_to_predict = configuration._restore_to_predict
             self._debug_level = configuration._debug_level
+            self._fourth_label_neurons = configuration._fourth_label_neurons
             # If you don't restore model then you won't load train number and epochs number
             if self.restore_model:
                 self._num_trains_count = configuration._num_trains_count
@@ -936,7 +950,7 @@ class TFModels():
         dropout2 = tf.nn.dropout(pool2, keep_dropout)
         convolution_3 = tf.layers.conv2d(
             inputs=dropout2,
-            filters=64,
+            filters=self.third_label_neurons,
             kernel_size=[3, 3],
             padding="same")
 
@@ -944,11 +958,11 @@ class TFModels():
         # Dense Layer
         # TODO Checks max pools numbers
         pool2_flat = tf.reshape(dropout3, [-1, int(self._input_rows_numbers / 4) * int(self._input_columns_numbers / 4)
-                                        * 64])
-        dense = tf.layers.dense(inputs=pool2_flat, units=self.third_label_neurons)
+                                        * self.third_label_neurons])
+        dense = tf.layers.dense(inputs=pool2_flat, units=self.fourth_label_neurons)
         #dropout = tf.nn.dropout(dense, keep_dropout)
         # Readout Layer
-        w_fc2 = weight_variable([self.third_label_neurons, self.number_of_classes])
+        w_fc2 = weight_variable([self.fourth_label_neurons, self.number_of_classes])
         b_fc2 = bias_variable([self.number_of_classes])
         y_convolution = (tf.matmul(dense, w_fc2) + b_fc2)
         return y_convolution
@@ -1072,6 +1086,7 @@ class TFModels():
         pt('first_label_neurons', self.first_label_neurons)
         pt('second_label_neurons', self.second_label_neurons)
         pt('third_label_neurons', self.third_label_neurons)
+        pt('fourth_label_neurons',self._fourth_label_neurons)
         pt('input_size', self.input_size)
         pt('batch_size', self.batch_size)
 
@@ -1205,7 +1220,6 @@ class TFModels():
 
 
 
-
 """
 STATIC METHODS: Not need "self" :argument
 """
@@ -1225,6 +1239,18 @@ def get_inputs_and_labels_shuffled(inputs, inputs_labels):
     return inputs_processed, labels_processed
 
 
+def image_process_retinopathy(image, image_type, height, width, is_test=False, cv2_flag=False, debug_mode=False):
+
+    if not cv2_flag and not debug_mode:
+        if image_type == 0:  # GrayScale
+            image = Image.open(image).convert('L')
+        else:
+            image = Image.open(image)
+        image = np.array(image.resize((width, height)))
+        #pil_image_resized_antialias = np.array(image.resize((height, width), PIL.Image.ANTIALIAS))
+        return image
+
+
 def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
     """
     Generic method that process input and label across a if else statement witch contains a string that represent
@@ -1242,6 +1268,9 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
                                                     options[3], is_test=is_test)
         if option == Dictionary.string_option_german_prizes_problem:
             x_input = process_german_prizes_csv(x_input, is_test=is_test)
+        if option == Dictionary.string_option_retinopathy_k_problem:
+            x_input = image_process_retinopathy(image=x_input, image_type=options[1], height=options[2],
+                                                    width=options[3], is_test=is_test, cv2_flag=False, debug_mode=False)
     return x_input, y_label
 
 
@@ -1260,6 +1289,8 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
     if not cv2_flag and not debug_mode:
         image = Image.open(image).convert('L')
         image = np.array(image.resize((height, width)))
+        pt("image", image)
+        pt("image", image.size)
         #pil_image_resized_antialias = np.array(image.resize((height, width), PIL.Image.ANTIALIAS))
 
     elif not cv2_flag and debug_mode:

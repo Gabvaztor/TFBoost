@@ -148,29 +148,50 @@ class Reader(object):
         """
         # TODO check nulls
         # TODO low letters in methods
+
+        # TODO (@gabvaztor) Create new path in setting with "DATASET_PATH"
+        # By defect, saves in model path (without "model") string
+        path_to_save = self.settings.model_path  # path\\model --> path\\
+        path_to_save = path_to_save[0:-5]
+
         if type_problem == Dictionary.string_option_signals_images_problem:
             # TODO(@gabvaztor) Change this to use new structure
             features = self.reader_features
             tf_search = Searcher(features=features, reader=self)
             tf_search.find_train_and_test_sets_from_path_signals()
-            self.load_sets(test=True)
+            self.create_and_save_flag_sets(test=True)
         elif type_problem == Dictionary.string_option_web_traffic_problem:
             self.read_web_traffic_data_and_create_files(is_necessary_create_files=False)
-        elif type_problem == Dictionary.string_retinopathy_k_problem:
+        elif type_problem == Dictionary.string_option_retinopathy_k_problem:
             features = self.reader_features
             tf_search = Searcher(features=features, reader=self)
             tf_search.get_fullpath_and_execute_problem_operation(problem=type_problem)
-            self.load_sets(test=True)
+            self.create_and_save_flag_sets(test=True, save_to_file=True, path_to_save=path_to_save)
 
-    def load_sets(self, validation=False, test=False):
-        self.train_set.append(np.asarray(self.x_train))
-        self.train_set.append(np.asarray(self.y_train))
+    def create_and_save_flag_sets(self, validation=False, test=False, save_to_file=False, path_to_save=None):
+
+        self.x_train = np.asarray(self.x_train)
+        self.y_train = np.asarray(self.y_train)
+        self.x_test = np.asarray(self.x_test)
+        self.y_test = np.asarray(self.y_test)
+        self.x_validation = np.asarray(self.x_validation)
+        self.y_validation = np.asarray(self.y_validation)
+
+        self.train_set.append(self.x_train)
+        self.train_set.append(self.y_train)
+
+        # TODO (@gabvaztor) Delete test and validation checks
         if test:
-            self.test_set.append(np.asarray(self.x_test))
-            self.test_set.append(np.asarray(self.y_test))
+            self.test_set.append(self.x_test)
+            self.test_set.append(self.y_test)
         if validation:
-            self.validation_set.append(np.asarray(self.x_validation))
-            self.validation_set.append(np.asarray(self.y_validation))
+            self.validation_set.append(self.x_validation)
+            self.validation_set.append(self.y_validation)
+
+        if save_to_file:
+            np_arrays = [self.x_train, self.y_train, self.x_test, self.y_test, self.x_validation, self.y_validation]
+            names = ["x_train", "y_train", "x_test", "y_test", "x_validation", "y_validation"]
+            save_numpy_arrays_generic(folder_to_save=path_to_save, names=names,numpy_files=np_arrays)
 
     def calculate_percentages(self, percentages_sets):
         """
@@ -360,43 +381,50 @@ class Searcher(Reader):
         """
         Generic class to find a fullpath and do an specific operation (function) to a given problem.
         """
+        pt("Creating train and test/validation data...")
         setting_object = self.reader.settings
 
         dataframe_labels = None
 
         if setting_object.labels_path:
             labels_path = setting_object.labels_path
-            if problem == Dictionary.string_retinopathy_k_problem:
+            if problem == Dictionary.string_option_retinopathy_k_problem:
                 # Read CSV Labels
                 # TODO (@gabvaztor) Do generic import if more than one problem use it
                 import pandas as pd
                 dataframe_labels = pd.read_csv(filepath_or_buffer=labels_path)
 
+        start_time = time.time()
         for path in self.path_to_read:
             for root, dirs, files in os.walk(path):
-                for file_name in files:
-                    if problem == Dictionary.string_retinopathy_k_problem:
+                for count_number, file_name in enumerate(files):
+
+                    pt("Files Size", len(files))
+                    pt("Count number", count_number)
+                    progress = float(((count_number*100)/len(files)))
+                    progress = "{0:.3f}".format(progress)
+                    pt("Progress percent",  progress + "%")
+
+                    if problem == Dictionary.string_option_retinopathy_k_problem:
                         if (file_name.endswith(Dictionary.string_extension_jpeg)):
                             full_path = os.path.join(root, file_name)
                             labels = np.zeros(self.features.number_of_classes, dtype=np.float32)
                             name = os.path.splitext(file_name)[0]
-                            pt("name", name)
-                            if dataframe_labels["image"].str.contains(name).any():
-                                pt(dataframe_labels["image"], type(index))
-                                pt(dataframe_labels.index.get_loc(name), type(index))
-                                index = dataframe_labels["image"].index.get_loc(name)
-                                label = dataframe_labels.loc[[index]]["level"]
-                                pt("index", index)
-                                pt("label", label)
-                                pt("index", type(index))
-                                pt("label", type(label))
-                                sads
+                            if np.where(dataframe_labels["image"] == name)[0]:
+                                index = int(np.where(dataframe_labels["image"] == name)[0][0])
+                                label = int(dataframe_labels.loc[[index]]["level"].iloc[0])
+                                labels[label] = 1
                                 # To save
                                 if Dictionary.string_train in path:
                                     self.y_train.append(list(labels))
-
+                                    self.x_train.append(full_path)
+                                if Dictionary.string_test in path:
+                                    self.y_test.append(list(labels))
+                                    self.x_test.append(full_path)
                     elif problem == Dictionary.string_option_signals_images_problem:
                         self.find_train_and_test_sets_from_path_signals()
+        pt('Time to create data_sets', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
+        pt("Finish creating train and test/validation data...")
 
     def find_train_and_test_sets_from_path_signals(self):
         """
