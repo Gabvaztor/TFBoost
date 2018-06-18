@@ -148,6 +148,7 @@ if load_dataset:
     y_train = np.load(file=path_to_load + y_train_string)
     x_test = np.load(file=path_to_load + x_test_string)
     y_test = np.load(file=path_to_load + y_test_string)
+
 else:
     """
     Creating Reader Features
@@ -164,24 +165,15 @@ else:
     tf_reader = tfr.Reader(type_problem=option_problem, reader_features=reader_features,
                            settings=setting_object)  # Reader Object with all information
 
-
-    train_set = tf_reader.train_set  # Train Set
-    test_set = tf_reader.test_set  # Test Set
-
-    del reader_features
-    del tf_reader
-    x_train = None
-    y_train = None
-    x_test = None
-    y_test = None
+    x_train = tf_reader.x_train
+    y_train = tf_reader.y_train
+    x_test = tf_reader.x_test
+    y_test = tf_reader.y_test
 
 pt("x_train", x_train.shape)
 pt("y_train", y_train.shape)
 pt("x_test", x_test.shape)
 pt("y_test", y_test.shape)
-
-# TO create imges
-x_test = x_train
 
 models = models.TFModels(setting_object=setting_object, option_problem=options,
                          input_data=x_train,test=x_test,

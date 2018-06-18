@@ -180,13 +180,11 @@ class Reader(object):
         self.train_set.append(self.x_train)
         self.train_set.append(self.y_train)
 
-        # TODO (@gabvaztor) Delete test and validation checks
-        if test:
-            self.test_set.append(self.x_test)
-            self.test_set.append(self.y_test)
-        if validation:
-            self.validation_set.append(self.x_validation)
-            self.validation_set.append(self.y_validation)
+        # Append to lists
+        self.test_set.append(self.x_test)
+        self.test_set.append(self.y_test)
+        self.validation_set.append(self.x_validation)
+        self.validation_set.append(self.y_validation)
 
         if save_to_file:
             np_arrays = [self.x_train, self.y_train, self.x_test, self.y_test, self.x_validation, self.y_validation]
@@ -397,6 +395,12 @@ class Searcher(Reader):
         start_time = time.time()
         for path in self.path_to_read:
             for root, dirs, files in os.walk(path):
+                for x in files:
+                    lene = len("10_left.jpeg")
+                    if "_" not in x and "left" not in x and "right" not in x:
+                        pass
+                    if len(x) == 12 or x == "1099999_left.jpeg" or len(x) == lene or x == "109979_left.jpeg":
+                        pass
                 for count_number, file_name in enumerate(files):
 
                     pt("Files Size", len(files))

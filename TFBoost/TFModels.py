@@ -139,7 +139,7 @@ class TFModels():
         self._input_columns_numbers = option_problem[3]  # For example, in german problem, number of column pixels
         self._kernel_size = [6, 6]  # Kernel patch size
         self._epoch_numbers = 250  # Epochs number
-        self._batch_size = 2  # Batch size
+        self._batch_size = 8  # Batch size
         if self.input is not None and not self.restore_to_predict:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
             self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
@@ -155,10 +155,10 @@ class TFModels():
         else:
             self._test_size = None
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
-        self._first_label_neurons = 32
-        self._second_label_neurons = 64
-        self._third_label_neurons = 64
-        self._fourth_label_neurons = 64
+        self._first_label_neurons = 8
+        self._second_label_neurons = 16
+        self._third_label_neurons = 16
+        self._fourth_label_neurons = 32
         self._learning_rate = 1e-3  # Learning rate
         self._number_epoch_to_change_learning_rate = 60  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
@@ -631,14 +631,13 @@ class TFModels():
             saver = tf.train.Saver()  # Saver
             # Batching values and labels from input and labels (with batch size)
             if not self.restore_to_predict:
-                self.update_batch()
+                self.update_batch(create_dataset_flag=False)
                 # To restore model
                 if self.restore_model:
                     self.load_and_restore_model(sess)
                 self.train_model(args=None, kwargs=locals())
             else:
                 self.prediction(x_input=x_input, y_prediction=y_prediction, keep_probably=keep_probably, sess=sess)
-
 
     def prediction(self, x_input, y_prediction, keep_probably, sess):
         try:
@@ -717,7 +716,7 @@ class TFModels():
         self.inputs_processed, self.labels_processed = zip(*c)
 
     def data_buffer_generic_class(self, inputs, inputs_labels, shuffle_data=False, batch_size=None, is_test=False,
-                                  options=None):
+                                  options=None, create_dataset_flag=False):
         """
         Create a data buffer having necessaries class attributes (inputs,labels,...)
         :param inputs: Inputs
@@ -731,7 +730,8 @@ class TFModels():
         x_batch = []
         y_batch = []
         if is_test:
-            x_batch, y_batch = process_test_set(inputs, inputs_labels, options)
+            # TODO (@gabvaztor) Create process set to create new datasets
+            x_batch, y_batch = process_test_set(inputs, inputs_labels, options, create_dataset_flag=create_dataset_flag)
         else:
             if shuffle_data and self.index_buffer_data == 0:
                 self.input, self.input_labels = get_inputs_and_labels_shuffled(self.input, self.input_labels)
@@ -916,7 +916,7 @@ class TFModels():
         """
         # Placeholders
         #x = tf.placeholder(tf.float32, shape=[None, self.input_columns_after_reshape])  # All images will be 24*24 = 574
-        x = tf.placeholder(tf.float32, shape=[None, self.input_rows_numbers, self.input_columns_numbers])  # All images will be 24*24 = 574
+        x = tf.placeholder(tf.float32, shape=[None, self.input_rows_numbers, self.input_columns_numbers, 3])  # All images will be 24*24 = 574
         y_ = tf.placeholder(tf.float32, shape=[None, self.number_of_classes])  # Number of labels
         keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
         return x, y_, keep_probably
@@ -1093,21 +1093,23 @@ class TFModels():
         pt('input_size', self.input_size)
         pt('batch_size', self.batch_size)
 
-    def update_batch(self, is_test=False):
+    def update_batch(self, is_test=False, create_dataset_flag=False):
         if not is_test:
             self.input_batch, self.label_batch = self.data_buffer_generic_class(inputs=self.input,
                                                                                 inputs_labels=self.input_labels,
                                                                                 shuffle_data=self.shuffle_data,
                                                                                 batch_size=self.batch_size,
-                                                                                is_test=True,
-                                                                                options=self.options)
+                                                                                is_test=False,
+                                                                                options=self.options,
+                                                                                create_dataset_flag=create_dataset_flag)
         elif is_test:
             x_test_feed, y_test_feed = self.data_buffer_generic_class(inputs=self.test,
                                                                       inputs_labels=self.test_labels,
                                                                       shuffle_data=self.shuffle_data,
                                                                       batch_size=None,
                                                                       is_test=True,
-                                                                      options=self.options)
+                                                                      options=self.options,
+                                                                      create_dataset_flag=create_dataset_flag)
             return x_test_feed, y_test_feed
 
     def train_model(self, *args, **kwargs):
@@ -1151,7 +1153,6 @@ class TFModels():
                 feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
                                            keep_probably: self.train_dropout}
                 # Setting values
-
                 train_step.run(feed_dict_train_dropout)
                 # TODO(@gabvaztor) Add validation_accuracy to training
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
@@ -1164,6 +1165,7 @@ class TFModels():
                 accuracies_test.append(self.test_accuracy)
                 loss_train.append(cross_entropy_train)
                 loss_test.append(cross_entropy_test)
+
                 with tf.device('/cpu:0'):
                     numpy_arrays = [accuracies_train, accuracies_test, loss_train, loss_test]
                     numpy_names = ["accuracies_train", "accuracies_test", "loss_train", "loss_test"]
@@ -1207,6 +1209,9 @@ class TFModels():
 
                 # Update num_trains_count and num_epoch_count
                 self.num_trains_count += 1
+                # Collect trash
+                if self.num_trains_count % 100 == 0:
+                    gc.collect()
                 # Update batches values
                 self.update_batch()
                 if self.save_model_configuration:
@@ -1279,7 +1284,7 @@ def image_process_retinopathy(image, image_type, height, width, is_test=False, c
         return image
 
 
-def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
+def process_input_unity_generic(x_input, y_label, options=None, is_test=False, to_save=False):
     """
     Generic method that process input and label across a if else statement witch contains a string that represent
     the option (option = how process data)
@@ -1298,7 +1303,7 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False):
             x_input = process_german_prizes_csv(x_input, is_test=is_test)
         if option == Dictionary.string_option_retinopathy_k_problem:
             x_input = image_process_retinopathy(image=x_input, image_type=options[1], height=options[2],
-                                                width=options[3], is_test=is_test, to_save=True,
+                                                width=options[3], is_test=is_test, to_save=to_save,
                                                 cv2_flag=False, debug_mode=False)
     return x_input, y_label
 
@@ -1391,7 +1396,7 @@ def process_image_signals_problem(image, image_type, height, width, is_test=Fals
         #cv2.waitKey(0)  # Wait until press key to destroy image
     return image
 
-def process_test_set(test, test_labels, options):
+def process_test_set(test, test_labels, options, create_dataset_flag=False):
     """
     Process test set and return it
     :param test: Test set
@@ -1402,11 +1407,11 @@ def process_test_set(test, test_labels, options):
     x_test = []
     y_test = []
     for i in range(len(test)):
-        if i == 100:
-            gc.collect()
-        x, y = process_input_unity_generic(test[i], test_labels[i], options, is_test=True)
-        x_test.append(x)
-        y_test.append(y)
+        if i % 100 == 0:
+            x, y = process_input_unity_generic(test[i], test_labels[i], options, is_test=True, to_save=create_dataset_flag)
+            if not create_dataset_flag:
+                x_test.append(x)
+                y_test.append(y)
     x_test = np.asarray(x_test)
     y_test = np.asarray(y_test)
     return x_test, y_test
