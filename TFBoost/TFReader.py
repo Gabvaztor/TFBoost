@@ -149,10 +149,7 @@ class Reader(object):
         # TODO check nulls
         # TODO low letters in methods
 
-        # TODO (@gabvaztor) Create new path in setting with "DATASET_PATH"
-        # By defect, saves in model path (without "model") string
-        path_to_save = self.settings.model_path  # path\\model --> path\\
-        path_to_save = path_to_save[0:-5]
+        path_to_save = self.settings.saved_dataset_path
 
         if type_problem == Dictionary.string_option_signals_images_problem:
             # TODO(@gabvaztor) Change this to use new structure
@@ -395,12 +392,6 @@ class Searcher(Reader):
         start_time = time.time()
         for path in self.path_to_read:
             for root, dirs, files in os.walk(path):
-                for x in files:
-                    lene = len("10_left.jpeg")
-                    if "_" not in x and "left" not in x and "right" not in x:
-                        pass
-                    if len(x) == 12 or x == "1099999_left.jpeg" or len(x) == lene or x == "109979_left.jpeg":
-                        pass
                 for count_number, file_name in enumerate(files):
 
                     pt("Files Size", len(files))

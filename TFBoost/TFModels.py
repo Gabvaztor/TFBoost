@@ -117,7 +117,9 @@ class TFModels():
         self._label_batch = None
         # CONFIGURATION VARIABLES
         self._debug_level = 0 # TODO (@gabvaztor) Explain debug levels
-        self._restore_model = False # Labels and logits info. Load only to continue training.
+        # TODO (@gabvaztor) This have to restore ALL information: Train number, percent epoch, losses, index_buffer_data, ...
+        # TODO (@gabvaztor) Add Actual Losses
+        self._restore_model = True # Labels and logits info. Load only to continue training.
         self._restore_to_predict = predict_flag  # Load pretrained model to do a prediction. Restrictive
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
@@ -137,9 +139,9 @@ class TFModels():
         # TRAIN MODEL VARIABLES
         self._input_rows_numbers = option_problem[2] # For example, in german problem, number of row pixels
         self._input_columns_numbers = option_problem[3]  # For example, in german problem, number of column pixels
-        self._kernel_size = [6, 6]  # Kernel patch size
+        self._kernel_size = [7, 7]  # Kernel patch size
         self._epoch_numbers = 250  # Epochs number
-        self._batch_size = 8  # Batch size
+        self._batch_size = 9  # Batch size
         if self.input is not None and not self.restore_to_predict:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
             self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
@@ -635,6 +637,9 @@ class TFModels():
                 # To restore model
                 if self.restore_model:
                     self.load_and_restore_model(sess)
+                # TODO (@gabvaztor) When problem requires cross validation with train and test, do it during training.
+                # Besides this, when test/validation set requires check its accuracy but its size is very long to save
+                # in memory, it has to update all files during training to get the exact precision.
                 self.train_model(args=None, kwargs=locals())
             else:
                 self.prediction(x_input=x_input, y_prediction=y_prediction, keep_probably=keep_probably, sess=sess)
@@ -767,7 +772,7 @@ class TFModels():
             out_range = True
         return batch_size, out_range
 
-    def should_save(self):
+    def should_save(self, check_loss_train=False):
         """
         Check if must save from validation/test accuracy/error
 
@@ -790,6 +795,9 @@ class TFModels():
                 elif last_train_accuracy and last_test_accuracy and not self.ask_to_save_model_information:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
                     if self.test_accuracy and last_test_accuracy:
+                        if check_loss_train:
+                            if self.num_trains_count % 100 == 0:
+                                should_save = True
                         if self.test_accuracy >= last_test_accuracy:  # Save checking test
                             #  accuracies in this moment
                             should_save = True
@@ -937,31 +945,35 @@ class TFModels():
         # Pool Layer 1 and reshape images by 2
         pool1 = tf.layers.max_pooling2d(inputs=convolution_1,
                                         pool_size=[2, 2],
-                                        strides=2)
+                                        strides=2,
+                                        padding="same")
         dropout1 = tf.nn.dropout(pool1, keep_dropout)
         # Second Convolutional Layer
         convolution_2 = tf.layers.conv2d(
             inputs=dropout1,
             filters=self.second_label_neurons,
-            kernel_size=[4,4],
+            kernel_size=self.kernel_size,
             padding="same",
             activation=tf.nn.relu)
         # # Pool Layer 2 nd reshape images by 2
         pool2 = tf.layers.max_pooling2d(inputs=convolution_2,
                                         pool_size=[2, 2],
-                                        strides=2)
+                                        strides=2,
+                                        padding="same")
         dropout2 = tf.nn.dropout(pool2, keep_dropout)
+
+        """
         convolution_3 = tf.layers.conv2d(
             inputs=dropout2,
             filters=self.third_label_neurons,
-            kernel_size=[3, 3],
+            kernel_size=self.kernel_size,
             padding="same")
 
         dropout3 = tf.nn.dropout(convolution_3, keep_dropout)
+        """
         # Dense Layer
         # TODO Checks max pools numbers
-        pool2_flat = tf.reshape(dropout3, [-1, int(self._input_rows_numbers / 4) * int(self._input_columns_numbers / 4)
-                                        * self.third_label_neurons])
+        pool2_flat = tf.reshape(dropout2, [-1, int(int(self._input_rows_numbers / 1) * int(self._input_columns_numbers / 1) * 3)])
         dense = tf.layers.dense(inputs=pool2_flat, units=self.fourth_label_neurons)
         #dropout = tf.nn.dropout(dense, keep_dropout)
         # Readout Layer
@@ -1152,6 +1164,7 @@ class TFModels():
                 feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
                 feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
                                            keep_probably: self.train_dropout}
+
                 # Setting values
                 train_step.run(feed_dict_train_dropout)
                 # TODO(@gabvaztor) Add validation_accuracy to training
@@ -1173,7 +1186,7 @@ class TFModels():
                                               numpy_files=numpy_arrays,
                                               names=numpy_names)
                 if num_train % 2 == 0:
-                    percent_advance = str(num_train * 100 / self.trains)
+                    percent_advance = "{0:.3f}".format(float(num_train * 100 / self.trains))
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
                        str(epoch) + ": " + percent_advance + '%')
@@ -1194,7 +1207,7 @@ class TFModels():
                 if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
                         and self.num_epochs_count != 1 and self.index_buffer_data == 0:
                     self.learning_rate = float(self.learning_rate / 10.)
-                if self.should_save():
+                if self.should_save(check_loss_train=True):
                     filepath_save = self.save(saver=saver, session=sess)
                 if self.show_advanced_info:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
@@ -1212,6 +1225,7 @@ class TFModels():
                 # Collect trash
                 if self.num_trains_count % 100 == 0:
                     gc.collect()
+                    self.save(saver=saver, session=sess)
                 # Update batches values
                 self.update_batch()
                 if self.save_model_configuration:
@@ -1407,7 +1421,7 @@ def process_test_set(test, test_labels, options, create_dataset_flag=False):
     x_test = []
     y_test = []
     for i in range(len(test)):
-        if i % 100 == 0:
+        if i % 350 == 0:
             x, y = process_input_unity_generic(test[i], test_labels[i], options, is_test=True, to_save=create_dataset_flag)
             if not create_dataset_flag:
                 x_test.append(x)

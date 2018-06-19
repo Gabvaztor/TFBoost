@@ -8,5 +8,6 @@
   "ACCURACIES_LOSSES_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\History_Information\\Accuracies_Losses\\",
   "HISTORY_INFORMATION_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\History_Information\\Information\\",
   "HISTORY_CONFIGURATION_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\History_Information\\Configuration\\",
-  "LABELS_PATH": "E:\\Data_Science\\Data\\Retinopathy\\labels\\labels_modified.csv"
+  "LABELS_PATH": "E:\\Data_Science\\Data\\Retinopathy\\labels\\labels_modified.csv",
+  "SAVED_DATASET_PATH": "E:\\Data_Science\\Data\\Retinopathy\\saved_data\\"
 }

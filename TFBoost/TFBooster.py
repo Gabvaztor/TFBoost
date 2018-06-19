@@ -135,10 +135,7 @@ known_data_type = ''  # Contains the type of data if the data file contains an u
 # TODO (@gabvaztor) Check if file exist automatically
 load_dataset = True
 if load_dataset:
-    # TODO (@gabvaztor) Create new path in setting with "DATASET_PATH"
-    # By defect, saves in model path (without "model") string
-    path_to_load = setting_object.model_path  # path\\model --> path\\
-    path_to_load = path_to_load[0:-5]
+    path_to_load = setting_object.saved_dataset_path
     x_train_string = "x_train.npy"
     y_train_string = "y_train.npy"
     x_test_string = "x_test.npy"
