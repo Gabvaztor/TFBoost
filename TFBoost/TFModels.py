@@ -140,7 +140,7 @@ class TFModels():
         self._input_rows_numbers = option_problem[2] # For example, in german problem, number of row pixels
         self._input_columns_numbers = option_problem[3]  # For example, in german problem, number of column pixels
         self._kernel_size = [7, 7]  # Kernel patch size
-        self._epoch_numbers = 250  # Epochs number
+        self._epoch_numbers = 5  # Epochs number
         self._batch_size = 9  # Batch size
         if self.input is not None and not self.restore_to_predict:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
@@ -798,6 +798,7 @@ class TFModels():
                         if check_loss_train:
                             if self.num_trains_count % 100 == 0:
                                 should_save = True
+                        # TODO (@gabvaztor) Sometimes, gradient break and always obtain same test. Fix it.
                         if self.test_accuracy >= last_test_accuracy:  # Save checking test
                             #  accuracies in this moment
                             should_save = True
@@ -1026,7 +1027,9 @@ class TFModels():
         # Save variables to disk.
         if self.settings_object.model_path:
             try:
+                pt("Saving model...")
                 saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
+                pt("Model saved without problem")
                 if self.show_when_save_information:
                     pt("Saving model information...")
                 if self.save_model_information:
@@ -1185,6 +1188,14 @@ class TFModels():
                     save_numpy_arrays_generic(folder_to_save=self.settings_object.accuracies_losses_path,
                                               numpy_files=numpy_arrays,
                                               names=numpy_names)
+                y_pre = y_prediction.eval(feed_dict_train_100)
+                prediction_ = np.argmax(y_pre, axis=1)
+                p = tf.argmax(y_prediction, axis=1).eval(feed_dict_train_100)
+                pt("y_pre", y_pre)
+                pt("y_pre_sum", y_pre.sum())
+                pt("prediction_", prediction_)
+                pt("p", p)
+
                 if num_train % 2 == 0:
                     percent_advance = "{0:.3f}".format(float(num_train * 100 / self.trains))
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
