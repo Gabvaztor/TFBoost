@@ -176,8 +176,7 @@ models = models.TFModels(setting_object=setting_object, option_problem=options,
                          input_data=x_train,test=x_test,
                          input_labels=y_train,test_labels=y_test,
                          number_of_classes=number_of_classes, type=None,
-                         validation=None, validation_labels=None,
-                         load_model_configuration=False)
+                         validation=None, validation_labels=None)
 #with tf.device('/cpu:0'):  # CPU
 with tf.device('/gpu:0'):  # GPU
     models.convolution_model_image()
