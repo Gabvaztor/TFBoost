@@ -3,7 +3,6 @@
 """
 import multiprocessing
 
-
 def execute_asynchronous_process(functions, arguments=None):
     Multiprocess(functions=functions, arguments=arguments)
 
@@ -35,4 +34,5 @@ class Multiprocess():
         while True:
             if process.is_alive()==False:
                 process.terminate()
+                break
 
