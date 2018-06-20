@@ -30,6 +30,8 @@ from TFBoost.TFEncoder import Dictionary as dict
 from TFBoost.TFEncoder import Constant as const
 from UsefulTools.Prediction import *
 import SettingsObject
+import Asynchronous
+
 
 ''' TensorFlow: https://www.tensorflow.org/
 To upgrade TensorFlow to last version:
@@ -197,7 +199,6 @@ class TFModels():
             # Save model configuration in a json file
             pt("Saving model configuration... DO NOT STOP PYTHON PROCESS")
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
-            pt("Model configuration has been saved")
 
     @property
     def problem_information(self):
@@ -636,9 +637,10 @@ class TFModels():
 
     def _save_json_configuration(self, attributes_to_delete_configuration):
         try:
-            self._save_model_to_json(self.settings_object.configuration_path,
+            Asynchronous.execute_asynchronous_process(self._save_model_to_json(self.settings_object.configuration_path,
                                                    attributes_to_delete_configuration,
-                                                   type_file="Configuration")
+                                                   type_file="Configuration"))
+
         except Exception as e:
             pt(Errors.error, e)
             traceback.print_exc()
@@ -923,6 +925,7 @@ class TFModels():
             write_string_to_pathfile(json, fullpath)
             filepath = create_historic_folder(fullpath, type_file, accuracy)
             write_string_to_pathfile(json, filepath)
+            pt("Model " + type_file + " has been saved")
         except Exception as e:
             pt("Can not get json from class to save " + type_file + "file.")
             pt("Do you have float32? (Probably you need numpy float64 or int) Be careful with data types.")
