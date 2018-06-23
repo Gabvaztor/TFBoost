@@ -2,6 +2,25 @@
 
 """
 import multiprocessing
+from UsefulTools.UtilsFunctions import pt
+
+import traceback
+import json
+
+def object_to_json(object, attributes_to_delete=None):
+    """
+    Convert class to json with properties method.
+    :param attributes_to_delete: String set with all attributes' names to delete from properties method
+    :return: sort json from class properties.
+    """
+    try:
+        object_dictionary = class_properties(object=object, attributes_to_delete=attributes_to_delete)
+        json_string = json.dumps(object, default=lambda m: object_dictionary, sort_keys=True, indent=4)
+    except Exception as e:
+        pt(e)
+        pt(traceback.print_exc())
+        raise ValueError("PARAR")
+    return json_string
 
 def execute_asynchronous_process(functions, arguments=None):
     Multiprocess(functions=functions, arguments=arguments)
@@ -12,7 +31,7 @@ class Multiprocess():
     """
     def __init__(self, functions, arguments=None):
         datatype = self.__check_type__(functions)
-        print("type", type(datatype))
+        print("type", datatype)
         if datatype == type(list()):
             pass
         else:
@@ -31,8 +50,24 @@ class Multiprocess():
         process = multiprocessing.Process(name=name, target=function_def, args=arguments)
         process.start()
         process.join()
-        while True:
-            if process.is_alive()==False:
-                process.terminate()
-                break
 
+
+
+def class_properties(object, attributes_to_delete=None):
+    """
+    Return a string with actual object features without not necessaries
+    :param attributes_to_delete: represent witch attributes set must be deleted.
+    :return: A copy of class.__dic__ without deleted attributes
+    """
+    pt("object", object)
+    dict_copy = object.__dict__.copy()  # Need to be a copy to not get original class' attributes.
+    return dict_copy
+
+if __name__ == "__main__":
+    pt("__name__", __name__)
+else:
+    pt("__name__", __name__)
+    from TFBoost.TFModels import global_function, global_metadata
+    arguments = global_metadata
+    Multiprocess(functions=object_to_json, arguments=(arguments,))
+    #Multiprocess(functions=global_function, arguments=arguments)

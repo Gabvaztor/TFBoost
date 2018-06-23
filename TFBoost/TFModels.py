@@ -30,7 +30,6 @@ from TFBoost.TFEncoder import Dictionary as dict
 from TFBoost.TFEncoder import Constant as const
 from UsefulTools.Prediction import *
 import SettingsObject
-import Asynchronous
 
 
 ''' TensorFlow: https://www.tensorflow.org/
@@ -96,6 +95,9 @@ import types
 """ To recollect python rash"""
 import gc
 
+global global_function
+global global_metadata
+
 class TFModels():
     """
     Long Docs ...
@@ -117,6 +119,8 @@ class TFModels():
         self._settings_object = setting_object  # Setting object represent a kaggle configuration
         self._input_batch = None
         self._label_batch = None
+        # Parallel processes
+        self._processes = []
         # CONFIGURATION VARIABLES
         self._debug_level = 0 # TODO (@gabvaztor) Explain debug levels
         self._restore_model = False # Labels and logits info. Load only to continue training.
@@ -197,7 +201,6 @@ class TFModels():
                 self._load_model_configuration(self.settings_object.load_actual_configuration())
         if self.save_model_configuration and not self.restore_to_predict:
             # Save model configuration in a json file
-            pt("Saving model configuration... DO NOT STOP PYTHON PROCESS")
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
 
     @property
@@ -206,7 +209,7 @@ class TFModels():
 
     @problem_information.setter
     def problem_information(self, value):
-        self.problem_information = value
+        self._problem_information = value
 
     @property
     def validation_size(self):
@@ -637,13 +640,35 @@ class TFModels():
 
     def _save_json_configuration(self, attributes_to_delete_configuration):
         try:
-            Asynchronous.execute_asynchronous_process(self._save_model_to_json(self.settings_object.configuration_path,
+            self._save_model_to_json(self.settings_object.configuration_path,
+                                     attributes_to_delete_configuration,
+                                     type_file="Configuration")
+            """
+            f = self._save_model_to_json(self.settings_object.configuration_path,
                                                    attributes_to_delete_configuration,
-                                                   type_file="Configuration"))
+                                                   type_file="Configuration")
+                                                   """
+            """
+            p = multiprocessing.Process(target=self._save_model_to_json, args=(self.settings_object.configuration_path,
+                                                                           attributes_to_delete_configuration,
+                                                                           "Configuration"))
+            
+            #import Asynchronous
+            #Asynchronous.execte_asynchronous_process(functions=f, arguments=None)
 
+            global global_function
+            global global_metadata
+            global_function = self._save_model_to_json
+            global_metadata = (self.settings_object.configuration_path, attributes_to_delete_configuration, "Configuration")
+            global_metadata = (self)
+
+            import Asynchronous
+            pass
+            """
         except Exception as e:
             pt(Errors.error, e)
             traceback.print_exc()
+            pass
 
     @timed
     def convolution_model_image(self):
@@ -808,7 +833,7 @@ class TFModels():
             out_range = True
         return batch_size, out_range
 
-    def should_save(self, check_loss_train=False):
+    def should_save(self, saves_information_list=None, check_loss_train=False, if_is_equal=True):
         """
         Check if must save from validation/test accuracy/error
 
@@ -816,7 +841,13 @@ class TFModels():
         """
         # TODO (@gabvaztor) Detect when stop learning. From 60% to 10% validation/test
         should_save = False
-        if self.save_model_information:
+        save_for_information = True
+        if saves_information_list:
+            if saves_information_list.count(1) / 2 >= 25:
+                save_for_information = False
+            if len(saves_information_list) >= 50:
+                del saves_information_list[0]
+        if self.save_model_information and save_for_information:
             actual_information = self.settings_object.load_actual_information()
             if actual_information:
                 last_train_accuracy = actual_information._train_accuracy
@@ -825,19 +856,26 @@ class TFModels():
                 if last_train_accuracy and last_validation_accuracy and not self.ask_to_save_model_information:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
                     if self.validation_accuracy and last_validation_accuracy:
-                        if self.validation_accuracy >= last_validation_accuracy:  # Save checking validation
-                            #  accuracies in this moment
+                        if if_is_equal:
+                            if self.validation_accuracy >= last_validation_accuracy:  # Save checking validation
+                                #  accuracies in this moment
+                                should_save = True
+                        elif self.validation_accuracy > last_validation_accuracy:
                             should_save = True
                 elif last_train_accuracy and last_test_accuracy and not self.ask_to_save_model_information:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
                     if self.test_accuracy and last_test_accuracy:
-                        if check_loss_train:
-                            if self.num_trains_count % 100 == 0:
+                        if if_is_equal:
+                            # TODO (@gabvaztor) Sometimes, gradient break and always obtain same test. Fix it. (restart
+                            # learning)
+                            if self.test_accuracy >= last_test_accuracy:  # Save checking test
+                                #  accuracies in this moment
                                 should_save = True
-                        # TODO (@gabvaztor) Sometimes, gradient break and always obtain same test. Fix it.
-                        if self.test_accuracy >= last_test_accuracy:  # Save checking test
-                            #  accuracies in this moment
-                            should_save = True
+                        elif self.test_accuracy > last_test_accuracy:
+                                should_save = True
+                elif check_loss_train:
+                    if self.num_trains_count % 50 == 0:
+                        should_save = True
                 else:
                     if self.ask_to_save_model_information:
                         pt("last_train_accuracy", last_train_accuracy)
@@ -853,6 +891,10 @@ class TFModels():
                         should_save = True
             else:
                 should_save = True
+        if should_save and saves_information_list:
+            saves_information_list.append(1)
+        elif not should_save and saves_information_list:
+            saves_information_list.append(0)
         return should_save
 
     def _load_model_configuration(self, configuration):
@@ -866,7 +908,8 @@ class TFModels():
         """
         if configuration:
             # TODO Add to docs WHEN it is necessary to add more attributes = Do documentation
-            self.restore_model = configuration._restore_model
+            if not self.restore_model:
+                self.restore_model = configuration._restore_model
             self.save_model = configuration._save_model_information
             self.ask_to_save_model = configuration._ask_to_save_model_information
             self.show_info = configuration._show_advanced_info
@@ -921,13 +964,14 @@ class TFModels():
             accuracy = kwargs["accuracy"]
         filepath = ""
         try:
+            pt("Saving model" + type_file + " ... DO NOT STOP PYTHON PROCESS")
             json = object_to_json(object=self, attributes_to_delete=attributes_to_delete)
             write_string_to_pathfile(json, fullpath)
             filepath = create_historic_folder(fullpath, type_file, accuracy)
             write_string_to_pathfile(json, filepath)
             pt("Model " + type_file + " has been saved")
         except Exception as e:
-            pt("Can not get json from class to save " + type_file + "file.")
+            pt("Can not get json from class to save " + type_file + " file.")
             pt("Do you have float32? (Probably you need numpy float64 or int) Be careful with data types.")
             pt(Errors.error, e)
             traceback.print_exc()
@@ -1208,6 +1252,7 @@ class TFModels():
             num_train_start = 0
         is_new_epoch_flag = False  # Represent if training come into a new epoch. With this, a graph will be saved each
         # new epoch
+        saves_information = []  # Represent
         # START  TRAINING
         for epoch in range(self.num_epochs_count, self.epoch_numbers):  # Start with load value or 0
             for num_train in range(num_train_start, self.trains):  # Start with load value or 0
@@ -1244,7 +1289,7 @@ class TFModels():
                 pt("y_pre_sum", y_pre.sum())
                 pt("prediction_", prediction_)
                 pt("p", p)
-
+                pt("saves_information", saves_information)
                 if num_train % 2 == 0:
                     percent_advance = "{0:.3f}".format(float(num_train * 100 / self.trains))
                     pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
@@ -1267,7 +1312,7 @@ class TFModels():
                 if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
                         and self.num_epochs_count != 1 and self.index_buffer_data == 0:
                     self.learning_rate = float(self.learning_rate / 10.)
-                if self.should_save(check_loss_train=True):
+                if self.should_save(saves_information_list=saves_information, check_loss_train=True, if_is_equal=False):
                     filepath_save = self.save(saver=saver, session=sess)
                 if self.show_advanced_info:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
@@ -1285,7 +1330,6 @@ class TFModels():
                 # Collect trash
                 if self.num_trains_count % 100 == 0:
                     gc.collect()
-                    self.save(saver=saver, session=sess)
                 # Update batches values
                 self.update_batch()
                 if self.save_model_configuration:
@@ -1492,3 +1536,6 @@ def process_test_set(test, test_labels, options, create_dataset_flag=False):
 
 def process_german_prizes_csv(x_input, is_test=False):
     return x_input
+
+def call_method(method):
+    method()

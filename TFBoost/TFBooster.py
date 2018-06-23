@@ -180,3 +180,8 @@ models = models.TFModels(setting_object=setting_object, option_problem=options,
 #with tf.device('/cpu:0'):  # CPU
 with tf.device('/gpu:0'):  # GPU
     models.convolution_model_image()
+"""
+if __name__ == '__main__':
+    import multiprocessing
+    multiprocessing.freeze_support()
+"""

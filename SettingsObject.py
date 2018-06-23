@@ -29,6 +29,8 @@ class Settings():
     string_history_configuration_path = "HISTORY_CONFIGURATION_PATH"
     string_labels_path = "LABELS_PATH"
     string_saved_dataset_path = "SAVED_DATASET_PATH"
+    # TODO (@gabvaztor) Create new variable that save "generic path". This means that you only have to specify only one
+    # path and system will get (from a generic structure) other paths.
 
     # TODO (@gabvaztor) Configure with new paths
     @property
