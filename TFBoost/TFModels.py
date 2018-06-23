@@ -1376,6 +1376,7 @@ def image_process_retinopathy(image, image_type, height, width, is_test=False, c
         #pil_image_resized_antialias = np.array(image.resize((height, width), PIL.Image.ANTIALIAS))
         # Save resized
         if to_save:
+            #  TODO(@gabvaztor) Delete width black pixels, resize and save to x,y resolution
             # Resize image and modify
             image_array = np.asarray(image)[:, 140:-127, :]
             image = Image.fromarray(image_array)
