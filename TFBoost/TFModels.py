@@ -855,6 +855,7 @@ class TFModels():
                 last_train_accuracy = actual_information._train_accuracy
                 last_test_accuracy = actual_information._test_accuracy
                 last_validation_accuracy = actual_information._validation_accuracy
+                last_train_loss = actual_information._train_loss
                 if last_train_accuracy and last_validation_accuracy and not self.ask_to_save_model_information:
                     # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
                     if self.validation_accuracy and last_validation_accuracy:
@@ -875,9 +876,6 @@ class TFModels():
                                 should_save = True
                         elif self.test_accuracy > last_test_accuracy:
                                 should_save = True
-                elif check_loss_train:
-                    if self.num_trains_count % 50 == 0:
-                        should_save = True
                 else:
                     if self.ask_to_save_model_information:
                         pt("last_train_accuracy", last_train_accuracy)
@@ -890,6 +888,10 @@ class TFModels():
                     else:
                         option_choosed = True
                     if option_choosed:
+                        should_save = True
+                if check_loss_train:
+                    # TODO (@gabvaztor) module number parametrizable
+                    if self.num_trains_count % 50 == 0 or self.train_loss <= last_train_loss:
                         should_save = True
             else:
                 should_save = True
@@ -962,7 +964,7 @@ class TFModels():
             accuracy = kwargs["accuracy"]
         filepath = ""
         try:
-            pt("Saving model" + type_file + " ... DO NOT STOP PYTHON PROCESS")
+            pt("Saving model " + type_file + " ... DO NOT STOP PYTHON PROCESS")
             json = object_to_json(object=self, attributes_to_delete=attributes_to_delete)
             write_string_to_pathfile(json, fullpath)
             filepath = create_historic_folder(fullpath, type_file, accuracy)
