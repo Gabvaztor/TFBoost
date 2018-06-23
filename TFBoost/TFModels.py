@@ -181,6 +181,7 @@ class TFModels():
         self._validation_loss = None
         self._test_loss = None
         self._problem_information = "Accuracy represent error. Low is better"
+        # TODO (@gabvaztor) Save time to restore
         # OPTIONS
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
