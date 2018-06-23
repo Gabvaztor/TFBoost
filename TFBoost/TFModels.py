@@ -123,7 +123,7 @@ class TFModels():
         self._processes = []
         # CONFIGURATION VARIABLES
         self._debug_level = 0 # TODO (@gabvaztor) Explain debug levels
-        self._restore_model = False # Labels and logits info. Load only to continue training.
+        self._restore_model = True # Labels and logits info. Load only to continue training.
         self._restore_model_configuration = self.restore_model  # By defect, use restore_model value. This, load variables from configuration file.
         self._restore_to_predict = predict_flag  # Load pretrained model to do a prediction. Restrictive
         self._save_model_information = True  # If must to save model or not
@@ -200,6 +200,7 @@ class TFModels():
                 pt("Loading model configuration", self.settings_object.configuration_path)
                 self._load_model_configuration(self.settings_object.load_actual_configuration())
         if self.save_model_configuration and not self.restore_to_predict:
+            # TODO (@gabvaztor) First, save a temporal file to avoid corrupts files.
             # Save model configuration in a json file
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
 
@@ -891,10 +892,6 @@ class TFModels():
                         should_save = True
             else:
                 should_save = True
-        if should_save and saves_information_list:
-            saves_information_list.append(1)
-        elif not should_save and saves_information_list:
-            saves_information_list.append(0)
         return should_save
 
     def _load_model_configuration(self, configuration):
@@ -1314,6 +1311,9 @@ class TFModels():
                     self.learning_rate = float(self.learning_rate / 10.)
                 if self.should_save(saves_information_list=saves_information, check_loss_train=True, if_is_equal=False):
                     filepath_save = self.save(saver=saver, session=sess)
+                    saves_information.append(1)
+                else:
+                    saves_information.append(0)
                 if self.show_advanced_info:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
