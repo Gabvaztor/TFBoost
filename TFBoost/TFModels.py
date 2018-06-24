@@ -145,7 +145,7 @@ class TFModels():
         self._input_rows_numbers = option_problem[2] # For example, in german problem, number of row pixels
         self._input_columns_numbers = option_problem[3]  # For example, in german problem, number of column pixels
         self._kernel_size = [7, 7]  # Kernel patch size
-        self._epoch_numbers = 5  # Epochs number
+        self._epoch_numbers = 15  # Epochs number
         self._batch_size = 9  # Batch size
         if self.input is not None and not self.restore_to_predict:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
@@ -162,6 +162,7 @@ class TFModels():
         else:
             self._test_size = None
         self._train_dropout = 0.5  # Keep probably to dropout to avoid overfitting
+        # TODO (@gabvaztor) Transform neurons variable to a list
         self._first_label_neurons = 8
         self._second_label_neurons = 16
         self._third_label_neurons = 16
@@ -169,7 +170,7 @@ class TFModels():
         self._learning_rate = 1e-3  # Learning rate
         self._number_epoch_to_change_learning_rate = 60  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
-        self._print_information = 100  # How many trains are needed to print information
+        self._print_information = 2  # How many trains are needed to print information
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training. Start at zero.
         self._num_trains_count = 1  # Start at one
@@ -181,7 +182,8 @@ class TFModels():
         self._validation_loss = None
         self._test_loss = None
         self._problem_information = "Accuracy represent error. Low is better"
-        # TODO (@gabvaztor) Save time to restore
+        self._delta_time = 0
+        self._saves_information = []
         # OPTIONS
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
@@ -640,6 +642,22 @@ class TFModels():
     def restore_model_configuration(self, value):
         self._restore_model_configuration = value
 
+    @property
+    def delta_time(self):
+        return self._delta_time
+
+    @delta_time.setter
+    def delta_time(self, value):
+        self._delta_time = value
+
+    @property
+    def saves_information(self):
+        return self._saves_information
+
+    @saves_information.setter
+    def saves_information(self, value):
+        self._saves_information = value
+
     def _save_json_configuration(self, attributes_to_delete_configuration):
         try:
             self._save_model_to_json(self.settings_object.configuration_path,
@@ -696,6 +714,8 @@ class TFModels():
             saver = tf.train.Saver()  # Saver
             # Batching values and labels from input and labels (with batch size)
             if not self.restore_to_predict:
+                # TODO (@gabvaztor) When restore model and don't change train size, it must to keep the same order of
+                # train set.
                 self.update_batch(create_dataset_flag=False)
                 # To restore model
                 if self.restore_model:
@@ -910,6 +930,12 @@ class TFModels():
             # TODO Add to docs WHEN it is necessary to add more attributes = Do documentation
             if not self.restore_model:
                 self.restore_model = configuration._restore_model
+            if configuration._epoch_numbers != self.epoch_numbers:
+                # It has preferency the actual epoch numbers.
+                if self.epoch_numbers < configuration._epoch_numbers:
+                    raise ValueError("Epoch number can't be lower than last configuration. Please, put a higher "
+                                     "epoch_number")
+                self.epoch_numbers = self.epoch_numbers
             self.save_model = configuration._save_model_information
             self.ask_to_save_model = configuration._ask_to_save_model_information
             self.show_info = configuration._show_advanced_info
@@ -920,7 +946,6 @@ class TFModels():
             self.input_rows_numbers = configuration._input_rows_numbers
             self.input_columns_numbers = configuration._input_columns_numbers
             self.kernel_size = configuration._kernel_size
-            self.epoch_numbers = configuration._epoch_numbers
             self.batch_size = configuration._batch_size
             self.input_size = configuration._input_size
             self.test_size = configuration._test_size
@@ -946,11 +971,13 @@ class TFModels():
             self.train_loss = configuration._train_loss
             self.test_loss = configuration._test_loss
             self.validation_loss = configuration._validation_loss
+            self.saves_information = configuration._saves_information
             # If you don't restore model then you won't load train number and epochs number
             if self.restore_model:
                 self.num_trains_count = configuration._num_trains_count
                 self.num_epochs_count = configuration._num_epochs_count
                 self.index_buffer_data = configuration._index_buffer_data
+                self.delta_time = configuration._delta_time
             pt("Loaded model configuration")
 
     def _save_model_to_json(self, fullpath, attributes_to_delete=None, *args, **kwargs):
@@ -1235,7 +1262,7 @@ class TFModels():
 
         # TRAIN VARIABLES
         start_time = time.time()  # Start time
-
+        actual_delta = self.delta_time  # Last delta time if exists
         # TO STATISTICS
         # To load accuracies and losses
         accuracies_train, accuracies_test, loss_train, loss_test = load_accuracies_and_losses(
@@ -1252,7 +1279,8 @@ class TFModels():
             num_train_start = 0
         is_new_epoch_flag = False  # Represent if training come into a new epoch. With this, a graph will be saved each
         # new epoch
-        saves_information = []  # Represent
+        # TODO (@gabvaztor) Fix epoch value when end training and put a higher epoch. This happens because percent is
+        # near 100% when finish and start in that percent.
         # START  TRAINING
         for epoch in range(self.num_epochs_count, self.epoch_numbers):  # Start with load value or 0
             for num_train in range(num_train_start, self.trains):  # Start with load value or 0
@@ -1263,7 +1291,7 @@ class TFModels():
 
                 # Setting values
                 train_step.run(feed_dict_train_dropout)
-                # TODO(@gabvaztor) Add validation_accuracy to training
+                # TODO(@gabvaztor) Add validation_accuracy to training when necessary
                 self.train_accuracy = accuracy.eval(feed_dict_train_100) * 100
                 self.test_accuracy = accuracy.eval(feed_dict_test_100) * 100
                 # Mandatory to save as numpy float64, not float32
@@ -1289,10 +1317,14 @@ class TFModels():
                 pt("y_pre_sum", y_pre.sum())
                 pt("prediction_", prediction_)
                 pt("p", p)
-                pt("saves_information", saves_information)
-                if num_train % 2 == 0:
+                pt("saves_information", self.saves_information)
+
+                # Update time
+                delta = actual_delta + (time.time() - start_time)
+                self.delta_time = delta
+                if num_train % self.print_information == 0:
                     percent_advance = "{0:.3f}".format(float(num_train * 100 / self.trains))
-                    pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime((time.time() - start_time)))))
+                    pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime(delta))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
                        str(epoch) + ": " + percent_advance + '%')
                     pt('train_accuracy', self.train_accuracy)
@@ -1312,11 +1344,11 @@ class TFModels():
                 if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
                         and self.num_epochs_count != 1 and self.index_buffer_data == 0:
                     self.learning_rate = float(self.learning_rate / 10.)
-                if self.should_save(saves_information_list=saves_information, check_loss_train=True, if_is_equal=False):
+                if self.should_save(saves_information_list=self.saves_information, check_loss_train=True, if_is_equal=False):
                     filepath_save = self.save(saver=saver, session=sess)
-                    saves_information.append(1)
+                    self.saves_information.append(1)
                 else:
-                    saves_information.append(0)
+                    self.saves_information.append(0)
                 if self.show_advanced_info:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
@@ -1333,12 +1365,18 @@ class TFModels():
                 # Collect trash
                 if self.num_trains_count % 100 == 0:
                     gc.collect()
+                # TODO (@gabvaztor) Check update batch when it is the last train of epoch
                 # Update batches values
                 self.update_batch()
                 if self.save_model_configuration:
                     # Save configuration to that results
                     self._save_json_configuration(Constant.attributes_to_delete_configuration)
         pt('END TRAINING ')
+        # Actual epoch is epoch_number
+        self.actual_epoch = self.epoch_numbers
+        if self.save_model_configuration:
+            # Save configuration to that results
+            self._save_json_configuration(Constant.attributes_to_delete_configuration)
         self.show_save_statistics(accuracies_train=accuracies_train, accuracies_test=accuracies_test,
                                   loss_train=loss_train, loss_test=loss_test, folder_to_save=filepath_save)
         self.make_predictions()
@@ -1347,12 +1385,9 @@ class TFModels():
         # TODO (@gabvaztor) Finish method
         pass
 
-
-
 """
 STATIC METHODS: Not need "self" :argument
 """
-
 
 def get_inputs_and_labels_shuffled(inputs, inputs_labels):
     """
