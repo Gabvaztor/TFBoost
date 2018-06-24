@@ -185,6 +185,7 @@ class TFModels():
         self._problem_information = "Accuracy represent error. Low is better"
         self._delta_time = 0
         self._saves_information = []
+        # TODO (@gabvaztor) Create a parallel function which could save with an input() anytime.
         # OPTIONS
         # Options represent a list with this structure:
         #               - First position: "string_option" --> unique string to represent problem in question
@@ -203,6 +204,8 @@ class TFModels():
                 # input("You will load model configuration but no restore the tensorflow model, do you want to continue?")
                 pt("Loading model configuration", self.settings_object.configuration_path)
                 self._load_model_configuration(self.settings_object.load_actual_configuration())
+
+        #COMRPOBAR DE DONDE GUARDAR Y COMPRUEBA LOS DATOS, DEL INFORMATION O CONFIGURATION
         if self.save_model_configuration and not self.restore_to_predict:
             # TODO (@gabvaztor) First, save a temporal file to avoid corrupts files.
             # Save model configuration in a json file
@@ -856,7 +859,7 @@ class TFModels():
             out_range = True
         return batch_size, out_range
 
-    def should_save(self, saves_information_list=None, check_loss_train=False, if_is_equal=True):
+    def should_save(self, check_loss_train=False, if_is_equal=True):
         """
         Check if must save from validation/test accuracy/error
 
@@ -865,11 +868,11 @@ class TFModels():
         # TODO (@gabvaztor) Detect when stop learning. From 60% to 10% validation/test
         should_save = False
         save_for_information = True
-        if saves_information_list:
-            if saves_information_list.count(1) / 2 >= 25:
+        if self.saves_information:
+            if self.saves_information.count(1) / 2 >= 25:
                 save_for_information = False
-            if len(saves_information_list) >= 50:
-                del saves_information_list[0]
+            if len(self.saves_information) >= 50:
+                del self.saves_information[0]
         if self.save_model_information and save_for_information:
             actual_information = self.settings_object.load_actual_information()
             if actual_information:
@@ -912,10 +915,14 @@ class TFModels():
                         should_save = True
                 if check_loss_train:
                     # TODO (@gabvaztor) module number parametrizable
-                    if self.num_trains_count % 50 == 0 or self.train_loss <= last_train_loss:
+                    if self.num_trains_count % 1500 == 0 or self.train_loss <= last_train_loss:
                         should_save = True
             else:
                 should_save = True
+            if should_save:
+                self.saves_information.append(1)
+            else:
+                self.saves_information.append(0)
         return should_save
 
     def _load_model_configuration(self, configuration):
@@ -928,58 +935,61 @@ class TFModels():
         :param configuration: the json class
         """
         if configuration:
-            # TODO Add to docs WHEN it is necessary to add more attributes = Do documentation
-            if not self.restore_model:
-                self.restore_model = configuration._restore_model
-            if configuration._epoch_numbers != self.epoch_numbers:
-                # It has preferency the actual epoch numbers.
-                if self.epoch_numbers < configuration._epoch_numbers:
-                    raise ValueError("Epoch number can't be lower than last configuration. Please, put a higher "
-                                     "epoch_number")
-                self.epoch_numbers = self.epoch_numbers
-            self.save_model = configuration._save_model_information
-            self.ask_to_save_model = configuration._ask_to_save_model_information
-            self.show_info = configuration._show_advanced_info
-            self.show_images = configuration._show_images
-            self.save_model_configuration = configuration._save_model_configuration
-            self.save_model_information = configuration._save_model_information
-            self.shuffle_data = configuration._shuffle_data
-            self.input_rows_numbers = configuration._input_rows_numbers
-            self.input_columns_numbers = configuration._input_columns_numbers
-            self.kernel_size = configuration._kernel_size
-            self.batch_size = configuration._batch_size
-            self.input_size = configuration._input_size
-            self.test_size = configuration._test_size
-            self.train_dropout = configuration._train_dropout
-            self.first_label_neurons = configuration._first_label_neurons
-            self.second_label_neurons = configuration._second_label_neurons
-            self.third_label_neurons = configuration._third_label_neurons
-            self.learning_rate = configuration._learning_rate
-            self.trains = configuration._trains
-            self.number_epoch_to_change_learning_rate = configuration._number_epoch_to_change_learning_rate
-            self.save_graphs_images = configuration._save_graphs_images
-            self.ask_to_continue_creating_model_without_exist = \
-                configuration._ask_to_continue_creating_model_without_exist
-            self.ask_to_save_model_information = configuration._ask_to_save_model_information
-            self.show_when_save_information = configuration._show_when_save_information
-            self.print_information = configuration._print_information
-            self.validation_size = configuration._validation_size
-            self.problem_information = configuration._problem_information
-            self.restore_to_predict = configuration._restore_to_predict
-            self.debug_level = configuration._debug_level
-            self.fourth_label_neurons = configuration._fourth_label_neurons
-            self.restore_model_configuration = configuration._restore_model_configuration
-            self.train_loss = configuration._train_loss
-            self.test_loss = configuration._test_loss
-            self.validation_loss = configuration._validation_loss
-            self.saves_information = configuration._saves_information
-            # If you don't restore model then you won't load train number and epochs number
-            if self.restore_model:
-                self.num_trains_count = configuration._num_trains_count
-                self.num_epochs_count = configuration._num_epochs_count
-                self.index_buffer_data = configuration._index_buffer_data
-                self.delta_time = configuration._delta_time
-            pt("Loaded model configuration")
+            try:
+                # TODO Add to docs WHEN it is necessary to add more attributes = Do documentation
+                if not self.restore_model:
+                    self.restore_model = configuration._restore_model
+                if configuration._epoch_numbers != self.epoch_numbers:
+                    # It has preferency the actual epoch numbers.
+                    if self.epoch_numbers < configuration._epoch_numbers:
+                        raise ValueError("Epoch number can't be lower than last configuration. Please, put a higher "
+                                         "epoch_number")
+                    self.epoch_numbers = self.epoch_numbers
+                self.save_model = configuration._save_model_information
+                self.ask_to_save_model = configuration._ask_to_save_model_information
+                self.show_info = configuration._show_advanced_info
+                self.show_images = configuration._show_images
+                self.save_model_configuration = configuration._save_model_configuration
+                self.save_model_information = configuration._save_model_information
+                self.shuffle_data = configuration._shuffle_data
+                self.input_rows_numbers = configuration._input_rows_numbers
+                self.input_columns_numbers = configuration._input_columns_numbers
+                self.kernel_size = configuration._kernel_size
+                self.batch_size = configuration._batch_size
+                self.input_size = configuration._input_size
+                self.test_size = configuration._test_size
+                self.train_dropout = configuration._train_dropout
+                self.first_label_neurons = configuration._first_label_neurons
+                self.second_label_neurons = configuration._second_label_neurons
+                self.third_label_neurons = configuration._third_label_neurons
+                self.learning_rate = configuration._learning_rate
+                self.trains = configuration._trains
+                self.number_epoch_to_change_learning_rate = configuration._number_epoch_to_change_learning_rate
+                self.save_graphs_images = configuration._save_graphs_images
+                self.ask_to_continue_creating_model_without_exist = \
+                    configuration._ask_to_continue_creating_model_without_exist
+                self.ask_to_save_model_information = configuration._ask_to_save_model_information
+                self.show_when_save_information = configuration._show_when_save_information
+                self.print_information = configuration._print_information
+                self.validation_size = configuration._validation_size
+                self.problem_information = configuration._problem_information
+                self.restore_to_predict = configuration._restore_to_predict
+                self.debug_level = configuration._debug_level
+                self.fourth_label_neurons = configuration._fourth_label_neurons
+                self.restore_model_configuration = configuration._restore_model_configuration
+                self.train_loss = configuration._train_loss
+                self.test_loss = configuration._test_loss
+                self.validation_loss = configuration._validation_loss
+                self.saves_information = configuration._saves_information
+                # If you don't restore model then you won't load train number and epochs number
+                if self.restore_model:
+                    self.num_trains_count = configuration._num_trains_count
+                    self.num_epochs_count = configuration._num_epochs_count
+                    self.index_buffer_data = configuration._index_buffer_data
+                    self.delta_time = configuration._delta_time
+                pt("Loaded model configuration")
+            except Exception as e:
+                raise ValueError("Error during load configuration", e)
 
     def _save_model_to_json(self, fullpath, attributes_to_delete=None, *args, **kwargs):
         """
@@ -1345,11 +1355,8 @@ class TFModels():
                 if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
                         and self.num_epochs_count != 1 and self.index_buffer_data == 0:
                     self.learning_rate = float(self.learning_rate / 10.)
-                if self.should_save(saves_information_list=self.saves_information, check_loss_train=True, if_is_equal=False):
+                if self.should_save(check_loss_train=True, if_is_equal=False):
                     filepath_save = self.save(saver=saver, session=sess)
-                    self.saves_information.append(1)
-                else:
-                    self.saves_information.append(0)
                 if self.show_advanced_info:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
