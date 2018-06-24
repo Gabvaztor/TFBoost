@@ -144,7 +144,6 @@ class TFModels():
         # TRAIN MODEL VARIABLES
         self._input_rows_numbers = option_problem[2] # For example, in german problem, number of row pixels
         self._input_columns_numbers = option_problem[3]  # For example, in german problem, number of column pixels
-        self._kernel_size = [7, 7]  # Kernel patch size
         self._epoch_numbers = 15  # Epochs number
         self._batch_size = 9  # Batch size
         if self.input is not None and not self.restore_to_predict:  # Change if necessary
@@ -167,6 +166,8 @@ class TFModels():
         self._second_label_neurons = 16
         self._third_label_neurons = 16
         self._fourth_label_neurons = 32
+        # TODO (@gabvaztor) Crate lists of kernels
+        self._kernel_size = [7, 7]  # Kernel patch size
         self._learning_rate = 1e-3  # Learning rate
         self._number_epoch_to_change_learning_rate = 60  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
