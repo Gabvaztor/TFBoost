@@ -48,6 +48,7 @@ class Thread():
             name = function_def.__name__
         process = threading.Thread(name=name, target=function_def, args=arguments, kwargs=kwargs)
         process.start()
+        pass
 
 def class_properties(object, attributes_to_delete=None):
     """
@@ -58,3 +59,4 @@ def class_properties(object, attributes_to_delete=None):
     pt("object", object)
     dict_copy = object.__dict__.copy()  # Need to be a copy to not get original class' attributes.
     return dict_copy
+

@@ -95,6 +95,8 @@ import types
 """ To recollect python rash"""
 import gc
 
+from AsynchronousThreading import execute_asynchronous_thread
+
 global global_function
 global global_metadata
 
@@ -144,7 +146,7 @@ class TFModels():
         # TRAIN MODEL VARIABLES
         self._input_rows_numbers = option_problem[2] # For example, in german problem, number of row pixels
         self._input_columns_numbers = option_problem[3]  # For example, in german problem, number of column pixels
-        self._epoch_numbers = 15  # Epochs number
+        self._epoch_numbers = 50  # Epochs number
         self._batch_size = 9  # Batch size
         if self.input is not None and not self.restore_to_predict:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
@@ -664,10 +666,16 @@ class TFModels():
 
     def _save_json_configuration(self, attributes_to_delete_configuration):
         try:
+            execute_asynchronous_thread(functions=self._save_model_to_json,
+                                        arguments=(self.settings_object.configuration_path,
+                                                   attributes_to_delete_configuration,),
+                                        kwargs={"type_file": "Configuration"})
+
+            """
             self._save_model_to_json(self.settings_object.configuration_path,
                                      attributes_to_delete_configuration,
                                      type_file="Configuration")
-            """
+            
             f = self._save_model_to_json(self.settings_object.configuration_path,
                                                    attributes_to_delete_configuration,
                                                    type_file="Configuration")
@@ -915,7 +923,7 @@ class TFModels():
                         should_save = True
                 if check_loss_train:
                     # TODO (@gabvaztor) module number parametrizable
-                    if self.num_trains_count % 1500 == 0 or self.train_loss <= last_train_loss:
+                    if self.num_trains_count % 1500000 == 0 or self.train_loss <= last_train_loss:
                         should_save = True
             else:
                 should_save = True
@@ -1153,12 +1161,15 @@ class TFModels():
        #pt('index_buffer_data', self.index_buffer_data)
         #pt("SMAPE", smape(y__, y__prediction).eval(feed_dict))
 
-    def save(self, saver, session):
+    def save_actual_model(self, saver, session):
         # Save variables to disk.
         if self.settings_object.model_path:
             try:
                 pt("Saving model... DO NOT STOP PYTHON PROCESS")
-                saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
+                execute_asynchronous_thread(functions=saver.save,
+                                            arguments=(session, self.settings_object.model_path + Dictionary.string_ckpt_extension),
+                                            kwargs=None)
+                #saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
                 pt("Model saved without problem")
                 if self.show_when_save_information:
                     pt("Saving model information...")
@@ -1318,9 +1329,10 @@ class TFModels():
                 with tf.device('/cpu:0'):
                     numpy_arrays = [accuracies_train, accuracies_test, loss_train, loss_test]
                     numpy_names = ["accuracies_train", "accuracies_test", "loss_train", "loss_test"]
-                    save_numpy_arrays_generic(folder_to_save=self.settings_object.accuracies_losses_path,
-                                              numpy_files=numpy_arrays,
-                                              names=numpy_names)
+                    execute_asynchronous_thread(functions=save_numpy_arrays_generic,
+                                                arguments=(self.settings_object.accuracies_losses_path, numpy_arrays,
+                                                           numpy_names),
+                                                kwargs=None)
                 y_pre = y_prediction.eval(feed_dict_train_100)
                 prediction_ = np.argmax(y_pre, axis=1)
                 p = tf.argmax(y_prediction, axis=1).eval(feed_dict_train_100)
@@ -1335,7 +1347,8 @@ class TFModels():
                 self.delta_time = delta
                 if num_train % self.print_information == 0:
                     percent_advance = "{0:.3f}".format(float(num_train * 100 / self.trains))
-                    pt('Time', str(time.strftime("%Hh%Mm%Ss", time.gmtime(delta))))
+                    day = str(int(time.strftime("%d", time.gmtime(delta))) - 1 )
+                    pt('Time', str(time.strftime(day + " Days-%Hh%Mm%Ss", time.gmtime(delta))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
                        str(epoch) + ": " + percent_advance + '%')
                     pt('train_accuracy', self.train_accuracy)
@@ -1356,7 +1369,7 @@ class TFModels():
                         and self.num_epochs_count != 1 and self.index_buffer_data == 0:
                     self.learning_rate = float(self.learning_rate / 10.)
                 if self.should_save(check_loss_train=True, if_is_equal=False):
-                    filepath_save = self.save(saver=saver, session=sess)
+                    filepath_save = self.save_actual_model(saver=saver, session=sess)
                 if self.show_advanced_info:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
@@ -1572,6 +1585,7 @@ def process_test_set(test, test_labels, options, create_dataset_flag=False):
     x_test = []
     y_test = []
     for i in range(len(test)):
+        # TODO (@gabvaztor) Number parametrizable
         if i % 350 == 0:
             x, y = process_input_unity_generic(test[i], test_labels[i], options, is_test=True, to_save=create_dataset_flag)
             if not create_dataset_flag:

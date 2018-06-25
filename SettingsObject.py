@@ -138,7 +138,7 @@ class Settings():
 
     def load_actual_information(self):
         """
-        :return:
+        Information path contains best accuracy to compare before save.
         """
         # TODO (@gabvaztor) DOCs
         configuration = None
