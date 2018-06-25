@@ -141,7 +141,7 @@ class TFModels():
         self._show_advanced_info = False  # Labels and logits info.
         self._show_images = False  # If True show images when show_info is True
         self._save_model_configuration = True  # If True, then all attributes will be saved in a settings_object path.
-        self._shuffle_data = True  # If True, then the train and validation data will be shuffled separately.
+        self._shuffle_data = False  # If True, then the train and validation data will be shuffled separately.
         self._generate_predictions = False  # If true, it tries to generate a prediction
         self._save_graphs_images = False  # If True, then save graphs images from statistical values. NOTE that this will
         # decrease the performance during training. Although this is true or false, for each time an epoch has finished,
@@ -898,20 +898,20 @@ class TFModels():
                         time_to_sleep = int(input_value[6:])
                         if time_to_sleep <= 0:  # Must be higher than 0
                             raise ()  # Provoke error
-                    except Exception as e:
+                    except Exception:
                         pt("Bad line code of WAIT. Format: 'WAIT -10'")
                 pt("WAITING " + str(time_to_sleep) + " SECONDS...")
                 time.sleep(time_to_sleep)  # To sleep
-            if input_value == "SAVE":
+            elif input_value == "SAVE":
                 should_save = True
-            else:
+            elif "CODE" in input_value:
                 try:
                     condition = exec(input_value)
                     pt(input_value)
                     pt("Condition", condition)
                     if condition:
                         should_save = True
-                except Exception as e:
+                except Exception:
                     pt("Bad line code as condition. Format: 'self.train_loss < 0.2'")
             input_value = ""
         save_for_information = True
@@ -949,8 +949,11 @@ class TFModels():
                                 if self.test_accuracy >= last_test_accuracy:  # Save checking test
                                     #  accuracies in this moment
                                     should_save = True
+                                elif self.train_accuracy > 98.:
+                                    should_save = True
                             elif self.test_accuracy > last_test_accuracy:
                                     should_save = True
+
                     else:
                         if self.ask_to_save_model_information:
                             pt("last_train_accuracy", last_train_accuracy)
@@ -1315,6 +1318,7 @@ class TFModels():
 
     def train_model(self, *args, **kwargs):
 
+        global input_value
         x = kwargs['kwargs']['x_input']
         y_labels = kwargs['kwargs']['y_labels']
         keep_probably = kwargs['kwargs']['keep_probably']
@@ -1445,6 +1449,9 @@ class TFModels():
                 if self.save_model_configuration:
                     # Save configuration to that results
                     self._save_json_configuration(Constant.attributes_to_delete_configuration)
+                if input_value == "STOP":
+                    quit()
+                input_value = ""
         pt('END TRAINING ')
         # Actual epoch is epoch_number
         self.actual_epoch = self.epoch_numbers
