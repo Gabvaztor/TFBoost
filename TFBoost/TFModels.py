@@ -99,6 +99,9 @@ from AsynchronousThreading import execute_asynchronous_thread
 
 global global_function
 global global_metadata
+input_value = ""
+# TODO (@gabvaztor) Add force stop variable
+
 
 class TFModels():
     """
@@ -187,6 +190,7 @@ class TFModels():
         self._problem_information = "Accuracy represent error. Low is better"
         self._delta_time = 0
         self._saves_information = []
+        self._train_accuracy_sum = 0.  # Sum of all train accuracies of a epoch
         # TODO (@gabvaztor) Create a parallel function which could save with an input() anytime.
         # OPTIONS
         # Options represent a list with this structure:
@@ -206,12 +210,15 @@ class TFModels():
                 # input("You will load model configuration but no restore the tensorflow model, do you want to continue?")
                 pt("Loading model configuration", self.settings_object.configuration_path)
                 self._load_model_configuration(self.settings_object.load_actual_configuration())
-
         #COMRPOBAR DE DONDE GUARDAR Y COMPRUEBA LOS DATOS, DEL INFORMATION O CONFIGURATION
         if self.save_model_configuration and not self.restore_to_predict:
             # TODO (@gabvaztor) First, save a temporal file to avoid corrupts files.
             # Save model configuration in a json file
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
+
+        # TODO (@gabvaztor) Explote this feature
+        # Execute input function asynchronously to force_save or wait process
+        execute_asynchronous_thread(input_while)
 
     @property
     def problem_information(self):
@@ -664,6 +671,14 @@ class TFModels():
     def saves_information(self, value):
         self._saves_information = value
 
+    @property
+    def train_accuracy_sum(self):
+        return self._train_accuracy_sum
+
+    @train_accuracy_sum.setter
+    def train_accuracy_sum(self, value):
+        self._train_accuracy_sum = value
+
     def _save_json_configuration(self, attributes_to_delete_configuration):
         try:
             execute_asynchronous_thread(functions=self._save_model_to_json,
@@ -873,64 +888,92 @@ class TFModels():
 
         :return: if should save
         """
-        # TODO (@gabvaztor) Detect when stop learning. From 60% to 10% validation/test
+        global input_value
         should_save = False
+        if input_value != "":
+            if "WAIT" in input_value:
+                time_to_sleep = 10
+                if input_value != "WAIT":
+                    try:
+                        time_to_sleep = int(input_value[6:])
+                        if time_to_sleep <= 0:  # Must be higher than 0
+                            raise ()  # Provoke error
+                    except Exception as e:
+                        pt("Bad line code of WAIT. Format: 'WAIT -10'")
+                pt("WAITING " + str(time_to_sleep) + " SECONDS...")
+                time.sleep(time_to_sleep)  # To sleep
+            if input_value == "SAVE":
+                should_save = True
+            else:
+                try:
+                    condition = exec(input_value)
+                    pt(input_value)
+                    pt("Condition", condition)
+                    if condition:
+                        should_save = True
+                except Exception as e:
+                    pt("Bad line code as condition. Format: 'self.train_loss < 0.2'")
+            input_value = ""
         save_for_information = True
+        # TODO (@gabvaztor) Detect when stop learning. From 60% to 10% validation/test
         if self.saves_information:
             if self.saves_information.count(1) / 2 >= 25:
                 save_for_information = False
             if len(self.saves_information) >= 50:
                 del self.saves_information[0]
-        if self.save_model_information and save_for_information:
-            actual_information = self.settings_object.load_actual_information()
-            if actual_information:
-                last_train_accuracy = actual_information._train_accuracy
-                last_test_accuracy = actual_information._test_accuracy
-                last_validation_accuracy = actual_information._validation_accuracy
-                last_train_loss = actual_information._train_loss
-                if last_train_accuracy and last_validation_accuracy and not self.ask_to_save_model_information:
-                    # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
-                    if self.validation_accuracy and last_validation_accuracy:
-                        if if_is_equal:
-                            if self.validation_accuracy >= last_validation_accuracy:  # Save checking validation
-                                #  accuracies in this moment
+        if should_save:  # This happens when force save for input or condition = True
+            pt("FORCE SAVE...")
+        else:
+            if self.save_model_information and save_for_information:
+                actual_information = self.settings_object.load_actual_information()
+                if actual_information:
+                    last_train_accuracy = actual_information._train_accuracy
+                    last_test_accuracy = actual_information._test_accuracy
+                    last_validation_accuracy = actual_information._validation_accuracy
+                    last_train_loss = actual_information._train_loss
+                    if last_train_accuracy and last_validation_accuracy and not self.ask_to_save_model_information:
+                        # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
+                        if self.validation_accuracy and last_validation_accuracy:
+                            if if_is_equal:
+                                if self.validation_accuracy >= last_validation_accuracy:  # Save checking validation
+                                    #  accuracies in this moment
+                                    should_save = True
+                            elif self.validation_accuracy > last_validation_accuracy:
                                 should_save = True
-                        elif self.validation_accuracy > last_validation_accuracy:
-                            should_save = True
-                elif last_train_accuracy and last_test_accuracy and not self.ask_to_save_model_information:
-                    # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
-                    if self.test_accuracy and last_test_accuracy:
-                        if if_is_equal:
-                            # TODO (@gabvaztor) Sometimes, gradient break and always obtain same test. Fix it. (restart
-                            # learning)
-                            if self.test_accuracy >= last_test_accuracy:  # Save checking test
-                                #  accuracies in this moment
-                                should_save = True
-                        elif self.test_accuracy > last_test_accuracy:
-                                should_save = True
-                else:
-                    if self.ask_to_save_model_information:
-                        pt("last_train_accuracy", last_train_accuracy)
-                        pt("last_test_accuracy", last_test_accuracy)
-                        pt("last_validation_accuracy", last_validation_accuracy)
-                        pt("actual_train_accuracy", self.train_accuracy)
-                        pt("actual_test_accuracy", self.test_accuracy)
-                        pt("actual_validation_accuracy", self.validation_accuracy)
-                        option_choosed = recurrent_ask_to_save_model()
+                    elif last_train_accuracy and last_test_accuracy and not self.ask_to_save_model_information:
+                        # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
+                        if self.test_accuracy and last_test_accuracy:
+                            if if_is_equal:
+                                # TODO (@gabvaztor) Sometimes, gradient break and always obtain same test. Fix it. (restart
+                                # learning)
+                                if self.test_accuracy >= last_test_accuracy:  # Save checking test
+                                    #  accuracies in this moment
+                                    should_save = True
+                            elif self.test_accuracy > last_test_accuracy:
+                                    should_save = True
                     else:
-                        option_choosed = True
-                    if option_choosed:
-                        should_save = True
-                if check_loss_train:
-                    # TODO (@gabvaztor) module number parametrizable
-                    if self.num_trains_count % 1500000 == 0 or self.train_loss <= last_train_loss:
-                        should_save = True
-            else:
-                should_save = True
-            if should_save:
-                self.saves_information.append(1)
-            else:
-                self.saves_information.append(0)
+                        if self.ask_to_save_model_information:
+                            pt("last_train_accuracy", last_train_accuracy)
+                            pt("last_test_accuracy", last_test_accuracy)
+                            pt("last_validation_accuracy", last_validation_accuracy)
+                            pt("actual_train_accuracy", self.train_accuracy)
+                            pt("actual_test_accuracy", self.test_accuracy)
+                            pt("actual_validation_accuracy", self.validation_accuracy)
+                            option_choosed = recurrent_ask_to_save_model()
+                        else:
+                            option_choosed = True
+                        if option_choosed:
+                            should_save = True
+                    if check_loss_train:
+                        # TODO (@gabvaztor) module number parametrizable
+                        if self.num_trains_count % 1500000 == 0 or self.train_loss <= last_train_loss:
+                            should_save = True
+                else:
+                    should_save = True
+        if should_save:
+            self.saves_information.append(1)
+        else:
+            self.saves_information.append(0)
         return should_save
 
     def _load_model_configuration(self, configuration):
@@ -989,6 +1032,7 @@ class TFModels():
                 self.test_loss = configuration._test_loss
                 self.validation_loss = configuration._validation_loss
                 self.saves_information = configuration._saves_information
+                self.train_accuracy_sum = configuration._train_accuracy_sum
                 # If you don't restore model then you won't load train number and epochs number
                 if self.restore_model:
                     self.num_trains_count = configuration._num_trains_count
@@ -1167,7 +1211,8 @@ class TFModels():
             try:
                 pt("Saving model... DO NOT STOP PYTHON PROCESS")
                 execute_asynchronous_thread(functions=saver.save,
-                                            arguments=(session, self.settings_object.model_path + Dictionary.string_ckpt_extension),
+                                            arguments=(session, self.settings_object.model_path +
+                                                       Dictionary.string_ckpt_extension),
                                             kwargs=None)
                 #saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
                 pt("Model saved without problem")
@@ -1301,10 +1346,14 @@ class TFModels():
             num_train_start = 0
         is_new_epoch_flag = False  # Represent if training come into a new epoch. With this, a graph will be saved each
         # new epoch
-        # TODO (@gabvaztor) Fix epoch value when end training and put a higher epoch. This happens because percent is
-        # near 100% when finish and start in that percent.
+        restart_index_buffer = False  # When true, restart index buffer in the end of a epoch.
         # START  TRAINING
         for epoch in range(self.num_epochs_count, self.epoch_numbers):  # Start with load value or 0
+            if restart_index_buffer:
+                self.index_buffer_data = 0  # When it starts new epoch, index of data will be 0 again. This does not
+                # happen when restore model
+                self.train_accuracy_sum = 0.  # Restart train_accuracy_sum for new epoch.
+                is_new_epoch_flag = False
             for num_train in range(num_train_start, self.trains):  # Start with load value or 0
                 # Update feeds
                 feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
@@ -1320,6 +1369,7 @@ class TFModels():
                 self.train_loss = np.float64(cross_entropy.eval(feed_dict_train_100))
                 self.test_loss = np.float64(cross_entropy.eval(feed_dict_test_100))
 
+                self.train_accuracy_sum += self.train_accuracy
                 # To generate statistics
                 accuracies_train.append(self.train_accuracy)
                 accuracies_test.append(self.test_accuracy)
@@ -1347,14 +1397,15 @@ class TFModels():
                 self.delta_time = delta
                 if num_train % self.print_information == 0:
                     percent_advance = "{0:.3f}".format(float(num_train * 100 / self.trains))
-                    day = str(int(time.strftime("%d", time.gmtime(delta))) - 1 )
-                    pt('Time', str(time.strftime(day + " Days-%Hh%Mm%Ss", time.gmtime(delta))))
+                    day = str(int(time.strftime("%d", time.gmtime(delta))) - 1)
+                    pt('Time', str(time.strftime(day + " Days - %Hh%Mm%Ss", time.gmtime(delta))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
-                       str(epoch) + ": " + percent_advance + '%')
+                       str(epoch) + ": " + percent_advance + '%' + " | Train number of actual epoch: " + str(num_train))
                     pt('train_accuracy', self.train_accuracy)
                     pt('cross_entropy_train', self.train_loss)
                     pt('test_accuracy', self.test_accuracy)
-                    pt('self.index_buffer_data', self.index_buffer_data)
+                    pt('index_buffer_data', self.index_buffer_data)
+                    pt('Mean train accuracy (actual epoch)', self.train_accuracy_sum / num_train)
                     # DEBUG MODE
                     #y_pre = y_prediction.eval(feed_dict_train_100)
                     #pt("y_pre", y_pre)
@@ -1364,6 +1415,7 @@ class TFModels():
                 if num_train + 1 == self.trains:  # +1 because start in 0
                     self.num_epochs_count += 1
                     is_new_epoch_flag = True
+                    restart_index_buffer = True
                 # To decrement learning rate during training
                 if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
                         and self.num_epochs_count != 1 and self.index_buffer_data == 0:
@@ -1374,12 +1426,13 @@ class TFModels():
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
                 with tf.device('/cpu:0'):
-                    if (self.save_graphs_images and filepath_save) or (is_new_epoch_flag and filepath_save):
+                    if (self.save_graphs_images and filepath_save) or (is_new_epoch_flag):
+                        if not filepath_save:
+                            filepath_save = self.settings_object.configuration_path
                         self.show_save_statistics(accuracies_train=accuracies_train, accuracies_test=accuracies_test,
                                                   loss_train=loss_train, loss_test=loss_test,
                                                   folder_to_save=filepath_save, show_graphs=False,
                                                   is_new_epoch_flag=is_new_epoch_flag)
-                        is_new_epoch_flag = False
 
                 # Update num_trains_count and num_epoch_count
                 self.num_trains_count += 1
@@ -1600,3 +1653,8 @@ def process_german_prizes_csv(x_input, is_test=False):
 
 def call_method(method):
     method()
+
+def input_while():
+    global input_value
+    while True:
+        input_value = input()

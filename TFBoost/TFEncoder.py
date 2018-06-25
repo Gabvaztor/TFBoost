@@ -186,7 +186,7 @@ class Constant(object):
                                         "_settings_object", "_save_model_configuration",
                                         "_show_images","_show_advanced_info", "_save_model_information",
                                         "_ask_to_save_model_information", "_input_batch", "_label_batch",
-                                        "_validation", "_validation_labels", "_processes"]
+                                        "_validation", "_validation_labels", "_processes", "_saves_information"]
     # attributes_to_delete: represent witch attributes set must not be save in json file when save configuration.
     attributes_to_delete_configuration = ["_input", "_test", "_input_labels", "_test_labels", "_settings_object",
                                           "_input_batch", "_label_batch", "_validation", "_validation_labels",
