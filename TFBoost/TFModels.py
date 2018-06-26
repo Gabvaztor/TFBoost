@@ -100,8 +100,7 @@ from AsynchronousThreading import execute_asynchronous_thread
 global global_function
 global global_metadata
 input_value = ""
-# TODO (@gabvaztor) Add force stop variable
-
+console_words_option = ["WAIT -t", "SAVE", "CODE 'a condition'", "STOP", "HELP"]
 
 class TFModels():
     """
@@ -191,6 +190,7 @@ class TFModels():
         self._delta_time = 0
         self._saves_information = []
         self._train_accuracy_sum = 0.  # Sum of all train accuracies of a epoch
+        self._num_actual_trains = 0
         # TODO (@gabvaztor) Create a parallel function which could save with an input() anytime.
         # OPTIONS
         # Options represent a list with this structure:
@@ -679,6 +679,14 @@ class TFModels():
     def train_accuracy_sum(self, value):
         self._train_accuracy_sum = value
 
+    @property
+    def num_actual_trains(self):
+        return self._num_actual_trains
+
+    @num_actual_trains.setter
+    def num_actual_trains(self, value):
+        self._num_actual_trains = value
+
     def _save_json_configuration(self, attributes_to_delete_configuration):
         try:
             execute_asynchronous_thread(functions=self._save_model_to_json,
@@ -864,6 +872,7 @@ class TFModels():
             x_batch = np.asarray(x_batch)
             y_batch = np.asarray(y_batch)
             if out_range:  # Reset index_buffer_data
+                pt("index_buffer_data OUT OF RANGE")
                 self.index_buffer_data = 0
         return x_batch, y_batch
 
@@ -891,6 +900,17 @@ class TFModels():
         global input_value
         should_save = False
         if input_value != "":
+            if input_value == "HELP":
+                pt("WORDS", console_words_option)
+                pt("STOP", "Stop current training")
+                pt("WAIT -t", "If you write WAIT, the training will be paused for 10 seconds. If you write a -t time "
+                              "(WAIT -20), the training will be paused for 't' time.")
+                pt("SAVE", "Force save in the actual train step")
+                pt("CODE 'a condition'",
+                   "With CODE you can write a python code (self.trains > 1000) and, if True, will "
+                   "activate a variable that save the actual model")
+                pt("HELP", "Show this message for 10 seconds")
+                input_value = "WAIT"
             if "WAIT" in input_value:
                 time_to_sleep = 10
                 if input_value != "WAIT":
@@ -900,11 +920,13 @@ class TFModels():
                             raise ()  # Provoke error
                     except Exception:
                         pt("Bad line code of WAIT. Format: 'WAIT -10'")
+                # TODO (@gabvaztor) Do sleep showing how seconds rest dinamically
                 pt("WAITING " + str(time_to_sleep) + " SECONDS...")
                 time.sleep(time_to_sleep)  # To sleep
-            elif input_value == "SAVE":
+                pt("Continue Training...")
+            if input_value == "SAVE":
                 should_save = True
-            elif "CODE" in input_value:
+            if "CODE" in input_value:
                 try:
                     condition = exec(input_value)
                     pt(input_value)
@@ -913,7 +935,8 @@ class TFModels():
                         should_save = True
                 except Exception:
                     pt("Bad line code as condition. Format: 'self.train_loss < 0.2'")
-            input_value = ""
+            if input_value != "STOP":
+                input_value = ""
         save_for_information = True
         # TODO (@gabvaztor) Detect when stop learning. From 60% to 10% validation/test
         if self.saves_information:
@@ -949,11 +972,10 @@ class TFModels():
                                 if self.test_accuracy >= last_test_accuracy:  # Save checking test
                                     #  accuracies in this moment
                                     should_save = True
-                                elif self.train_accuracy > 98.:
-                                    should_save = True
                             elif self.test_accuracy > last_test_accuracy:
                                     should_save = True
-
+                        if self.train_accuracy > 98. and self.num_trains_count % 10  == 0:
+                            should_save = True
                     else:
                         if self.ask_to_save_model_information:
                             pt("last_train_accuracy", last_train_accuracy)
@@ -1036,6 +1058,7 @@ class TFModels():
                 self.validation_loss = configuration._validation_loss
                 self.saves_information = configuration._saves_information
                 self.train_accuracy_sum = configuration._train_accuracy_sum
+                self.num_actual_trains = configuration._num_actual_trains
                 # If you don't restore model then you won't load train number and epochs number
                 if self.restore_model:
                     self.num_trains_count = configuration._num_trains_count
@@ -1344,21 +1367,25 @@ class TFModels():
 
         # Update test feeds ( will be not modified during training)
         feed_dict_test_100 = {x: x_test_feed, y_labels: y_test_feed, keep_probably: 1}
-        # Update real num_train:
-        num_train_start = int(self.num_trains_count % self.trains)
-        if num_train_start == self.trains:
-            num_train_start = 0
+        # Update real self.num_actual_trains:
+        if self.index_buffer_data == 0:
+            self.num_actual_trains = 0
+        elif self.num_actual_trains == 0: # 1188
+            self.num_actual_trains = int(self.num_trains_count % self.trains)  # This case only can happen when
+        # you restore a model and num_actual_trains fails to load. Otherwise, num_actual_trains contains rigth value.
         is_new_epoch_flag = False  # Represent if training come into a new epoch. With this, a graph will be saved each
         # new epoch
-        restart_index_buffer = False  # When true, restart index buffer in the end of a epoch.
         # START  TRAINING
         for epoch in range(self.num_epochs_count, self.epoch_numbers):  # Start with load value or 0
-            if restart_index_buffer:
+            if is_new_epoch_flag:
                 self.index_buffer_data = 0  # When it starts new epoch, index of data will be 0 again. This does not
                 # happen when restore model
                 self.train_accuracy_sum = 0.  # Restart train_accuracy_sum for new epoch.
                 is_new_epoch_flag = False
-            for num_train in range(num_train_start, self.trains):  # Start with load value or 0
+                self.num_actual_trains = 0
+                # Update batches values (because index_buffer_data restarted)
+                self.update_batch()
+            for num_train in range(self.num_actual_trains, self.trains):  # Start with load value or 0
                 # Update feeds
                 feed_dict_train_100 = {x: self.input_batch, y_labels: self.label_batch, keep_probably: 1}
                 feed_dict_train_dropout = {x: self.input_batch, y_labels: self.label_batch,
@@ -1390,36 +1417,37 @@ class TFModels():
                 y_pre = y_prediction.eval(feed_dict_train_100)
                 prediction_ = np.argmax(y_pre, axis=1)
                 p = tf.argmax(y_prediction, axis=1).eval(feed_dict_train_100)
-                pt("y_pre", y_pre)
-                pt("y_pre_sum", y_pre.sum())
-                pt("prediction_", prediction_)
-                pt("p", p)
-                pt("saves_information", self.saves_information)
+
 
                 # Update time
                 delta = actual_delta + (time.time() - start_time)
                 self.delta_time = delta
+                # TODO (@gabvaztor) Each X time, do a backup and continue training.
+
+                # Update actual
                 if num_train % self.print_information == 0:
+                    pt("y_pre", y_pre)
+                    pt("y_pre_sum", y_pre.sum())
+                    pt("prediction_", prediction_)
+                    pt("p", p)
+                    pt("saves_information", self.saves_information)
                     percent_advance = "{0:.3f}".format(float(num_train * 100 / self.trains))
                     day = str(int(time.strftime("%d", time.gmtime(delta))) - 1)
                     pt('Time', str(time.strftime(day + " Days - %Hh%Mm%Ss", time.gmtime(delta))))
                     pt('TRAIN NUMBER: ' + str(self.num_trains_count) + ' | Percent Epoch ' +
-                       str(epoch) + ": " + percent_advance + '%' + " | Train number of actual epoch: " + str(num_train))
+                       str(epoch) + ": " + percent_advance + '%' + " | Trains number of actual epoch: " + str(num_train))
                     pt('train_accuracy', self.train_accuracy)
                     pt('cross_entropy_train', self.train_loss)
                     pt('test_accuracy', self.test_accuracy)
                     pt('index_buffer_data', self.index_buffer_data)
                     pt('Mean train accuracy (actual epoch)', self.train_accuracy_sum / num_train)
-                    # DEBUG MODE
-                    #y_pre = y_prediction.eval(feed_dict_train_100)
-                    #pt("y_pre", y_pre)
+                    pt('WORDS: ' + str(console_words_option))
 
                 # Update indexes
                 # Update num_epochs_counts
                 if num_train + 1 == self.trains:  # +1 because start in 0
                     self.num_epochs_count += 1
                     is_new_epoch_flag = True
-                    restart_index_buffer = True
                 # To decrement learning rate during training
                 if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
                         and self.num_epochs_count != 1 and self.index_buffer_data == 0:
@@ -1438,20 +1466,22 @@ class TFModels():
                                                   folder_to_save=filepath_save, show_graphs=False,
                                                   is_new_epoch_flag=is_new_epoch_flag)
 
-                # Update num_trains_count and num_epoch_count
+                # Update num_trains_count and yo
                 self.num_trains_count += 1
+                self.num_actual_trains = num_train
+                if self.save_model_configuration:
+                    # Save configuration
+                    self._save_json_configuration(Constant.attributes_to_delete_configuration)
+                if input_value == "STOP":
+                    pt("Force STOP", "You can now stop process without problems.")
+                    exit()
                 # Collect trash
                 if self.num_trains_count % 100 == 0:
                     gc.collect()
                 # TODO (@gabvaztor) Check update batch when it is the last train of epoch
                 # Update batches values
                 self.update_batch()
-                if self.save_model_configuration:
-                    # Save configuration to that results
-                    self._save_json_configuration(Constant.attributes_to_delete_configuration)
-                if input_value == "STOP":
-                    quit()
-                input_value = ""
+
         pt('END TRAINING ')
         # Actual epoch is epoch_number
         self.actual_epoch = self.epoch_numbers

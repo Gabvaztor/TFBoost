@@ -426,7 +426,6 @@ def is_json(my_json):
         return False
     return True
 
-
 def class_properties(object, attributes_to_delete=None):
     """
     Return a string with actual object features without not necessaries

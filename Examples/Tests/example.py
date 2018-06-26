@@ -1,5 +1,11 @@
-from AsynchronousThreading import execute_asynchronous_thread
-import time
+m = 2
+for x in range(m, 10):
+    print("m", m)
+    print("x", x)
 
-value = "WAIT -151"
-print(value[6:])
+
+    if x == 5:
+        print ("hsd")
+        m = m - 3
+    else:
+        m = x
