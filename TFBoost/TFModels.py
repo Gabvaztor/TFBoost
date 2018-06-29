@@ -172,7 +172,7 @@ class TFModels():
         self._fourth_label_neurons = 32
         # TODO (@gabvaztor) Crate lists of kernels
         self._kernel_size = [7, 7]  # Kernel patch size
-        self._learning_rate = 1e-3  # Learning rate
+        self._learning_rate = 1e-4  # Learning rate
         self._number_epoch_to_change_learning_rate = 60  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
         self._print_information = 2  # How many trains are needed to print information
@@ -189,6 +189,7 @@ class TFModels():
         self._problem_information = "Accuracy represent error. Low is better"
         self._delta_time = 0
         self._saves_information = []
+        # TODO (@gabvaztor) Add mean accuracy by epoch in list (will can see a graph with evolution)
         self._train_accuracy_sum = 0.  # Sum of all train accuracies of a epoch
         self._num_actual_trains = 0
         # TODO (@gabvaztor) Create a parallel function which could save with an input() anytime.
@@ -897,6 +898,7 @@ class TFModels():
 
         :return: if should save
         """
+        # TODO (@gabvaztor) Save a temp file to continue training when X hours or input console
         global input_value
         should_save = False
         if input_value != "":
@@ -974,7 +976,7 @@ class TFModels():
                                     should_save = True
                             elif self.test_accuracy > last_test_accuracy:
                                     should_save = True
-                        if self.train_accuracy > 98. and self.num_trains_count % 10  == 0:
+                        if self.train_accuracy > 98. and self.num_trains_count % 22435543  == 0:
                             should_save = True
                     else:
                         if self.ask_to_save_model_information:
@@ -991,7 +993,7 @@ class TFModels():
                             should_save = True
                     if check_loss_train:
                         # TODO (@gabvaztor) module number parametrizable
-                        if self.num_trains_count % 1500000 == 0 or self.train_loss <= last_train_loss:
+                        if self.num_trains_count % 150247 == 0 or self.train_loss <= last_train_loss:
                             should_save = True
                 else:
                     should_save = True
@@ -1425,7 +1427,7 @@ class TFModels():
                 # TODO (@gabvaztor) Each X time, do a backup and continue training.
 
                 # Update actual
-                if num_train % self.print_information == 0:
+                if num_train % self.print_information == 0 or input_value != "":
                     pt("y_pre", y_pre)
                     pt("y_pre_sum", y_pre.sum())
                     pt("prediction_", prediction_)
@@ -1441,7 +1443,7 @@ class TFModels():
                     pt('test_accuracy', self.test_accuracy)
                     pt('index_buffer_data', self.index_buffer_data)
                     pt('Mean train accuracy (actual epoch)', self.train_accuracy_sum / num_train)
-                    pt('WORDS: ' + str(console_words_option))
+                    pt('WORDS: ', str(console_words_option))
 
                 # Update indexes
                 # Update num_epochs_counts
@@ -1475,12 +1477,14 @@ class TFModels():
                 if input_value == "STOP":
                     pt("Force STOP", "You can now stop process without problems.")
                     exit()
-                # Collect trash
-                if self.num_trains_count % 100 == 0:
-                    gc.collect()
-                # TODO (@gabvaztor) Check update batch when it is the last train of epoch
-                # Update batches values
-                self.update_batch()
+                    break
+                else:
+                    # Collect trash
+                    if self.num_trains_count % 100 == 0:
+                        gc.collect()
+                    # TODO (@gabvaztor) Check update batch when it is the last train of epoch
+                    # Update batches values
+                    self.update_batch()
 
         pt('END TRAINING ')
         # Actual epoch is epoch_number
