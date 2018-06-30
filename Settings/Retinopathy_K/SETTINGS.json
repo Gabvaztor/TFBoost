@@ -1,6 +1,6 @@
 {
   "TRAIN_DATA_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\train_resized\\",
-  "MODEL_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\model",
+  "MODEL_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\",
   "TEST_DATA_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\test_resized\\",
   "SUBMISSION_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Predictions\\prediction.json",
   "CONFIGURATION_PATH": "E:\\Data_Science\\Projects\\Retinopathy\\Models\\configuration_model.json",

@@ -132,6 +132,8 @@ class TFModels():
         self._restore_to_predict = predict_flag  # Load pretrained model to do a prediction. Restrictive
         self._save_model_information = True  # If must to save model or not
         self._ask_to_save_model_information = False  # If True and 'save_model' is true, ask to save model each time
+        # TODO (@gabvaztor) Create a flag variable with which you can change a variable value before load and, if
+        # the value change, the changed value is priority
         # 'should_save'
         self._show_when_save_information = False  # If True then you will see printed in console when during training
         # the information.json has been saved.
@@ -900,7 +902,7 @@ class TFModels():
         """
         # TODO (@gabvaztor) Save a temp file to continue training when X hours or input console
         global input_value
-        should_save = False
+        should_save = 0
         if input_value != "":
             if input_value == "HELP":
                 pt("WORDS", console_words_option)
@@ -927,14 +929,16 @@ class TFModels():
                 time.sleep(time_to_sleep)  # To sleep
                 pt("Continue Training...")
             if input_value == "SAVE":
-                should_save = True
+                should_save = 2
+                # STOP training because, it is probably that index_buffer_data change value
+                input_value = "STOP"
             if "CODE" in input_value:
                 try:
                     condition = exec(input_value)
                     pt(input_value)
                     pt("Condition", condition)
                     if condition:
-                        should_save = True
+                        should_save = 1
                 except Exception:
                     pt("Bad line code as condition. Format: 'self.train_loss < 0.2'")
             if input_value != "STOP":
@@ -962,9 +966,9 @@ class TFModels():
                             if if_is_equal:
                                 if self.validation_accuracy >= last_validation_accuracy:  # Save checking validation
                                     #  accuracies in this moment
-                                    should_save = True
+                                    should_save = 1
                             elif self.validation_accuracy > last_validation_accuracy:
-                                should_save = True
+                                should_save = 1
                     elif last_train_accuracy and last_test_accuracy and not self.ask_to_save_model_information:
                         # TODO(@gabvaztor) Check when, randomly, gradient descent obtain high accuracy
                         if self.test_accuracy and last_test_accuracy:
@@ -973,11 +977,9 @@ class TFModels():
                                 # learning)
                                 if self.test_accuracy >= last_test_accuracy:  # Save checking test
                                     #  accuracies in this moment
-                                    should_save = True
+                                    should_save = 1
                             elif self.test_accuracy > last_test_accuracy:
-                                    should_save = True
-                        if self.train_accuracy > 98. and self.num_trains_count % 22435543  == 0:
-                            should_save = True
+                                    should_save = 1
                     else:
                         if self.ask_to_save_model_information:
                             pt("last_train_accuracy", last_train_accuracy)
@@ -990,13 +992,13 @@ class TFModels():
                         else:
                             option_choosed = True
                         if option_choosed:
-                            should_save = True
+                            should_save = 1
                     if check_loss_train:
                         # TODO (@gabvaztor) module number parametrizable
-                        if self.num_trains_count % 150247 == 0 or self.train_loss <= last_train_loss:
-                            should_save = True
+                        if self.train_loss <= last_train_loss and (last_test_accuracy <= self.test_accuracy):
+                            should_save = 1
                 else:
-                    should_save = True
+                    should_save = 1
         if should_save:
             self.saves_information.append(1)
         else:
@@ -1104,7 +1106,7 @@ class TFModels():
             pt("Restoring model...", self.settings_object.model_path)
             try:
                 # TODO (@gabvaztor) Do Generic possibles models
-                model_possible_1 = self.settings_object.model_path + Dictionary.string_ckpt_extension
+                model_possible_1 = self.settings_object.model_path + "model" + Dictionary.string_ckpt_extension
                 model_possible_2 = model_possible_1 + Dictionary.string_meta_extension
                 model_possible_3 = model_possible_1 + Dictionary.string_ckpt_extension
                 model_possible_4 = model_possible_3 + Dictionary.string_meta_extension
@@ -1233,13 +1235,18 @@ class TFModels():
        #pt('index_buffer_data', self.index_buffer_data)
         #pt("SMAPE", smape(y__, y__prediction).eval(feed_dict))
 
-    def save_actual_model(self, saver, session):
+    def save_actual_model(self, saver, session, save_type):
         # Save variables to disk.
         if self.settings_object.model_path:
             try:
+                fullpath_save = self.settings_object.model_path
+                if save_type == 2:  # Force save, temp save
+                    fullpath_save = self.settings_object.model_path + "temp\\" + "model.ckpt"
+                    create_directory_from_fullpath(fullpath=fullpath_save)
                 pt("Saving model... DO NOT STOP PYTHON PROCESS")
+
                 execute_asynchronous_thread(functions=saver.save,
-                                            arguments=(session, self.settings_object.model_path +
+                                            arguments=(session, self.settings_object.model_path + "model" +
                                                        Dictionary.string_ckpt_extension),
                                             kwargs=None)
                 #saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
@@ -1454,8 +1461,9 @@ class TFModels():
                 if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
                         and self.num_epochs_count != 1 and self.index_buffer_data == 0:
                     self.learning_rate = float(self.learning_rate / 10.)
-                if self.should_save(check_loss_train=True, if_is_equal=False):
-                    filepath_save = self.save_actual_model(saver=saver, session=sess)
+                should_save = self.should_save(check_loss_train=True, if_is_equal=False)
+                if should_save > 0:  # 0, not save | 1, train save | 2, force save
+                    filepath_save = self.save_actual_model(saver=saver, session=sess, save_type=should_save)
                 if self.show_advanced_info:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
@@ -1475,7 +1483,9 @@ class TFModels():
                     # Save configuration
                     self._save_json_configuration(Constant.attributes_to_delete_configuration)
                 if input_value == "STOP":
-                    pt("Force STOP", "You can now stop process without problems.")
+                    pt("PAUSING Training...","")
+                    time.sleep(3)  # 3 Seconds to save configuration
+                    pt("Training PAUSED", "You can now stop process without problems.")
                     exit()
                     break
                 else:
