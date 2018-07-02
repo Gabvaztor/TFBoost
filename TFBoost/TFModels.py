@@ -207,6 +207,7 @@ class TFModels():
             save_and_restart(self.settings_object.model_path)
         # SAVE AND LOAD MODEL
         # If load_model_configuration is True, then it will load a configuration from settings_object method
+        # TODO (@gabvaztor) Check when temp file exists and, if timestamp is more actual, load it.
         if self.restore_model_configuration and not self.restore_to_predict:
             # And restore time too.
             if self.restore_model:
@@ -690,10 +691,13 @@ class TFModels():
     def num_actual_trains(self, value):
         self._num_actual_trains = value
 
-    def _save_json_configuration(self, attributes_to_delete_configuration):
+    def _save_json_configuration(self, attributes_to_delete_configuration, save_type=None):
         try:
+            save_path = self.settings_object.configuration_path
+            if save_type == 2:
+                save_path = get_temp_file_from_fullpath(save_path)
             execute_asynchronous_thread(functions=self._save_model_to_json,
-                                        arguments=(self.settings_object.configuration_path,
+                                        arguments=(save_path,
                                                    attributes_to_delete_configuration,),
                                         kwargs={"type_file": "Configuration"})
 
@@ -1239,16 +1243,14 @@ class TFModels():
         # Save variables to disk.
         if self.settings_object.model_path:
             try:
-                fullpath_save = self.settings_object.model_path
+                fullpath_save = self.settings_object.model_path + "model.ckpt"
                 if save_type == 2:  # Force save, temp save
-                    fullpath_save = self.settings_object.model_path + "temp\\" + "model.ckpt"
-                    create_directory_from_fullpath(fullpath=fullpath_save)
-                pt("Saving model... DO NOT STOP PYTHON PROCESS")
-
+                    fullpath_save = get_temp_file_from_fullpath(fullpath_save)
+                    pt("Saving TEMP model... DO NOT STOP PYTHON PROCESS")
+                else:
+                    pt("Saving model... DO NOT STOP PYTHON PROCESS")
                 execute_asynchronous_thread(functions=saver.save,
-                                            arguments=(session, self.settings_object.model_path + "model" +
-                                                       Dictionary.string_ckpt_extension),
-                                            kwargs=None)
+                                            arguments=(session, fullpath_save))
                 #saver.save(session, self.settings_object.model_path + Dictionary.string_ckpt_extension)
                 pt("Model saved without problem")
                 if self.show_when_save_information:
@@ -1259,8 +1261,11 @@ class TFModels():
                         accuracy = self.validation_accuracy
                     elif self.test_accuracy:
                         accuracy = self.test_accuracy
+                    information_path = self.settings_object.information_path
+                    if save_type == 2:
+                        information_path = get_temp_file_from_fullpath(information_path)
                     filepath = self._save_model_to_json(
-                        fullpath=self.settings_object.information_path,
+                        fullpath=information_path,
                         attributes_to_delete=Constant.attributes_to_delete_information,
                         type_file="Information", accuracy=accuracy)
                 else:
@@ -1461,9 +1466,9 @@ class TFModels():
                 if self.num_epochs_count % self.number_epoch_to_change_learning_rate == 0 \
                         and self.num_epochs_count != 1 and self.index_buffer_data == 0:
                     self.learning_rate = float(self.learning_rate / 10.)
-                should_save = self.should_save(check_loss_train=True, if_is_equal=False)
-                if should_save > 0:  # 0, not save | 1, train save | 2, force save
-                    filepath_save = self.save_actual_model(saver=saver, session=sess, save_type=should_save)
+                save_type = self.should_save(check_loss_train=True, if_is_equal=False)
+                if save_type > 0:  # 0, not save | 1, train save | 2, force save
+                    filepath_save = self.save_actual_model(saver=saver, session=sess, save_type=save_type)
                 if self.show_advanced_info:
                     self.show_advanced_information(y_labels=y_labels, y_prediction=y_prediction,
                                                    feed_dict=feed_dict_train_100)
@@ -1481,7 +1486,7 @@ class TFModels():
                 self.num_actual_trains = num_train
                 if self.save_model_configuration:
                     # Save configuration
-                    self._save_json_configuration(Constant.attributes_to_delete_configuration)
+                    self._save_json_configuration(Constant.attributes_to_delete_configuration, save_type=save_type)
                 if input_value == "STOP":
                     pt("PAUSING Training...","")
                     time.sleep(3)  # 3 Seconds to save configuration

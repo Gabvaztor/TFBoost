@@ -458,9 +458,32 @@ def show_actual_path():
     pt("Actual Path", os.path.dirname(os.path.abspath(__file__)))
     pt("Actual Path", os.getcwd())
 
+def get_temp_file_from_fullpath(fullpath):
+    """
+    Create and return the temp fullpath from another fullpath
+
+    Args:
+        fullpath: the fullpath
+
+    Returns: the created temp fullpath
+    """
+    basename = os.path.basename(fullpath)
+    path = os.path.dirname(fullpath) + "\\temp\\"
+    create_directory_from_fullpath(path)
+
+    return path + basename
+
+def read_changing_data(open_file):
+    #open_file.seek(0, 2)
+    while True:
+        line = open_file.readline().strip()
+        if not line:
+            time.sleep(0.1)
+            continue
+        open_file.flush()
+        yield line
+
 """MATPLOTLIB"""
-
-
 def animate():
     import matplotlib.pyplot as plt
     import matplotlib.animation as animation
@@ -472,3 +495,4 @@ def animate():
     ax1.clear()
     # ax1.plot(x_data, y_data)
     # ani = animation.FuncAnimation(fig, animate, interval=1000)
+

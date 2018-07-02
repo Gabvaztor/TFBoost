@@ -2,5 +2,5 @@ class Presence():
     """
     Presence class
     """
-    def __init__(self, sensor, power):
-        self.power = power
+    def __init__(self, sensor, state):
+        self.state = state
