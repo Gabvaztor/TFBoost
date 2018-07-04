@@ -16,7 +16,7 @@ class Prediction():
     json = tfencoder.Dictionary.string_json_extension
 
 # German signals images
-class GermanSignal(Prediction):
+class ImagePrediction(Prediction):
     """
 
     """

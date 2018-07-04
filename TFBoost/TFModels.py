@@ -108,7 +108,7 @@ class TFModels():
     """
     # TODO (@gabvaztor) Docs
     def __init__(self, setting_object, option_problem, input_data=None, test=None, input_labels=None, test_labels=None,
-                 number_of_classes=None , type=None, validation=None, validation_labels=None,predict_flag=False):
+                 number_of_classes=None , type=None, validation=None, validation_labels=None, predict_flag=False):
         # TODO (@gabvaztor) Show and save graphs during all training asking before
         # TODO (@gabvaztor) Run some operations in other python execution or multiprocessing
         # NOTE: IF YOU LOAD_MODEL_CONFIGURATION AND CHANGE SOME TENSORFLOW ATTRIBUTE AS NEURONS, THE TRAIN WILL START
@@ -219,10 +219,10 @@ class TFModels():
             # TODO (@gabvaztor) First, save a temporal file to avoid corrupts files.
             # Save model configuration in a json file
             self._save_json_configuration(Constant.attributes_to_delete_configuration)
-
         # TODO (@gabvaztor) Explote this feature
         # Execute input function asynchronously to force_save or wait process
-        execute_asynchronous_thread(input_while)
+        if not self.restore_to_predict:
+            execute_asynchronous_thread(input_while)
 
     @property
     def problem_information(self):
@@ -740,8 +740,8 @@ class TFModels():
         # Print actual configuration
         self.print_actual_configuration()
         # TODO Try python EVAL method to do multiple variable neurons
-        #with tf.device('/cpu:0'):  # CPU
-        with tf.device('/gpu:0'):  # GPU
+        with tf.device('/cpu:0'):  # CPU
+        #with tf.device('/gpu:0'):  # GPU
             # Placeholders
             x_input, y_labels, keep_probably = self.placeholders(args=None, kwargs=None)
             # Reshape x placeholder into a specific tensor
@@ -775,14 +775,15 @@ class TFModels():
             label = 99
             if self.input_labels is not None and self.input_labels:
                 label = self.input_labels[0]
-            x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options)
+            x_input_pred, real_label = process_input_unity_generic(input_path, label, self.options, to_predict=True)
             if label == 99:
                 real_label = None
             else:
                 real_label = int(np.argmax(real_label))
-            self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
+            saved_path = self.test_prediction(sess=sess, x_input_tensor=x_input, y_prediction=y_prediction,
                                                   x_input_pred=x_input_pred, keep_probably=keep_probably,
                                                   real_label=real_label, input_path=input_path)
+            pt("Prediction saved in", saved_path)
         except Exception as err:
             self.write_log_error(err)
 
@@ -812,19 +813,19 @@ class TFModels():
         feed_dict_prediction = {x_input_tensor: x_input_pred, keep_probably: 1.0}
         i = 0
         if x_input_pred is not None:
-            while i < 15:
+            while i < 1:
                 start_datetime_ = datetime.datetime.now()
-                i += 1
                 prediction = y_prediction.eval(feed_dict=feed_dict_prediction)
                 pt("Prediction " + str(i), np.argmax(prediction))
                 if real_label:
                     pt("Real Label", real_label)
                 delta = datetime.datetime.now() - start_datetime_
                 pt("Time to do inference " + str(i), delta.total_seconds())
+                i += 1
             path_saved = None
-            information = "German Signal prediction"
+            information = self.options[0]
             try:
-                prediction_class = GermanSignal(information=information, real_label=real_label,
+                prediction_class = ImagePrediction(information=information, real_label=real_label,
                                                 image_fullpath=input_path,
                                                 prediction_label=int(np.argmax(prediction)))
                 prediction_class.save_json(save_fullpath=self.settings_object.submission_path)
@@ -1534,7 +1535,7 @@ def get_inputs_and_labels_shuffled(inputs, inputs_labels):
 
 
 def image_process_retinopathy(image, image_type, height, width, is_test=False, cv2_flag=False, debug_mode=False,
-                              to_save=False):
+                              to_save=False, to_predict=False):
     fullpath_image = image
     if not cv2_flag and not debug_mode:
         if image_type == 0:  # GrayScale
@@ -1543,7 +1544,7 @@ def image_process_retinopathy(image, image_type, height, width, is_test=False, c
             image = Image.open(image)
         #pil_image_resized_antialias = np.array(image.resize((height, width), PIL.Image.ANTIALIAS))
         # Save resized
-        if to_save:
+        if to_save or to_predict:
             #  TODO(@gabvaztor) Delete width black pixels, resize and save to x,y resolution
             # Resize image and modify
             image_array = np.asarray(image)[:, 140:-127, :]
@@ -1553,25 +1554,25 @@ def image_process_retinopathy(image, image_type, height, width, is_test=False, c
             pt("height2", height2)
             image = np.array(image.resize((width, height)))
             pt("image", image.shape)
-
-            # TODO (@gabvaztor) Create new place in SETTINGS to save new datasets
-            # Image path
-            path_to_save = os.path.dirname(fullpath_image)
-            filename = os.path.basename(fullpath_image)[:-5]
-            if is_test:
-                folder = "\\test\\"
-                pass  # We have already save test images
-            else:
-                folder = "\\train\\"
-            fullpath_to_save = path_to_save + folder + filename
-            create_directory_from_fullpath(fullpath=fullpath_to_save)
-            Image.fromarray(image).save(fullpath_to_save + ".jpeg")
+            if to_save:
+                # TODO (@gabvaztor) Create new place in SETTINGS to save new datasets
+                # Image path
+                path_to_save = os.path.dirname(fullpath_image)
+                filename = os.path.basename(fullpath_image)[:-5]
+                if is_test:
+                    folder = "\\test\\"
+                    pass  # We have already save test images
+                else:
+                    folder = "\\train\\"
+                fullpath_to_save = path_to_save + folder + filename
+                create_directory_from_fullpath(fullpath=fullpath_to_save)
+                Image.fromarray(image).save(fullpath_to_save + ".jpeg")
         else:
             image = np.asarray(image)
         return image
 
 
-def process_input_unity_generic(x_input, y_label, options=None, is_test=False, to_save=False):
+def process_input_unity_generic(x_input, y_label, options=None, is_test=False, to_save=False, to_predict=False):
     """
     Generic method that process input and label across a if else statement witch contains a string that represent
     the option (option = how process data)
@@ -1591,7 +1592,7 @@ def process_input_unity_generic(x_input, y_label, options=None, is_test=False, t
         if option == Dictionary.string_option_retinopathy_k_problem:
             x_input = image_process_retinopathy(image=x_input, image_type=options[1], height=options[2],
                                                 width=options[3], is_test=is_test, to_save=to_save,
-                                                cv2_flag=False, debug_mode=False)
+                                                cv2_flag=False, debug_mode=False, to_predict=to_predict)
     return x_input, y_label
 
 

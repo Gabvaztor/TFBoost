@@ -27,25 +27,12 @@ Notes:
     * This file use TensorFlow version >1.0.
 """
 
-"""
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# IMPORTS
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-"""
-
 from UsefulTools.UtilsFunctions import *
 import TFBoost.TFModels as models
 import SettingsObject
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# ---- GLOBAL VARIABLES ----
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-
-import cv2
 """ To get via parameter"""
 import argparse
 
@@ -67,16 +54,17 @@ if image_fullpath_to_predict:
 if image_label_real:
     input_labels = [image_label_real]
 train_set = [image_fullpath_to_predict]
-setting_object = SettingsObject.Settings(Dictionary.string_settings_german_signal_path)
-option_problem = Dictionary.string_option_signals_images_problem
-options = [option_problem, cv2.IMREAD_GRAYSCALE, 60, 60]
-number_of_classes = 59 # Start in 0
+setting_object = SettingsObject.Settings(Dictionary.string_settings_retinopathy_k)
+option_problem = Dictionary.string_option_retinopathy_k_problem
+options = [option_problem, 1, 720, 1280]
+number_of_classes = 5 # Start in 0
+
 
 models = models.TFModels(setting_object=setting_object, option_problem=options,
                          input_data=input_data,test=None,
                          input_labels=input_labels,test_labels=None,
                          number_of_classes=number_of_classes, type=None,
-                         validation=None, validation_labels=None,
-                         load_model_configuration=False, predict_flag=predict_flag)
-models.convolution_model_image()
+                         validation=None, validation_labels=None, predict_flag=True)
+with tf.device('/cpu:0'):  # CPU
+    models.convolution_model_image()
 

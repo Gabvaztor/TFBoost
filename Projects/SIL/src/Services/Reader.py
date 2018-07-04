@@ -6,13 +6,16 @@ from Projects.SIL.src.DTO.Luminosity import Luminosity
 from Projects.SIL.src.DTO.Presence import Presence
 from Projects.SIL.src.DTO.Temperature import Temperature
 from UsefulTools.UtilsFunctions import pt, printProgressBar, get_files_from_path
+from AsynchronousThreading import execute_asynchronous_thread
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
 import matplotlib.dates as mdates
 from datetime import datetime
-import plotly.plotly as plotly
+#import plotly.plotly as plotly
 import numpy as np
+import multiprocessing
+
 
 style_list = ['default', 'classic', 'Solarize_Light2', '_classic_test', 'bmh', 'dark_background', 'fast',
               'fivethirtyeight', 'ggplot', 'grayscale', 'seaborn', 'seaborn-bright', 'seaborn-colorblind',
@@ -28,6 +31,7 @@ clamp_filepath = "\\\\192.168.1.62\\miranda\\10_20180702.dat"
 # clamp_filepath="E:\\SmartIotLabs\\DATA\\nEW\\10_20180702.dat"
 global_sensor_filepath = "\\\\192.168.1.62\\miranda\\1_20180702.dat"
 miranda_path = "\\\\192.168.1.62\\miranda\\"
+miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
 # global_sensor_filepath="E:\\SmartIotLabs\\DATA\\nEW\\1_20180702.dat"
 pt("clamp_filepath", clamp_filepath)
 pt("global_sensor_filepath", global_sensor_filepath)
@@ -78,8 +82,6 @@ def sort_paths_by_date_in_basename(sorted_paths, sorted_with_dates, fullpath, na
         sorted_paths.insert(index, fullpath)
 
     return sorted_paths, sorted_with_dates
-
-
 
 class Reader():
 
@@ -149,7 +151,16 @@ class Reader():
                                 luminosity = Luminosity(sensor=None, lux=value)
                                 luminosity_date.append(date)
                                 luminosity_value.append(value)
+def histogram(vector, q=None):
 
+    pt("q", q)
+    pt("vector", vector)
+    bins = np.delete(np.unique(vector), 0)
+    pt("bins", bins)
+    ret = plt.hist(vector, bins=bins)
+    plt.title("Histogram with 'auto' bins")
+    plt.show()
+    return ret
 
 def statistical_process(data, algorithm):
 
@@ -164,21 +175,11 @@ def statistical_process(data, algorithm):
 
     """
 
-    def histogram(vector):
-
-        bins = np.delete(np.unique(vector), 0)
-        pt("vector", vector)
-        pt("bins", bins)
-        ret = plt.hist(vector, bins=bins)
-        plt.title("Histogram with 'auto' bins")
-        plt.show()
-        return ret
-
     for i, type_data in enumerate(data):  # Step = 2
         if i != 0:
-
-            histogram(type_data[1])
-
+            arg = type_data[1]
+            pt(arg)
+            histogram([arg])
     return data
 
 matplotlib = False
@@ -193,7 +194,7 @@ if plotlylib:
         title='Time series with range slider and selectors'
     )
     fig = dict(data=data_, layout=layout)
-    plotly.plot(fig)
+    #plotly.plot(fig)
 
 if matplotlib:  # Matplot lib
 
