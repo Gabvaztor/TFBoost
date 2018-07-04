@@ -483,16 +483,46 @@ def read_changing_data(open_file):
         open_file.flush()
         yield line
 
-"""MATPLOTLIB"""
-def animate():
-    import matplotlib.pyplot as plt
-    import matplotlib.animation as animation
-    from matplotlib import style
+# Print iterations progress
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█'):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = '\r')
+    # Print New Line on Complete
+    if iteration == total:
+        print()
 
-    style.use('fivethirtyeight')
-    fig = plt.figure()
-    ax1 = fig.add_subplot(1, 1, 1)
-    ax1.clear()
-    # ax1.plot(x_data, y_data)
-    # ani = animation.FuncAnimation(fig, animate, interval=1000)
+def get_files_from_path(paths, ends_in=None):
+    """
+    Get all files in paths. If ends_in, return only those files ends in a string
+    Args:
+        paths: Paths to search (could be a list of paths)
+        ends_in: ends in. For example, a extension (".png", ".dat")
 
+    Returns: all file_names
+
+    """
+    if type(paths) == type(""):
+        paths = [paths]
+    for path in paths:
+        for root, dirs, files in os.walk(path):
+            for count_number, file_name in enumerate(files):
+                full_path = os.path.join(root, file_name)
+                name = os.path.splitext(file_name)[0]
+                if ends_in:
+                    if file_name.endswith(ends_in):
+                        yield full_path, root, name
+                else:
+                    yield full_path, root, name

@@ -48,7 +48,6 @@ class Thread():
             name = function_def.__name__
         process = threading.Thread(name=name, target=function_def, args=arguments, kwargs=kwargs)
         process.start()
-        pass
 
 def class_properties(object, attributes_to_delete=None):
     """
