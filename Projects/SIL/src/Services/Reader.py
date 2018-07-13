@@ -18,6 +18,9 @@ import os
 import gc
 import multiprocessing
 from sys import getsizeof
+from Projects.SIL.src.Services.DataObject import DataObject, DataTypes, InfoDataObject, Measures
+
+
 
 
 
@@ -41,9 +44,8 @@ miranda_path = "\\\\192.168.1.38\\miranda\\"
 save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
 checkpoint_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\Checkpoints\\"
 
-datatypes = 8
-figures = []
-graphs = []
+#figures = []
+#graphs = []
 
 # Info
 titles = ["Power disaggregation 1", "Power disaggregation 2", "Power disaggregation 3", "Power disaggregation total",
@@ -88,27 +90,33 @@ def add_to_graph(title=None, ylabel=None, ax=None):
     plt.suptitle(title)
     plt.grid()
 
-def calculate_deltas_from_data(data):
-    for i, data_type in enumerate(data):
-        if data_type[1]:
-            value_list = data_type[1]
-            delta_data.append(max(value_list) - min(value_list))
+def calculate_deltas_from_data():
+    for i, (sensor_data_id, data_object) in enumerate(data_objects):
+        if data_object.y:
+            delta = max(data_object.y) - min(data_object.y)
+            data_object.deltas.append(delta)
+        elif data_object.multiple_y:
+            for data_type in data_object.multiple_y:
+                delta = max(data_type) - min(data_type)
+                data_object.deltas.append(delta)
         else:
             delta_data.append(0)
+            raise Exception("Data object has not values in 'y'")
+
 
 def update_data(load_data):
+    datatypes = 0
     # TODO (@gabvaztor) Create an object to store data object
     for i in range(datatypes):
         data.append([[], []])
         
     Reader(path=miranda_path, sensor_type=20, load_data=load_data).read_refresh_data()
-    Reader(path=miranda_path, sensor_type=1, load_data=load_data).read_refresh_data()
+    #Reader(path=miranda_path, sensor_type=1, load_data=load_data).read_refresh_data()
     """
     data = [[clamp_date_1, clamp_value_1], [clamp_date_2, clamp_value_2], [clamp_date_2, clamp_value_3],
             [presence_date, presence_value], [humidity_date, humidity_value],
             [luminosity_date, luminosity_value], [temperature_date, temperature_value]]
     """
-    calculate_deltas_from_data(data)
 
     return data
 
@@ -126,6 +134,39 @@ def sort_paths_by_date_in_basename(sorted_paths, sorted_with_dates, fullpath, na
     return sorted_paths, sorted_with_dates
 
 
+def date_from_format(date, format):
+    try:
+        date = datetime.strptime(date, format)
+    except:
+        if len(date) > 19:
+            fix_date = date[-19:]
+            date = datetime.strptime(fix_date, format)
+    return date
+
+def update_data_object_information(end_date, last_filepath):
+    for _, data_object in data_objects.items():
+        sensor_id = data_object.information.sensor_id
+        data_id = data_object.information.data_id
+        measure = None
+        data_type = None
+        if sensor_id == 20:
+            measure = Measures.WATIOS
+            data_type = DataTypes.ELECTRIC_CLAMP
+        elif sensor_id in [1, 2, 3, 4, 5, 6]:
+            if data_id == 1:
+                measure = Measures.WATIOS
+                data_type = DataTypes.ELECTRIC_CLAMP
+            elif data_id == 2:
+                measure = Measures.TEMPERATURE
+                data_type = DataTypes.TEMPERATURE
+            elif data_id == 3:
+                measure = Measures.HUMIDITY
+                data_type = DataTypes.HUMIDITY
+            elif data_id == 4:
+                measure = Measures.LUMINOSITY
+                data_type = DataTypes.LUMINOSITY
+        data_object.information.set_info(measure=measure, datatype=data_type,
+                                         file_path=last_filepath, end_date=end_date)
 
 class Reader():
 
@@ -148,12 +189,14 @@ class Reader():
                                                                                  name)
         data_loaded_flag = self.load_historic_data(sorted_paths)
 
-
         # Info data
         first_date = None  # To see delta to show data
         end_date = None
+        last_filepath = None
+        total_files = len(sorted_paths)
+
         for file_count, file in enumerate(sorted_paths):
-            pt("File " + str(file_count + 1) + " of " + str(len(sorted_paths)))
+            pt("File " + str(file_count + 1) + " of " + str(total_files))
             # Open file
             file_data = open(file, "r").read()
             lines = file_data.split("\n")
@@ -163,28 +206,28 @@ class Reader():
             for line_count, line in enumerate(lines):
                 if line_count % 5000 == 0:
                     gc.collect()
-                if file_count == len(sorted_paths) - 1 and line_count == 0 and len(sorted_paths) > 1:
-                    try:
-                        last_filename = sorted_paths[file_count - 1]
-                        self.save_data_checkpoint(os.path.splitext(last_filename)[0])
-                    except:
-                        pt("Not saved")
                 printProgressBar(iteration=line_count, total=total_lines, prefix='File progress:', suffix='Complete',
                                  length=50)
+                if file_count == total_files - 1 and line_count == 0 and total_files > 1:
+                    try:
+                        last_filename = sorted_paths[file_count - 1]
+                        filename = os.path.splitext(last_filename)[0]
+                        fdsf
+                        self.save_data_checkpoint(filename=filename)
+                    except:
+                        pt("Not saved")
                 if len(line) > 1:
                     date_id_value = line.split(sep=";")
                     date, ID, value = date_id_value[0], int(date_id_value[1]), date_id_value[2]
                     sensor_data_id = str(self.sensor_type) + "_" + date_id_value[1]
-                    if not sensor_data_id in data_objects:
-                        data_objects[sensor_data_id] = DataObject()
+                    date = date_from_format(date=date, format="%Y-%m-%d %H:%M:%S")
+                    if not sensor_data_id in data_objects:  # It means there is a new sensor data type.
+                        information = InfoDataObject(sensor_id=self.sensor_type, start_date=date, data_id=ID)
+                        data_objects[sensor_data_id] = DataObject(information=information)
+
                     data_object = data_objects[sensor_data_id]
-                    try:
-                        date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-                    except:
-                        if len(date) > 19:
-                            fix_date = date[-19:]
-                            date = datetime.strptime(fix_date , "%Y-%m-%d %H:%M:%S")
-                    if file_count == 0 and line_count == 0:
+
+                    if file_count == 0 and line_count == 0:  # TODO (@gabvaztor) If not loaded before
                         first_date = date
                     delta_minutes = (date - first_date).total_seconds()/60
                     if delta_minutes > 10. or data_loaded_flag:
@@ -206,7 +249,6 @@ class Reader():
                                         clamp_3.add(x=date, y=clamp_3_value)
                                         clamp_total.add(x=date, y=total_value)
 
-                                       
                                         data[0][0].append(date)
                                         data[0][1].append(value)
                                         data[1][0].append(date)
@@ -218,6 +260,7 @@ class Reader():
                                         """
                                     except Exception as e:
                                         pt("ERROR", e)
+
                         elif self.sensor_type == 1:  # Luminosity, presence, humidity and temperature
                             if ID == 1:  # Presence
                                 presence = Presence(sensor=None, state=value)
@@ -241,14 +284,12 @@ class Reader():
                                 luminosity = Luminosity(sensor=None, lux=value)
                                 data[6][0].append(date)
                                 data[6][1].append(value)
-            # End for
-            # Data objects
-            info_clamp_1 = InfoDataObject(measure=Measures.WATIOS,
-                                          datatype=DataTypes.ELECTRIC_CLAMP_1,
-                                          sensor_id=self.sensor_type,
-                                          start_date=first_date,
-                                          end_date=end_date, file_path=file,
-                                          client_id="X").array()
+                    # If it is last line:
+                    if line_count == total_lines - 1 and file_count == total_files - 2 and total_files > 1:
+                        end_date = date
+                        last_filepath = file
+        update_data_object_information(end_date=end_date, last_filepath=last_filepath)
+
     def load_historic_data(self, sorted_paths):
         """
         First, we get all saved files if exists. After that, we remove the appropiates files in "sorted_paths" to not
@@ -347,7 +388,8 @@ def statistical_process(data, algorithm, save=False):
     Returns: data processed
 
     """
-
+    # TODO (@gabvaztor) Get events from data. A event represent a patron in the data. After that, you can train
+    # as supervised
     for i, type_data in enumerate(data):
         if i != 0 and i != 1:
             type_data = np.asarray(type_data)
@@ -357,47 +399,72 @@ def statistical_process(data, algorithm, save=False):
     asfdaf
     return data
 
+def calculate_datatypes():
+    datatypes_number = 0
+    for key, data_object in data_objects.items():
+        datatypes_number += data_object.number_datatypes
+    return datatypes_number
+
 matplotlib = True
 plotlylib = False
-load_data = True
+load_data = False
 update_data(load_data=load_data)
+datatypes = calculate_datatypes() # Number of different data
+calculate_deltas_from_data()
 #data = statistical_process(data=data, algorithm=1)
+
+
 
 if plotlylib:
     for d in data:
-
         trace = dict(x=d[0], y=d[1])
         data_ = [trace]
-        layout = dict(
-            title='Time series with range slider and selectors'
-        )
+        layout = dict(title='Time series with range slider and selectors')
         fig = dict(data=data_, layout=layout)
         plotly.plot(fig)
 
 if matplotlib:  # Matplot lib
-
-    for i in range(datatypes):
-        fig = plt.figure(figsize=(7, 7), dpi=90, facecolor='w', edgecolor='k')
-        subplot = fig.add_subplot(1, 1, 1)
-        left = 0.1  # the left side of the subplots of the figure
-        right = 1.  # the right side of the subplots of the figure
-        bottom = 0.05  # the bottom of the subplots of the figure
-        top = 0.9  # the top of the subplots of the figure
-        wspace = 0.2  # the amount of width reserved for space between subplots,
-        # expressed as a fraction of the average axis width
-        hspace = 0.2  # the amount of height reserved for space between subplots,
-        # expressed as a fraction of the average axis height
-        fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top,
-                wspace=wspace, hspace=hspace)
-        add_to_graph(title=titles[i])
-        figures.append(fig)
-        graphs.append(subplot)
+    pt("Creating and saving graphs...")
+    actual_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    for doid, data_object in data_objects.items():
+        for i in range(data_object.number_datatypes):
+            pt("Creating graph " + str(i + 1) + " of " + str(len(data_object.number_datatypes)) + "...")
+            fig = plt.figure(figsize=(7, 7), dpi=160, facecolor='w', edgecolor='k')
+            subplot = fig.add_subplot(1, 1, 1)
+            left = 0.1  # the left side of the subplots of the figure
+            right = 1.  # the right side of the subplots of the figure
+            bottom = 0.05  # the bottom of the subplots of the figure
+            top = 0.9  # the top of the subplots of the figure
+            wspace = 0.2  # the amount of width reserved for space between subplots,
+            # expressed as a fraction of the average axis width
+            hspace = 0.2  # the amount of height reserved for space between subplots,
+            # expressed as a fraction of the average axis height
+            fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top,
+                    wspace=wspace, hspace=hspace)
+            add_to_graph(title=data_object.information.datatype[i])
+            #figures.append(fig)
+            #graphs.append(subplot)
+            subplot.clear()
+            lines = subplot.plot(data_object.x[i], data_object.y[i], "-")
+            l1 = lines
+            plt.setp(lines, linestyle='-')  # set both to dashed
+            plt.setp(l1, linewidth=.08, color='b')  # line1 is thick and red
+            formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
+            ylabel = ylabels[i] + " | Max Δ = " + "{0:.2f}".format(delta_data[i])
+            subplot.set_ylabel(ylabel)
+            subplot.xaxis.set_major_formatter(formatter)
+            fig.autofmt_xdate()
+            # Save graph
+            save_path_graph = save_path + "Graphs\\" + actual_time + "\\" + titles[i].replace(" ", "_") + ".png"
+            create_directory_from_fullpath(fullpath=save_path_graph)
+            fig.savefig(fname=save_path_graph, dpi=1500)
+            gc.collect()
     #animated_clamp = animation.FuncAnimation(figures[0], clamp_function, interval=1000000000)
     #animated_global_sensor = animation.FuncAnimation(figures[1], global_sensor_function, interval=10000000)
 
-    actual_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    pt("Creating and saving graphs...")
+
+    """
     for i, graph in enumerate(graphs):
         pt("Creating graph " + str(i + 1) + " of " + str(len(graphs)) + "...")
         graph.clear()
@@ -416,161 +483,4 @@ if matplotlib:  # Matplot lib
             create_directory_from_fullpath(fullpath=save_path_graph)
             figures[i].savefig(fname=save_path_graph, dpi=1500)
             gc.collect()
-
-class DataTypes():
-
-    TEMPERATURE = "TEMPERATURE"
-    HUMIDITY = "HUMIDITY"
-    ELECTRIC_CLAMP_TOTAL = "ELECTRIC_CLAMP_TOTAL"
-    ELECTRIC_CLAMP_1 = "ELECTRIC_CLAMP_1"
-    ELECTRIC_CLAMP_2 = "ELECTRIC_CLAMP_2"
-    ELECTRIC_CLAMP_3 = "ELECTRIC_CLAMP_3"
-    LUMINOSITY = "LUMINOSITY"
-    PRESENCE = "PRESENCE"
-
-class Measures():
-
-    CELSIUS = "ºC"
-    PERCENT = "%"
-    WATIOS = "W"
-    LUX = "LUX"
-    BOOLEAN = "TRUE/FALSE"
-
-    TEMPERATURE = CELSIUS
-    HUMIDITY = PERCENT
-    LUMINOSITY = LUX
-    PRESENCE = BOOLEAN
-    CLAMP = WATIOS
-
-class InfoDataObject():
     """
-    Represent the data information. It will be in the third position of an DataObject
-    """
-
-    datatype = None
-    measure = None
-    sensor_id = None
-    data_id = None
-    start_date = None
-    end_date = None
-    file_path = None
-    client_id = None
-
-    def __init__(self, datatype=None, measure=None, sensor_id=None, data_id=None, start_date=None, end_date=None,
-                 file_path=None, client_id=None):
-
-        self.datatype = datatype
-        self.measure = measure
-        self.sensor_id = sensor_id
-        self.data_id = data_id
-        self.start_date = start_date
-        self.end_date = end_date
-        self.file_path = file_path
-        self.client_id = client_id
-
-    def set_info(self, datatype=None, measure=None, sensor_id=None, data_id=None, start_date=None, end_date=None,
-                 file_path=None, client_id=None):
-
-        if datatypes:
-            self.datatype = datatype
-        if measure:
-            self.measure = measure
-        if sensor_id:
-            self.sensor_id = sensor_id
-        if data_id:
-            self.data_id = data_id
-        if start_date:
-            self.start_date = start_date
-        if end_date:
-            self.end_date = end_date
-        if file_path:
-            self.file_path = file_path
-        if client_id:
-            self.client_id = client_id
-
-    def array(self):
-        """Return an array of features"""
-        return [self.datatype, self.measure, self.sensor_id, self.data_id, self.start_date, self.end_date,
-                         self.file_path, self.client_id]
-
-class DataObject():
-    """
-    'data' argument represents:
-        - First array: date values (or x values)
-        - Second array: sensor values (or y values)
-        - Third array: DataObject information. The format is:
-            ["datatype", "measure", "sensor_id", "data_id", "start_date", "end_date", "file_path", "client_id"]
-            Example: ["TEMPERATURE", "Cº", "11", "1", "2018-02-02", "2018-02-03", "\\miranda\\sensor1.dat\\",
-            "H5464356"]
-            This is a "InfoDataObject"
-    """
-
-    datatypes = DataTypes()
-
-    def __init__(self):
-        self.set_data(self.create_data())
-
-    def set_data(self, data):
-        self.all_data = data
-
-    @staticmethod
-    def create_data(first=None, second=None, third=None):
-
-        if not first:
-            first = []
-        if not second:
-            second = []
-        if not third:
-            third = InfoDataObject().array()
-
-        return np.array([first, second, third])
-
-    def data(self):
-        return self.all_data[0]
-
-    def get_all_data(self):
-        return self.all_data
-
-    def x(self):
-        return self.data[0]
-
-    def y(self):
-        return self.data[1]
-
-    def info(self):
-        return self.data[2]
-
-    def add(self, x=None, y=None, multiple_x_values=None, multiple_y_values=None):
-        """
-        Add a element or multiple element to
-        Args:
-            x: x values
-            y: y values
-            multiple_x_values: multiple x values. Must be an array of elements
-            multiple_y_data: multiple y values. Must be an array of elements
-
-        """
-        if x:
-            self.x.append(x)
-        if y:
-            self.y.append(y)
-        if multiple_x_values:
-            if len(multiple_x_values) != len(self.multiple_x):
-                for _ in range(len(multiple_x_values)):
-                    self.multiple_x.append([])
-            for i, value in enumerate(multiple_x_values):
-                self.multiple_x[i].append(value)
-        if multiple_y_values:
-            if len(multiple_y_values) != len(self.multiple_y):
-                for _ in range(len(multiple_y_values)):
-                    self.multiple_y.append([])
-            for i, value in enumerate(multiple_y_values):
-                self.multiple_y[i].append(value)
-
-    all_data = create_data()
-    data = data()
-    x = x()
-    y = y()
-    multiple_x = []
-    multiple_y = []
-
