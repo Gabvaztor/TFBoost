@@ -96,8 +96,16 @@ class DataObject():
             "H5464356"]
             This is a "InfoDataObject"
     """
+
+    all_data = None
+    datatypes = DataTypes()
+    information = InfoDataObject()
+    multiple_x = []
+    multiple_y = []
+
     def __init__(self, information=None):
         self.set_data(self.create_data())
+
         if information:
             self.information = information
 
@@ -109,7 +117,6 @@ class DataObject():
 
     @staticmethod
     def create_data(first=None, second=None, third=None):
-
         if not first:
             first = []
         if not second:
@@ -119,86 +126,104 @@ class DataObject():
 
         return np.array([first, second, third])
 
+    @property
     def data(self):
-        return self.all_data[0]
+        return self.all_data
 
+    @property
     def x(self):
         if self.multiple_x:
             return self.multiple_x
         else:
             return self.data[0]
 
+    @property
     def y(self):
         if self.multiple_y:
             return self.multiple_y
         else:
             return self.data[1]
 
+    @property
     def info(self):
         return self.data[2]
 
+    @property
+    def deltas(self):
+        """
+        Calcule deltas values between 'y' values
+        """
+        deltas = []
+        if self.y:
+            if type(self.y[0]) != type([]):
+                deltas.append(max(self.y) - min(self.y))
+            else:
+                for data_type in self.y:
+                    delta = max(data_type) - min(data_type)
+                    deltas.append(delta)
+        return deltas
+
+    @property
     def number_datatypes(self):
         """
         This calculate and return the number of datatypes (different 'y' values) in the DataObject.
 
         Returns: number of datatypes
         """
-
-        if self.y:
+        if self.multiple_y:
+            return len(self.multiple_y)
+        elif self.y:
             return 1
         else:
-            return len(self.multiple_y)
+            return 0
 
-    def calculate_deltas(self):
-        """
-        Calcule the delta values between y values
-        """
-        if self.y:
-            delta = max(self.y) - min(self.y)
-            self.deltas.append(delta)
-        elif self.multiple_y:
-            for data_type in self.multiple_y:
-                delta = max(data_type) - min(data_type)
-                self.deltas.append(delta)
+    def pair_data(self, index):
+        if self.multiple_y:
+            if type(self.x[index]) != type(self.y[index]):  # This means that there is one value in x and more than one
+                # in y
+                return np.asarray(self.x), np.asarray(self.y[index])
+            else:
+                return np.asarray(self.x[index]), np.asarray(self.y[index])
         else:
-            self.deltas = []
+            return np.asarray(self.x), np.asarray(self.y)
 
     def add(self, x=None, y=None, multiple_x_values=None, multiple_y_values=None):
         """
-        Add a element or multiple element to
+        Add a element or multiple element to x, y. Between x, y, multiple_x_values and multiple_y_values must sum 2
+        not None elements.
         Args:
             x: x values
             y: y values
             multiple_x_values: multiple x values. Must be an array of elements
             multiple_y_data: multiple y values. Must be an array of elements
         """
-        if x:
-            self.x.append(x)
-        if y:
-            self.y.append(y)
-        if multiple_x_values:
-            if len(multiple_x_values) != len(self.multiple_x):
-                for _ in range(len(multiple_x_values)):
-                    self.multiple_x.append([])
-            for i, value in enumerate(multiple_x_values):
-                self.multiple_x[i].append(value)
-        if multiple_y_values:
-            if len(multiple_y_values) != len(self.multiple_y):
-                for _ in range(len(multiple_y_values)):
-                    self.multiple_y.append([])
-            for i, value in enumerate(multiple_y_values):
-                self.multiple_y[i].append(value)
+        if self.__check_two_none_elements([x,y,multiple_x_values, multiple_y_values]):
+            if x is not None:
+                self.x.append(x)
+            if y is not None:
+                self.y.append(y)
+            if multiple_x_values is not None:
+                if len(multiple_x_values) != len(self.multiple_x):
+                    for _ in range(len(multiple_x_values)):
+                        self.multiple_x.append([])
+                for i, value in enumerate(multiple_x_values):
+                    self.multiple_x[i].append(value)
+            if multiple_y_values is not None:
+                if len(multiple_y_values) != len(self.multiple_y):
+                    for _ in range(len(multiple_y_values)):
+                        self.multiple_y.append([])
+                for i, value in enumerate(multiple_y_values):
+                    self.multiple_y[i].append(value)
+            return True
+        else:
+            return False
 
-    all_data = None
-    datatypes = DataTypes()
-    information = InfoDataObject()
-    data = data()
-    # TODO (@gabvaztor) Finish this
-    x = x()
-    y = y()
-    info = info()
-    multiple_x = []
-    multiple_y = []
-    deltas = calculate_deltas()  # Represents the deltas of data. If y, only one position. If multiple_y, multiple
-    # positions for each y.
-    number_datatypes = number_datatypes()
+    def __check_two_none_elements(self, elements_list):
+        count = 0
+        for element in elements_list:
+            if type(element) != type(None):
+                count += 1
+            if count == 2:
+                break
+        if count == 2:
+            return True

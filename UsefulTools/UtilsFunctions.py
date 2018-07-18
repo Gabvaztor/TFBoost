@@ -513,17 +513,19 @@ def get_files_from_path(paths, ends_in=None):
         ends_in: ends in. For example, a extension (".png", ".dat")
 
     Returns: all file_names
-
     """
     if type(paths) == type(""):
         paths = [paths]
     for path in paths:
-        for root, dirs, files in os.walk(path):
-            for count_number, file_name in enumerate(files):
-                full_path = os.path.join(root, file_name)
-                name = os.path.splitext(file_name)[0]
-                if ends_in:
-                    if file_name.endswith(ends_in):
+        if not os.path.exists(path):
+            raise ("Path does not exist.")
+        else:
+            for root, dirs, files in os.walk(path):
+                for count_number, file_name in enumerate(files):
+                    full_path = os.path.join(root, file_name)
+                    name = os.path.splitext(file_name)[0]
+                    if ends_in:
+                        if file_name.endswith(ends_in):
+                            yield full_path, root, name
+                    else:
                         yield full_path, root, name
-                else:
-                    yield full_path, root, name
