@@ -1,15 +1,16 @@
 import os
-from UsefulTools.UtilsFunctions import get_temp_file_from_fullpath
+from UsefulTools.UtilsFunctions import *
 
-class A():
-    def __init__(self):
-        self.data = self.data()
-    def data(self):
-        return self.all_data[0]
-    all_data = [[1]]
+def check_file_exists_and_change_name(path, i=None):
+    if is_none(i):
+        i = 1
+    else:
+        i += 1
+    if file_exists_in_path_or_create_path(path):
+        new_path = os.path.splitext(path)[0] + "_" + str(i) + os.path.splitext(path)[1]
+        check_file_exists_and_change_name(new_path, i)
+    else:
+        return path
 
-a = A()
-print(str(a.data))
-a.data.append(51)
-print(str(a.data))
-
+path = "E:\\Downloads\\system-design-primer-master.zip"
+path = check_file_exists_and_change_name(path=path)

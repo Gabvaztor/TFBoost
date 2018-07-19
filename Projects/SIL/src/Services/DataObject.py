@@ -1,4 +1,30 @@
 import numpy as np
+from UsefulTools.UtilsFunctions import *
+
+class Sensor():
+    """
+    Represent Sensors information.
+    """
+    type_0 = [20]
+    type_1 = [1,2,3,4,5,6]
+
+    @staticmethod
+    def clamp_types():
+        return [20]
+
+    @staticmethod
+    def global_sensor():
+        return [1,2,3,4,5,6]
+
+    @staticmethod
+    def sensors_ids():
+        """
+        sensors_ids must represent all different ids in all types of
+                        # sensors
+        Returns: All kinds of sensors ids.
+
+        """
+        return Sensor.clamp_types() + Sensor.global_sensor()
 
 class DataTypes():
 
@@ -149,19 +175,23 @@ class DataObject():
         return self.data[2]
 
     @property
-    def deltas(self):
+    def deltas_max_min(self):
         """
         Calcule deltas values between 'y' values
         """
         deltas = []
+        max_value = 0.
+        min_value = 0.
         if self.y:
             if type(self.y[0]) != type([]):
-                deltas.append(max(self.y) - min(self.y))
+                max_value, min_value = max(self.y), min(self.y)
+                deltas.append(max_value - min_value)
             else:
                 for data_type in self.y:
-                    delta = max(data_type) - min(data_type)
+                    max_value, min_value = max(data_type), min(data_type)
+                    delta = max_value - min_value
                     deltas.append(delta)
-        return deltas
+        return [deltas, max_value, min_value]
 
     @property
     def number_datatypes(self):
@@ -176,6 +206,40 @@ class DataObject():
             return 1
         else:
             return 0
+
+    @property
+    def title(self):
+        """
+        Returns:the title of this object
+        """
+        title_array = []
+        if not is_none(self.information.datatype):
+            title_array.append(str(self.information.datatype))
+        if not is_none(self.information.end_date) and not is_none(self.information.start_date):
+            try:
+                difference = self.information.end_date - self.information.start_date
+                title_array.append("(" + str(difference.days) + " days)")
+            except:
+                pt("Error in dates")
+        if not is_none(self.information.sensor_id) and not is_none(self.information.data_id):
+            title_array.append("[" + str(self.information.sensor_id) + "_" + str(self.information.data_id) + "]")
+        return ''.join(elem for elem in title_array)
+
+    @property
+    def label(self, i=None):
+        label_array = []
+        separator = " | "
+        if self.information.measure:
+            label_array.append(self.information.measure + separator)
+        if self.deltas_max_min[0]:
+            if i:
+                delta = self.deltas_max_min[0][i]
+                label_array.append("Δ " + "{0:.2f}".format(delta) + separator)
+        if self.deltas_max_min[1] > 0.:
+            label_array.append("MAX {0:.2f}".format(self.deltas_max_min[1]) + separator)
+        if self.deltas_max_min[1] > 0.:
+            label_array.append("MIN {0:.2f}".format(self.deltas_max_min[2]) + separator)
+        return ''.join(elem for elem in label_array)
 
     def pair_data(self, index):
         if self.multiple_y:

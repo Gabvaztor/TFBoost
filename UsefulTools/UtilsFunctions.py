@@ -529,3 +529,21 @@ def get_files_from_path(paths, ends_in=None):
                             yield full_path, root, name
                     else:
                         yield full_path, root, name
+
+def is_none(object):
+    if type(object) == type(None):
+        return True
+    else:
+        return False
+
+def check_file_exists_and_change_name(path, i=None):
+    if file_exists_in_path_or_create_path(path):
+        if is_none(i):
+            i = 1
+        else:
+            i += 1
+
+        path = os.path.splitext(path)[0] + "_" + str(i) + os.path.splitext(path)[1]
+        pt("new_path", path)
+        path = check_file_exists_and_change_name(path, i)
+    return path

@@ -6,7 +6,7 @@ from Projects.SIL.src.DTO.Luminosity import Luminosity
 from Projects.SIL.src.DTO.Presence import Presence
 from Projects.SIL.src.DTO.Temperature import Temperature
 from UsefulTools.UtilsFunctions import pt, printProgressBar, get_files_from_path, create_directory_from_fullpath, \
-    file_exists_in_path_or_create_path
+    file_exists_in_path_or_create_path, is_none, check_file_exists_and_change_name
 from AsynchronousThreading import execute_asynchronous_thread
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -19,7 +19,7 @@ import os
 import gc
 import multiprocessing
 from sys import getsizeof
-from Projects.SIL.src.Services.DataObject import DataObject, DataTypes, InfoDataObject, Measures
+from Projects.SIL.src.Services.DataObject import DataObject, DataTypes, InfoDataObject, Measures, Sensor
 
 
 
@@ -106,20 +106,38 @@ def calculate_deltas_from_data():
             raise Exception("Data object has not values in 'y'")
 
 
+def get_all_sensor_types(actual_sensor_types, path):
+    """
+    Args:
+        actual_sensor_type: actual sensor types to be updated.
+
+    Returns: sensor types with actual_sensor_types more all sensor types information
+    """
+    for fullpath, root, name in get_files_from_path(paths=path, ends_in=".dat"):
+        sensor_id = int(name.split("_")[0])
+        if sensor_id not in actual_sensor_types:
+            actual_sensor_types.append(sensor_id)
+    return actual_sensor_types
+
 def update_data(load_data):
     datatypes = 0
     # TODO (@gabvaztor) Create an object to store data object
     for i in range(datatypes):
         data.append([[], []])
-        
+
+    sensor_types = []
     #Reader(path=miranda_path, sensor_type=20, load_data=load_data).read_refresh_data()
-    Reader(path=miranda_path, sensor_type=1, load_data=load_data).read_refresh_data()
+    update_all_data = True
+    if update_all_data:
+        sensor_types = get_all_sensor_types(actual_sensor_types=sensor_types, path=miranda_path)
+    sensor_types.remove(20)
+    for sensor_type in sensor_types:
+        DataObjectReader(path=miranda_path, sensor_type=sensor_type, load_data=load_data).read_refresh_data()
     """
     data = [[clamp_date_1, clamp_value_1], [clamp_date_2, clamp_value_2], [clamp_date_2, clamp_value_3],
             [presence_date, presence_value], [humidity_date, humidity_value],
             [luminosity_date, luminosity_value], [temperature_date, temperature_value]]
     """
-
     return None
 
 def sort_paths_by_date_in_basename(sorted_paths, sorted_with_dates, fullpath, name):
@@ -145,30 +163,44 @@ def date_from_format(date, format):
             date = datetime.strptime(fix_date, format)
     return date
 
-def update_data_object_information(end_date, last_filepath):
-    for _, data_object in data_objects.items():
+def update_data_objects(end_date=None, last_filepath=None):
+    """
+        Check if there are data_objects in data_objects dictionary to delete.
+    """
+    to_delete = []
+    for doid, data_object in data_objects.items():
         sensor_id = data_object.information.sensor_id
         data_id = data_object.information.data_id
         measure = None
         data_type = None
-        if sensor_id == 20:
-            measure = Measures.WATIOS
-            data_type = DataTypes.ELECTRIC_CLAMP
-        elif sensor_id in [1, 2, 3, 4, 5, 6]:
-            if data_id == 1:
-                measure = Measures.PRESENCE
-                data_type = DataTypes.PRESENCE
-            elif data_id == 2:
-                measure = Measures.TEMPERATURE
-                data_type = DataTypes.TEMPERATURE
-            elif data_id == 3:
-                measure = Measures.HUMIDITY
-                data_type = DataTypes.HUMIDITY
-            elif data_id == 4:
-                measure = Measures.LUMINOSITY
-                data_type = DataTypes.LUMINOSITY
-        data_object.information.set_info(measure=measure, datatype=data_type,
-                                         file_path=last_filepath, end_date=end_date)
+        if not data_object.information.datatype or data_object.information.measure:
+            if sensor_id in Sensor.type_0:
+                measure = Measures.WATIOS
+                data_type = DataTypes.ELECTRIC_CLAMP
+            elif sensor_id in Sensor.type_1:
+                if data_id == 1:
+                    measure = Measures.PRESENCE
+                    data_type = DataTypes.PRESENCE
+                elif data_id == 2:
+                    measure = Measures.TEMPERATURE
+                    data_type = DataTypes.TEMPERATURE
+                elif data_id == 3:
+                    measure = Measures.HUMIDITY
+                    data_type = DataTypes.HUMIDITY
+                elif data_id == 4:
+                    measure = Measures.LUMINOSITY
+                    data_type = DataTypes.LUMINOSITY
+        if not data_object.x or not data_object.y:
+            to_delete.append(doid)
+        if is_none(measure) or is_none(data_type):
+            to_delete.append(doid)
+        if measure and data_type:
+            data_object.information.set_info(measure=measure, datatype=data_type)
+        if last_filepath and end_date:
+            data_object.information.set_info(file_path=last_filepath, end_date=end_date)
+
+    for doid in to_delete:
+        del data_objects[doid]
 
 
 def delete_unused_data_object():
@@ -182,7 +214,7 @@ def delete_unused_data_object():
     for doid in to_delete:
         del data_objects[doid]
 
-class Reader():
+class DataObjectReader():
 
     def __init__(self, path, sensor_type, load_data):
         self.path = path
@@ -235,6 +267,9 @@ class Reader():
                     date, ID, value = date_id_value[0], int(date_id_value[1]), date_id_value[2]
                     sensor_data_id = str(self.sensor_type) + "_" + date_id_value[1]
                     date = date_from_format(date=date, format="%Y-%m-%d %H:%M:%S")
+                    if ID not in Sensor.sensors_ids():  # sensors_ids must represent all different ids in all types of
+                        # sensors
+                        continue
                     if not sensor_data_id in data_objects:  # It means there is a new sensor data type.
                         information = InfoDataObject(sensor_id=self.sensor_type, start_date=date, data_id=ID)
                         data_objects[sensor_data_id] = DataObject(information=information)
@@ -246,7 +281,7 @@ class Reader():
                     delta_minutes = (date - first_date).total_seconds()/60
                     if delta_minutes > 10. or data_loaded_flag:
                         value = float(value)
-                        if self.sensor_type == 20:  # ElectricClamp
+                        if self.sensor_type in Sensor.type_0:  # ElectricClamp
                             if ID == 1:
                                 if len(date_id_value) > 3:
                                     try:
@@ -259,16 +294,18 @@ class Reader():
                                     except Exception as e:
                                         pt("ERROR", e)
 
-                        elif self.sensor_type == 1:  # Luminosity, presence, humidity and temperature
+                        elif self.sensor_type in Sensor.global_sensor():  # Luminosity, presence, humidity and temperature
                             if not data_object.add(x=date, y=value):
                                 pt("")
                                 pass
-                    # If it is last line:
-                    if line_count == total_lines - 1 and file_count == total_files - 2 and total_files > 1:
+                    if line_count + 1 == total_lines - 1 and file_count == total_files - 2 and total_files > 1:
                         end_date = date
                         last_filepath = file
-        update_data_object_information(end_date=end_date, last_filepath=last_filepath)
-        delete_unused_data_object()
+            if end_date and last_filepath:
+                update_data_objects(end_date=end_date, last_filepath=last_filepath)
+                end_date = None
+                last_filepath = None
+        update_data_objects()
 
     def load_historic_data(self, sorted_paths):
         """
@@ -420,7 +457,7 @@ if matplotlib:  # Matplot lib
             # expressed as a fraction of the average axis height
             fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top,
                     wspace=wspace, hspace=hspace)
-            add_to_graph(title=data_object.information.datatype)
+            add_to_graph(title=data_object.title)
             #figures.append(fig)
             #graphs.append(subplot)
             subplot.clear()
@@ -435,23 +472,26 @@ if matplotlib:  # Matplot lib
             pt("Size of y in bytes", getsizeof(y))
             #for sa in dir():
             #    print(sa, getsizeof(eval(sa)))
-            lines = subplot.plot(x, y, "-")
-            plt.setp(lines, linestyle='-')  # set both to dashed
-            plt.setp(lines, linewidth=.09, color='b')  # line1 is thick and red
+            if data_object.information.datatype == DataTypes.PRESENCE:
+                s = [1]*len(x)
+                plt.scatter(x, y, s=s)
+            else:
+                lines = subplot.plot(x, y)
+                plt.setp(lines, linestyle='-', linewidth=.09, color='b')  # set both to dashed
+
             formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
-            delta_str = data_object.deltas[i]
-            ylabel = data_object.information.measure + " | Max Δ = " + "{0:.2f}".format(delta_str)
-            subplot.set_ylabel(ylabel)
+            subplot.set_ylabel(data_object.label)
             subplot.xaxis.set_major_formatter(formatter)
             fig.autofmt_xdate()
             # Save graph
             save_path_graph = save_path + "Graphs\\" + actual_time + "\\" + \
-                              data_object.information.datatype.replace(" ", "_") + ".png"
-            if file_exists_in_path_or_create_path(save_path_graph):
-                filename = os.path.splitext(save_path_graph)[0] + str(i)
-                dirname = os.path.dirname(save_path_graph)
-                save_path_graph = dirname + filename + ".png"
-            fig.savefig(fname=save_path_graph, dpi=1700)
+                              data_object.information.datatype + "(" + str(data_object.information.sensor_id) + "_" + \
+                              str(data_object.information.data_id) + ")" + ".png"
+            save_path_graph = check_file_exists_and_change_name(save_path_graph)
+            pt("path_save", save_path_graph)
+            fig.savefig(fname=save_path_graph, dpi=1800)
             gc.collect()
     #animated_clamp = animation.FuncAnimation(figures[0], clamp_function, interval=1000000000)
     #animated_global_sensor = animation.FuncAnimation(figures[1], global_sensor_function, interval=10000000)
+
+
