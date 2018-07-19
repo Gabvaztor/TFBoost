@@ -1,5 +1,6 @@
 import numpy as np
 from UsefulTools.UtilsFunctions import *
+from sys import getsizeof
 
 class Sensor():
     """
@@ -287,7 +288,16 @@ class DataObject():
         for element in elements_list:
             if type(element) != type(None):
                 count += 1
-            if count == 2:
-                break
+        if count > 2:
+            pt("Can not be more than 2 element to add.")
         if count == 2:
             return True
+
+    def total_bytes(self):
+        total_bytes = 0
+        for attribute in dir(self):
+            total_bytes += getsizeof(eval(attribute))
+            pt("attr", attribute)
+        pt("total_bytes", total_bytes)
+        pt("all dir)", dir())
+        return total_bytes

@@ -18,9 +18,8 @@ import numpy as np
 import os
 import gc
 import multiprocessing
-from sys import getsizeof
 from Projects.SIL.src.Services.DataObject import DataObject, DataTypes, InfoDataObject, Measures, Sensor
-
+from sys import getsizeof
 
 
 
@@ -130,7 +129,7 @@ def update_data(load_data):
     update_all_data = True
     if update_all_data:
         sensor_types = get_all_sensor_types(actual_sensor_types=sensor_types, path=miranda_path)
-    sensor_types.remove(20)
+    #sensor_types.remove(20)
     for sensor_type in sensor_types:
         DataObjectReader(path=miranda_path, sensor_type=sensor_type, load_data=load_data).read_refresh_data()
     """
@@ -200,7 +199,8 @@ def update_data_objects(end_date=None, last_filepath=None):
             data_object.information.set_info(file_path=last_filepath, end_date=end_date)
 
     for doid in to_delete:
-        del data_objects[doid]
+        if doid in data_objects:
+            del data_objects[doid]
 
 
 def delete_unused_data_object():
@@ -470,8 +470,7 @@ if matplotlib:  # Matplot lib
             pt("Size of data_object.y in bytes", getsizeof(data_object.y))
             pt("Size of x in bytes", getsizeof(x))
             pt("Size of y in bytes", getsizeof(y))
-            #for sa in dir():
-            #    print(sa, getsizeof(eval(sa)))
+            total_bytes = data_object.total_bytes()
             if data_object.information.datatype == DataTypes.PRESENCE:
                 s = [1]*len(x)
                 plt.scatter(x, y, s=s)
