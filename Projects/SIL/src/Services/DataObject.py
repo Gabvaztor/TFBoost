@@ -279,9 +279,8 @@ class DataObject():
                         self.multiple_y.append([])
                 for i, value in enumerate(multiple_y_values):
                     self.multiple_y[i].append(value)
-            return True
         else:
-            return False
+            pt("")
 
     def __check_two_none_elements(self, elements_list):
         count = 0

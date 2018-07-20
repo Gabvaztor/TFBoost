@@ -547,3 +547,7 @@ def check_file_exists_and_change_name(path, i=None):
         pt("new_path", path)
         path = check_file_exists_and_change_name(path, i)
     return path
+
+def filename_and_extension_from_fullpath(fullpath):
+    filename, extension = os.path.splitext(fullpath)[0], os.path.splitext(fullpath)[1]
+    return filename, extension

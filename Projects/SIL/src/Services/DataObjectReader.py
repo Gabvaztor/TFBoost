@@ -276,7 +276,7 @@ class DataObjectReader():
 
                     data_object = data_objects[sensor_data_id]
 
-                    if file_count == 0 and line_count == 0:  # TODO (@gabvaztor) If not loaded before
+                    if file_count == 0 and line_count == 0 or not first_date:  # TODO (@gabvaztor) If not loaded before
                         first_date = date
                     delta_minutes = (date - first_date).total_seconds()/60
                     if delta_minutes > 10. or data_loaded_flag:
@@ -293,11 +293,10 @@ class DataObjectReader():
                                         data_object.add(x=date, multiple_y_values=multiple_y_values)
                                     except Exception as e:
                                         pt("ERROR", e)
-
                         elif self.sensor_type in Sensor.global_sensor():  # Luminosity, presence, humidity and temperature
-                            if not data_object.add(x=date, y=value):
-                                pt("")
-                                pass
+                            data_object.add(x=date, y=value)
+                            if ID == 1 and self.sensor_type == 3 and line_count > 500:
+                                pt()
                     if line_count + 1 == total_lines - 1 and file_count == total_files - 2 and total_files > 1:
                         end_date = date
                         last_filepath = file
@@ -305,6 +304,7 @@ class DataObjectReader():
                 update_data_objects(end_date=end_date, last_filepath=last_filepath)
                 end_date = None
                 last_filepath = None
+                first_date = None
         update_data_objects()
 
     def load_historic_data(self, sorted_paths):
