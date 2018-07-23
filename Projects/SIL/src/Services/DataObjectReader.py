@@ -6,7 +6,7 @@ from Projects.SIL.src.DTO.Luminosity import Luminosity
 from Projects.SIL.src.DTO.Presence import Presence
 from Projects.SIL.src.DTO.Temperature import Temperature
 from UsefulTools.UtilsFunctions import pt, printProgressBar, get_files_from_path, create_directory_from_fullpath, \
-    file_exists_in_path_or_create_path, is_none, check_file_exists_and_change_name
+    file_exists_in_path_or_create_path, is_none, check_file_exists_and_change_name, filename_and_extension_from_fullpath
 from AsynchronousThreading import execute_asynchronous_thread
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -20,7 +20,7 @@ import gc
 import multiprocessing
 from Projects.SIL.src.Services.DataObject import DataObject, DataTypes, InfoDataObject, Measures, Sensor
 from sys import getsizeof
-
+import traceback
 
 
 
@@ -37,54 +37,25 @@ style.use(style=style_)
 clamp_filepath = "\\\\192.168.1.62\\miranda\\10_20180702.dat"
 # clamp_filepath="E:\\SmartIotLabs\\DATA\\nEW\\10_20180702.dat"
 global_sensor_filepath = "\\\\192.168.1.62\\miranda\\1_20180702.dat"
-miranda_path = "\\\\192.168.1.38\\miranda\\"
+miranda_path = "\\\\192.168.1.220\\miranda\\"
 miranda_path = "..\\..\\data\\temp\\"
 #miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
 # global_sensor_filepath="E:\\SmartIotLabs\\DATA\\nEW\\1_20180702.dat"
 # Save image path
 save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
 checkpoint_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\Checkpoints\\"
+checkpoint_path = "..\\..\\data\\intermediate\\"
 
 #figures = []
 #graphs = []
 
-# Info
-titles = ["Power disaggregation 1", "Power disaggregation 2", "Power disaggregation 3", "Power disaggregation total",
-          "Temperature",
-          "Humidity",
-          "Luminosity",
-          "Presence"
-          ]
-ylabels = ["Power (W)", "Power (W)", "Power (W)", "Power (W)",
-           "Cº",
-           "%",
-           "Lux",
-           "True / False"]
 
-# Data
-clamp_date_1 = []
-clamp_date_2 = []
-clamp_date_3 = []
-presence_date = []
-humidity_date = []
-luminosity_date = []
-temperature_date = []
-
-clamp_value_1 = []
-clamp_value_2 = []
-clamp_value_3 = []
-presence_value = []
-humidity_value = []
-luminosity_value = []
-temperature_value = []
-
-data_global = []
 delta_data = []
-
 # Information
 sensor_data_ids = []  # Contains the information of sensors and data_ids. The format is: ["sensorID_dataID", ...]
 # Will be used to check when a type data was used or not.
 data_objects = {}
+saved_data_objects_doid = []
 
 def add_to_graph(title=None, ylabel=None, ax=None):
     plt.title(title)
@@ -149,9 +120,7 @@ def sort_paths_by_date_in_basename(sorted_paths, sorted_with_dates, fullpath, na
         sorted_with_dates.sort()
         index = sorted_with_dates.index(date)
         sorted_paths.insert(index, fullpath)
-
     return sorted_paths, sorted_with_dates
-
 
 def date_from_format(date, format):
     try:
@@ -197,7 +166,6 @@ def update_data_objects(end_date=None, last_filepath=None):
             data_object.information.set_info(measure=measure, datatype=data_type)
         if last_filepath and end_date:
             data_object.information.set_info(file_path=last_filepath, end_date=end_date)
-
     for doid in to_delete:
         if doid in data_objects:
             del data_objects[doid]
@@ -222,6 +190,9 @@ class DataObjectReader():
         self.load_data = load_data
 
     def read_refresh_data(self, i=None):
+        global data_objects
+        global saved_data_objects_doid
+
         pt("Refresing data...")
 
         sorted_paths = []
@@ -247,20 +218,19 @@ class DataObjectReader():
             file_data = open(file, "r").read()
             lines = file_data.split("\n")
             total_lines = len(lines)
-            pir_count = 0
             pt("file", file)
             for line_count, line in enumerate(lines):
-                if line_count % 5000 == 0:
+                if line_count % 5000 == 0 and line_count != 0:
                     gc.collect()
                 printProgressBar(iteration=line_count, total=total_lines, prefix='File progress:', suffix='Complete',
                                  length=50)
-                if file_count == total_files - 1 and line_count == 0 and total_files > 1:
+                if file_count == total_files - 1 and line_count == 0 and total_files > 1 or True:
                     try:
                         last_filename = sorted_paths[file_count - 1]
-                        filename = os.path.splitext(last_filename)[0]
-                        fdsf
-                        self.save_data_checkpoint(filename=filename)
-                    except:
+                        filename, extension = filename_and_extension_from_fullpath(last_filename)
+                        self.save_data_checkpoint(filename=filename, saved_data_objects_doid=saved_data_objects_doid)
+                    except Exception:
+                        traceback.print_exc()
                         pt("Not saved")
                 if len(line) > 1:
                     date_id_value = line.split(sep=";")
@@ -297,6 +267,10 @@ class DataObjectReader():
                             data_object.add(x=date, y=value)
                             if ID == 1 and self.sensor_type == 3 and line_count > 500:
                                 pt()
+                            pair1, pair2 = len(data_object.x), len(data_object.y)
+                            if pair1 != pair2:
+                                pt("pair1", pair1)
+                                pt("pair2", pair2)
                     if line_count + 1 == total_lines - 1 and file_count == total_files - 2 and total_files > 1:
                         end_date = date
                         last_filepath = file
@@ -314,17 +288,16 @@ class DataObjectReader():
 
         Args:
             sorted_paths: Sorted paths with all paths with interested data.
-
         """
         global data
         data_loaded = False
         if load_data:
             for fullpath, root, name in get_files_from_path(paths=checkpoint_path, ends_in=".npy"):
                 pt("Loading data...")
-                info = name.split("_")
-                sensor_id = info[0]
-                date = datetime.strptime(info[1], "%Y%m%d")
-                for index, sorted_path in enumerate(sorted_paths.copy()):
+                sensor_id_data_id_date = name.split("_")
+                sensor_id, data_id, date = sensor_id_data_id_date[0], sensor_id_data_id_date[1], \
+                            datetime.strptime(sensor_id_data_id_date[2], "%Y%m%d")
+                for sorted_path in sorted_paths.copy():
                     info_sorted = os.path.splitext(os.path.basename(sorted_path))[0].split("_")
                     sensor_id_sorted = info_sorted[0]
                     if sensor_id_sorted == sensor_id:
@@ -337,15 +310,19 @@ class DataObjectReader():
                 pt("Data loaded")
         return data_loaded
 
-    def save_data_checkpoint(self, filename):
+    def save_data_checkpoint(self, filename, saved_data_objects_doid=None):
         """
         Args:
             filename: Filename to save
         """
+        if not saved_data_objects_doid:
+            saved_data_objects_doid = []
         pt("Saving data...")
-        save_fullpath = checkpoint_path + filename + ".npy"
-        create_directory_from_fullpath(save_fullpath)
-        np.save(file=save_fullpath, arr=np.asarray(data))
+        for doid, data_object in data_objects.items():
+            if not doid in saved_data_objects_doid:
+                save_fullpath = checkpoint_path + filename + ".npy"
+                data_object.start_save(fullpath=save_fullpath)
+                saved_data_objects_doid.append(doid)
         pt("Data saved")
 
 def histogram(vector, iteration=None, save=False, q=None):
@@ -470,7 +447,7 @@ if matplotlib:  # Matplot lib
             pt("Size of data_object.y in bytes", getsizeof(data_object.y))
             pt("Size of x in bytes", getsizeof(x))
             pt("Size of y in bytes", getsizeof(y))
-            total_bytes = data_object.total_bytes()
+            #total_bytes = data_object.total_bytes()
             if data_object.information.datatype == DataTypes.PRESENCE:
                 s = [1]*len(x)
                 plt.scatter(x, y, s=s)

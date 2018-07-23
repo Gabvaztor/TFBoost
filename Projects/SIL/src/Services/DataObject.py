@@ -1,6 +1,7 @@
 import numpy as np
 from UsefulTools.UtilsFunctions import *
 from sys import getsizeof
+import traceback
 
 class Sensor():
     """
@@ -88,8 +89,16 @@ class InfoDataObject():
             self.client_id = client_id
 
     def set_info(self, datatype=None, measure=None, sensor_id=None, data_id=None, start_date=None, end_date=None,
-                 file_path=None, client_id=None):
-
+                 file_path=None, client_id=None, information_array=None):
+        if information_array:
+            self.datatype = information_array[0]
+            self.measure = information_array[1]
+            self.sensor_id = information_array[2]
+            self.data_id = information_array[3]
+            self.start_date = information_array[4]
+            self.end_date = information_array[5]
+            self.file_path = information_array[6]
+            self.client_id = information_array[7]
         if datatype:
             self.datatype = datatype
         if measure:
@@ -126,13 +135,11 @@ class DataObject():
 
     all_data = None
     datatypes = DataTypes()
-    information = InfoDataObject()
     multiple_x = []
     multiple_y = []
 
     def __init__(self, information=None):
         self.set_data(self.create_data())
-
         if information:
             self.information = information
 
@@ -141,6 +148,16 @@ class DataObject():
 
     def get_all_data(self):
         return self.all_data
+
+    @property
+    def information(self):
+        if not self.information:
+            self.information = InfoDataObject()
+        return self.information
+
+    @information.setter
+    def information(self, value):
+        self.information = value
 
     @staticmethod
     def create_data(first=None, second=None, third=None):
@@ -173,7 +190,46 @@ class DataObject():
 
     @property
     def info(self):
-        return self.data[2]
+        return self.information.array()
+
+    def start_save(self, fullpath):
+        pt("Saving DataObject " + self.unique_doid + "...")
+        try:
+            create_directory_from_fullpath(fullpath)
+            if len(self.data) == 3:
+                self.data[2] = self.information.array()
+                self.data[1] = np.asarray(self.y)
+                self.data[0] = np.asarray(self.x)
+            else:
+                self.set_data(data=self.create_data(first=np.asarray(self.x),
+                                             second=np.asarray(self.y),
+                                             third=self.information.array()))
+            np.save(file=fullpath, arr=np.asarray(self.data))
+            pt("DataObject " + self.unique_doid + " saved without problems")
+        except Exception:
+            traceback.print_exc()
+            pt("Problem saving data.")
+
+    def start_load(self, fullpath):
+        pt("Loading...")
+        try:
+            data = np.load(fullpath)
+            self.set_data(data=data)
+        except Exception:
+            traceback.print_exc()
+            pt("Problem loading data.")
+
+    @property
+    def unique_doid(self):
+        if self.information.sensor_id and self.information.data_id:
+            return self.information.sensor_id + "_" + self.information.data_id
+        else:
+            pt("Does not exist an unique ID")
+            return "NOID_ERROR"
+
+    @property
+    def unique_doid_date(self, string_date="NODATE_ERROR"):
+        return self.unique_doid + "_" + string_date
 
     @property
     def deltas_max_min(self):
@@ -211,7 +267,7 @@ class DataObject():
     @property
     def title(self):
         """
-        Returns:the title of this object
+        Returns: the title of this data_object
         """
         title_array = []
         if not is_none(self.information.datatype):
@@ -232,17 +288,19 @@ class DataObject():
         separator = " | "
         if self.information.measure:
             label_array.append(self.information.measure + separator)
-        if self.deltas_max_min[0]:
-            if i:
+        if len(self.deltas_max_min[0]) > 0:
+            if not is_none(i):
                 delta = self.deltas_max_min[0][i]
-                label_array.append("Δ " + "{0:.2f}".format(delta) + separator)
+            else:
+                delta = self.deltas_max_min[0][0]
+            label_array.append("Δ " + "{0:.2f}".format(delta) + separator)
         if self.deltas_max_min[1] > 0.:
             label_array.append("MAX {0:.2f}".format(self.deltas_max_min[1]) + separator)
         if self.deltas_max_min[1] > 0.:
             label_array.append("MIN {0:.2f}".format(self.deltas_max_min[2]) + separator)
         return ''.join(elem for elem in label_array)
 
-    def pair_data(self, index):
+    def pair_data(self, index=None):
         if self.multiple_y:
             if type(self.x[index]) != type(self.y[index]):  # This means that there is one value in x and more than one
                 # in y
@@ -280,7 +338,7 @@ class DataObject():
                 for i, value in enumerate(multiple_y_values):
                     self.multiple_y[i].append(value)
         else:
-            pt("")
+            pt("Can not Add to DataObject")
 
     def __check_two_none_elements(self, elements_list):
         count = 0
@@ -298,5 +356,5 @@ class DataObject():
             total_bytes += getsizeof(eval(attribute))
             pt("attr", attribute)
         pt("total_bytes", total_bytes)
-        pt("all dir)", dir())
+        pt("all dir()", dir())
         return total_bytes
