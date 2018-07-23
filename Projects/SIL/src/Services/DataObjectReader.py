@@ -224,14 +224,6 @@ class DataObjectReader():
                     gc.collect()
                 printProgressBar(iteration=line_count, total=total_lines, prefix='File progress:', suffix='Complete',
                                  length=50)
-                if file_count == total_files - 1 and line_count == 0 and total_files > 1 or True:
-                    try:
-                        last_filename = sorted_paths[file_count - 1]
-                        filename, extension = filename_and_extension_from_fullpath(last_filename)
-                        self.save_data_checkpoint(filename=filename, saved_data_objects_doid=saved_data_objects_doid)
-                    except Exception:
-                        traceback.print_exc()
-                        pt("Not saved")
                 if len(line) > 1:
                     date_id_value = line.split(sep=";")
                     date, ID, value = date_id_value[0], int(date_id_value[1]), date_id_value[2]
@@ -279,6 +271,15 @@ class DataObjectReader():
                 end_date = None
                 last_filepath = None
                 first_date = None
+            # TODO (@gabvaztor) Finish save and load methods
+            if file_count == total_files - 1 and line_count == 0 and total_files > 1 or True:
+                try:
+                    last_filename = sorted_paths[file_count - 1]
+                    filename, extension = filename_and_extension_from_fullpath(last_filename)
+                    self.save_data_checkpoint(filename=filename, saved_data_objects_doid=saved_data_objects_doid)
+                except Exception:
+                    traceback.print_exc()
+                    pt("Not saved")
         update_data_objects()
 
     def load_historic_data(self, sorted_paths):
