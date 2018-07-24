@@ -69,8 +69,16 @@ class InfoDataObject():
     client_id = None
 
     def __init__(self, datatype=None, measure=None, sensor_id=None, data_id=None, start_date=None, end_date=None,
-                 file_path=None, client_id=None):
-
+                 file_path=None, client_id=None, information_array=None):
+        if information_array:
+            self.datatype = information_array[0]
+            self.measure = information_array[1]
+            self.sensor_id = information_array[2]
+            self.data_id = information_array[3]
+            self.start_date = information_array[4]
+            self.end_date = information_array[5]
+            self.file_path = information_array[6]
+            self.client_id = information_array[7]
         if datatype:
             self.datatype = datatype
         if measure:
@@ -135,10 +143,11 @@ class DataObject():
 
     all_data = None
     datatypes = DataTypes()
-    multiple_x = []
-    multiple_y = []
+    information = InfoDataObject()
 
     def __init__(self, information=None):
+        self.multiple_x = []
+        self.multiple_y = []
         self.set_data(self.create_data())
         if information:
             self.information = information
@@ -148,16 +157,6 @@ class DataObject():
 
     def get_all_data(self):
         return self.all_data
-
-    @property
-    def information(self):
-        if not self.information:
-            self.information = InfoDataObject()
-        return self.information
-
-    @information.setter
-    def information(self, value):
-        self.information = value
 
     @staticmethod
     def create_data(first=None, second=None, third=None):
@@ -176,24 +175,35 @@ class DataObject():
 
     @property
     def x(self):
-        if self.multiple_x:
-            return self.multiple_x
-        else:
-            return self.data[0]
+        try:
+            if self.multiple_x:
+                return self.multiple_x
+            else:
+                return self.data[0]
+        except Exception:
+            traceback.print_exc()
 
     @property
     def y(self):
-        if self.multiple_y:
-            return self.multiple_y
-        else:
-            return self.data[1]
-
+        try:
+            if self.multiple_y:
+                return self.multiple_y
+            else:
+                return self.data[1]
+        except Exception:
+            traceback.print_exc()
     @property
     def info(self):
         return self.information.array()
 
+    def is_valid(self):
+        if len(self.x) > 0 and len(self.y) > 0:
+            return True
+        else:
+            return False
+
     def start_save(self, fullpath):
-        pt("Saving DataObject " + self.unique_doid + "...")
+        pt("Saving DataObject " + self.unique_doid + "...", "")
         try:
             create_directory_from_fullpath(fullpath)
             if len(self.data) == 3:
@@ -205,7 +215,7 @@ class DataObject():
                                              second=np.asarray(self.y),
                                              third=self.information.array()))
             np.save(file=fullpath, arr=np.asarray(self.data))
-            pt("DataObject " + self.unique_doid + " saved without problems")
+            pt("DataObject " + self.unique_doid + " saved without problems", "")
         except Exception:
             traceback.print_exc()
             pt("Problem saving data.")
@@ -215,6 +225,8 @@ class DataObject():
         try:
             data = np.load(fullpath)
             self.set_data(data=data)
+            self.information = InfoDataObject(information_array=data[2])
+            return self
         except Exception:
             traceback.print_exc()
             pt("Problem loading data.")
@@ -222,14 +234,14 @@ class DataObject():
     @property
     def unique_doid(self):
         if self.information.sensor_id and self.information.data_id:
-            return self.information.sensor_id + "_" + self.information.data_id
+            return str(self.information.sensor_id) + "_" + str(self.information.data_id)
         else:
             pt("Does not exist an unique ID")
             return "NOID_ERROR"
 
     @property
     def unique_doid_date(self, string_date="NODATE_ERROR"):
-        return self.unique_doid + "_" + string_date
+        return str(self.unique_doid) + "_" + string_date
 
     @property
     def deltas_max_min(self):
