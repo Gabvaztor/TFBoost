@@ -202,13 +202,7 @@ class DataObjectReader():
                                                                                  sorted_with_dates,
                                                                                  fullpath,
                                                                                  name)
-        if self.sensor_type == 1:
-            pt()
-
         data_loaded_flag = self.load_historic_data(sorted_paths)
-
-        if self.sensor_type == 1:
-            pt()
         # Info data
         first_date = None  # To see delta to show data
         end_date = None
@@ -274,8 +268,8 @@ class DataObjectReader():
                 end_date = None
                 last_filepath = None
                 first_date = None
-            if file_count < total_files - 1 and total_files > 1 and len(saved_data_objects_doid) != len(data_objects):
-                # If it is not the last file
+            if file_count < total_files - 1 and total_files > 1 and len(saved_data_objects_doid) != len(data_objects) \
+                    and file != sorted_paths[-1]:  # If it is not the last file
                 try:
                     self.save_data_checkpoint()
                 except Exception:
@@ -283,7 +277,7 @@ class DataObjectReader():
                     pt("Not saved")
         update_data_objects()
 
-    def  load_historic_data(self, sorted_paths):
+    def load_historic_data(self, sorted_paths):
         """
         First, we get all saved files if exists. After that, we remove the appropiates files in "sorted_paths" to not
         read that file (and not load its data).
@@ -329,8 +323,6 @@ class DataObjectReader():
                 save_fullpath = checkpoint_path + doid + ".npy"
                 data_object.start_save(fullpath=save_fullpath)
                 saved_data_objects_doid.append(doid)
-        pt("Data saved")
-
 def histogram(vector, iteration=None, save=False, q=None):
 
     pt("q", q)

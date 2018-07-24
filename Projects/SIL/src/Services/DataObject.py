@@ -271,7 +271,7 @@ class DataObject():
         """
         if self.multiple_y:
             return len(self.multiple_y)
-        elif self.y:
+        elif len(self.y):
             return 1
         else:
             return 0
