@@ -251,7 +251,7 @@ class DataObject():
         deltas = []
         max_value = 0.
         min_value = 0.
-        if self.y:
+        if len(self.y) > 0:
             if type(self.y[0]) != type([]):
                 max_value, min_value = max(self.y), min(self.y)
                 deltas.append(max_value - min_value)
