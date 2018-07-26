@@ -38,7 +38,7 @@ clamp_filepath = "\\\\192.168.1.62\\miranda\\10_20180702.dat"
 # clamp_filepath="E:\\SmartIotLabs\\DATA\\nEW\\10_20180702.dat"
 global_sensor_filepath = "\\\\192.168.1.62\\miranda\\1_20180702.dat"
 miranda_path = "\\\\192.168.1.220\\miranda\\"
-#miranda_path = "..\\..\\data\\temp\\"
+miranda_path = "..\\..\\data\\temp\\"
 #miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
 # global_sensor_filepath="E:\\SmartIotLabs\\DATA\\nEW\\1_20180702.dat"
 # Save image path
@@ -92,13 +92,14 @@ def get_all_sensor_types(actual_sensor_types, path):
 
 def update_data(load_data):
     sensor_types = []
-    #Reader(path=miranda_path, sensor_type=20, load_data=load_data).read_refresh_data()
-    update_all_data = True
+    DataObjectReader(path=miranda_path, sensor_type=20, load_data=load_data).read_refresh_data()
+    update_all_data = False
     if update_all_data:
         sensor_types = get_all_sensor_types(actual_sensor_types=sensor_types, path=miranda_path)
     #sensor_types.remove(20)
     for sensor_type in sensor_types:
         DataObjectReader(path=miranda_path, sensor_type=sensor_type, load_data=load_data).read_refresh_data()
+    update_data_objects()
     return None
 
 def sort_paths_by_date_in_basename(sorted_paths, sorted_with_dates, fullpath, name):
@@ -125,14 +126,53 @@ def date_from_format(date, format, to_string_format=None):
         return date, date_string
     return date
 
+
+def update_measure_and_datatype(data_object):
+    if is_none(data_object.information.measure) or is_none(data_object.information.datatype):
+        sensor_id = data_object.information.sensor_id
+        data_id = data_object.information.data_id
+        measure = None
+        data_type = None
+        if not data_object.information.datatype or data_object.information.measure:
+            if sensor_id in Sensor.type_0:
+                measure = Measures.WATIOS
+                data_type = DataTypes.ELECTRIC_CLAMP
+            elif sensor_id in Sensor.type_1:
+                if data_id == 1:
+                    measure = Measures.PRESENCE
+                    data_type = DataTypes.PRESENCE
+                elif data_id == 2:
+                    measure = Measures.TEMPERATURE
+                    data_type = DataTypes.TEMPERATURE
+                elif data_id == 3:
+                    measure = Measures.HUMIDITY
+                    data_type = DataTypes.HUMIDITY
+                elif data_id == 4:
+                    measure = Measures.LUMINOSITY
+                    data_type = DataTypes.LUMINOSITY
+            if measure and data_type:
+                data_object.information.set_info(measure=measure, datatype=data_type)
+
 def update_data_objects(end_date=None, last_filepath=None, doids=None):
     """
         Check if there are data_objects in data_objects dictionary to delete.
     """
     to_delete = []
-
     if not doids:  # If None or empty, doids will be all doid.
         doids = data_objects.keys()
+    for doid in doids:
+        data_object = data_objects[doid]
+        update_measure_and_datatype(data_object)
+        if is_none(data_object.information.measure) or is_none(data_object.information.datatype) \
+                or not data_object.is_valid():
+            to_delete.append(doid)
+            continue
+        if last_filepath:
+            data_object.information.set_info(file_path=last_filepath)
+        if end_date:
+            data_object.information.set_info(end_date=end_date)
+
+    """
     for doid, data_object in data_objects.items():
         if doid in doids:  # "Doids" represents doids that must be processed
             if is_none(data_object.information.measure) or is_none(data_object.information.datatype):
@@ -163,11 +203,10 @@ def update_data_objects(end_date=None, last_filepath=None, doids=None):
                     data_object.information.set_info(measure=measure, datatype=data_type)
             if last_filepath and end_date:
                 data_object.information.set_info(file_path=last_filepath, end_date=end_date)
+    """
     for doid in set(to_delete):
         if doid in data_objects:
             del data_objects[doid]
-
-
 
 def delete_unused_data_object():
     """
@@ -207,6 +246,8 @@ class DataObjectReader():
                                                                                  name)
         if sorted_paths:
             not_to_save_paths.append(sorted_paths[-1])
+        if self.sensor_type == 20:
+            pt("")
         data_loaded_flag = self.load_historic_data(sorted_paths)
         # Info data
         first_date = None  # To see delta to show data
@@ -237,11 +278,12 @@ class DataObjectReader():
                         # sensors
                         continue
                     if not sensor_data_date_id in data_objects:  # It means there is a new sensor data type.
-                        information = InfoDataObject(sensor_id=self.sensor_type, start_date=date, data_id=ID)
+                        information = InfoDataObject(sensor_id=self.sensor_type, start_date=date, data_id=ID,
+                                                     file_path=file)
                         data_objects[sensor_data_date_id] = DataObject(information=information)
                         created_data_object.append(sensor_data_date_id)
                     data_object = data_objects[sensor_data_date_id]
-                    if  line_count == 0 or not first_date:
+                    if line_count == 0 or not first_date:
                         first_date = date
                     delta_minutes = (date - first_date).total_seconds()/60
                     if delta_minutes > 10. or data_loaded_flag:
@@ -263,12 +305,12 @@ class DataObjectReader():
                     if line_count + 1 == total_lines - 1:
                         end_date = date
                         last_filepath = file
-            if end_date and last_filepath:
-                update_data_objects(end_date=end_date, last_filepath=last_filepath, doids=created_data_object)
+            if end_date:
+                update_data_objects(end_date=end_date, doids=created_data_object)
+                created_data_object.clear()
                 end_date = None
                 last_filepath = None
-                first_date = None
-        update_data_objects()
+
 
     def load_historic_data(self, sorted_paths):
         """
@@ -312,6 +354,7 @@ def save_data_objects_checkpoint():
     global saved_data_objects_doid
     pt("Saving data...")
     for doid, data_object in data_objects.items():
+        file_to_check = data_object.information.file_path
         if not doid in saved_data_objects_doid and data_object.information.file_path not in not_to_save_paths:
             save_fullpath = checkpoint_path + doid + ".npy"
             if not file_exists_in_path_or_create_path(save_fullpath):
@@ -397,11 +440,15 @@ plotlylib = False
 load_data = True
 update_data(load_data=load_data)
 save_data_objects_checkpoint()
-import msgpack
-with open(checkpoint_path + 'data.msgpack', 'w+') as outfile:
-    msgpack.pack(data_objects, outfile)
 
-
+def msg():
+    big_dict = {}
+    for doid, data_object in data_objects.items():
+        big_dict[doid] = data_object.serialize()
+    import msgpack
+    with open(checkpoint_path + 'data.msgpack', 'w+') as outfile:
+        msgpack.pack(big_dict, outfile)
+msg()
 #datatypes = calculate_datatypes() # Number of different data
 #calculate_deltas_from_data()
 #data = statistical_process(data=data, algorithm=1)

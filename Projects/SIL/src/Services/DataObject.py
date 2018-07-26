@@ -192,10 +192,11 @@ class DataObject():
                 return self.data[1]
         except Exception:
             traceback.print_exc()
+    """
     @property
     def info(self):
         return self.information.array()
-
+    """
     def is_valid(self):
         if len(self.x) > 0 and len(self.y) > 0:
             return True
@@ -370,3 +371,24 @@ class DataObject():
         pt("total_bytes", total_bytes)
         pt("all dir()", dir())
         return total_bytes
+
+    def data_array(self):
+        x, y = self.pair_data()
+        return np.array([x, y, self.information.array()])
+
+    def x_array(self, to_string=False):
+        if to_string:
+            if self.multiple_x:
+
+            return np.asarray([date.strftime("%Y-%m-%d %H:%M:%S") for date in self.x])
+        return np.asarray(self.x)
+
+    def y_array(self):
+        return np.asarray(self.y)
+
+    def serialize(self):
+        serialize_data_object = {}
+        serialize_data_object["x"] = self.x_array(to_string=True)
+        serialize_data_object["y"] = self.y_array()
+        serialize_data_object["information"] = self.information.array()
+        return serialize_data_object
