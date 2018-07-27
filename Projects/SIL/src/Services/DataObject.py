@@ -2,6 +2,7 @@ import numpy as np
 from UsefulTools.UtilsFunctions import *
 from sys import getsizeof
 import traceback
+import datetime
 
 class Sensor():
     """
@@ -126,8 +127,18 @@ class InfoDataObject():
 
     def array(self):
         """Return an array of features"""
+        return np.asarray(self.to_list())
+
+    def to_list(self):
         return [self.datatype, self.measure, self.sensor_id, self.data_id, self.start_date, self.end_date,
                          self.file_path, self.client_id]
+
+    def serializable(self, format="%Y-%m-%d %H:%M:%S"):
+        information_list = self.to_list()
+        for index, element in enumerate(information_list):
+            if isinstance(element, datetime.date):
+                information_list[index] = element.strftime(format)
+        return information_list
 
 class DataObject():
     """
@@ -145,12 +156,14 @@ class DataObject():
     datatypes = DataTypes()
     information = InfoDataObject()
 
-    def __init__(self, information=None):
-        self.multiple_x = []
-        self.multiple_y = []
-        self.set_data(self.create_data())
+    def __init__(self, information=None, data_objects_list=None):
+        if not data_objects_list:
+            self.multiple_x = []
+            self.multiple_y = []
+            self.set_data(self.create_data())
         if information:
             self.information = information
+
 
     def set_data(self, data):
         self.all_data = data
@@ -378,17 +391,47 @@ class DataObject():
 
     def x_array(self, to_string=False):
         if to_string:
-            if self.multiple_x:
-
-            return np.asarray([date.strftime("%Y-%m-%d %H:%M:%S") for date in self.x])
+            return np.asarray(self.x_string_date())
         return np.asarray(self.x)
+
+    def x_string_date(self):
+        if self.multiple_x:
+            multiple_x = []
+            multiple_x.append(self.transform_to_string_date_array(data=data) for data in self.multiple_x)
+            return multiple_x
+        else:
+            return self.transform_to_string_date_array(data=self.x)
+
+    @staticmethod
+    def transform_to_string_date_array(data, format="%Y-%m-%d %H:%M:%S", to_float=True):
+        if to_float:
+            return [DataObject.date_to_float(date.strftime(format)) for date in data]
+        else:
+            return [date.strftime(format) for date in data]
+
+    @staticmethod
+    def date_to_float(string_date):
+        return float(string_date[-5:].replace(":", "."))
 
     def y_array(self):
         return np.asarray(self.y)
 
+    def y_to_list(self):
+        if any(isinstance(element, np.ndarray) for element in self.y):
+            multiple_y = []
+            for data in self.y:
+                multiple_y.append(list(data))
+            return multiple_y
+        else:
+            return list(self.y)
+
     def serialize(self):
         serialize_data_object = {}
-        serialize_data_object["x"] = self.x_array(to_string=True)
-        serialize_data_object["y"] = self.y_array()
-        serialize_data_object["information"] = self.information.array()
+        serialize_data_object["x"] = self.x_string_date()
+        serialize_data_object["y"] = self.y_to_list()
+        serialize_data_object["information"] = self.information.serializable()
         return serialize_data_object
+
+    def serialize_to_bytes(self):
+        import pickle
+        pickle.dump(self.serialize(), open("save.p", "wb"))

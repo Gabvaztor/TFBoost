@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
 import matplotlib.dates as mdates
-from datetime import datetime, date as typedate
+from datetime import datetime, date as typedate, timedelta
 import plotly.plotly as plotly
 import numpy as np
 import os
@@ -90,15 +90,25 @@ def get_all_sensor_types(actual_sensor_types, path):
             actual_sensor_types.append(sensor_id)
     return actual_sensor_types
 
-def update_data(load_data):
+def update_data(load_data, load_dates=True, update_all_data=True, read_data=True, sensor_types=None):
     sensor_types = []
-    DataObjectReader(path=miranda_path, sensor_type=20, load_data=load_data).read_refresh_data()
-    update_all_data = False
+    #DataObjectReader(path=miranda_path, sensor_type=20, load_data=load_data).read_refresh_data()
+
+    start_date_to_load = datetime(year=2018, month=7, day=12)
+    end_date_to_load = datetime(year=2018, month=7, day=18) + timedelta(days=1) - timedelta(seconds=1)
+    dates_to_load = [start_date_to_load, end_date_to_load]
+
+    if not load_dates:
+        dates_to_load.clear()
     if update_all_data:
         sensor_types = get_all_sensor_types(actual_sensor_types=sensor_types, path=miranda_path)
+    else:
+        sensor_types = []
     #sensor_types.remove(20)
     for sensor_type in sensor_types:
-        DataObjectReader(path=miranda_path, sensor_type=sensor_type, load_data=load_data).read_refresh_data()
+        DataObjectReader(path=miranda_path, sensor_type=sensor_type,
+                         load_data=load_data, load_dates=dates_to_load,
+                         read_data=read_data).read_refresh_data()
     update_data_objects()
     return None
 
@@ -221,10 +231,15 @@ def delete_unused_data_object():
 
 class DataObjectReader():
 
-    def __init__(self, path, sensor_type, load_data):
+    def __init__(self, path, sensor_type, load_data=True, save_data=True, read_data=True, load_dates=None):
         self.path = path
         self.sensor_type = sensor_type
         self.load_data = load_data
+        self.save_data = save_data
+        self.read_data = read_data
+        if not load_dates:
+            load_dates = []
+        self.load_dates = load_dates
 
     def read_refresh_data(self, i=None):
         global data_objects
@@ -244,16 +259,22 @@ class DataObjectReader():
                                                                                  sorted_with_dates,
                                                                                  fullpath,
                                                                                  name)
-        if sorted_paths:
+        if not self.save_data:
+            not_to_save_paths = sorted_paths
+        elif sorted_paths:
             not_to_save_paths.append(sorted_paths[-1])
         if self.sensor_type == 20:
             pt("")
-        data_loaded_flag = self.load_historic_data(sorted_paths)
+        data_loaded_flag = self.load_historic_data(sorted_paths, load_dates=self.load_dates)
+
+        if not self.read_data:
+            sorted_paths.clear()
         # Info data
         first_date = None  # To see delta to show data
         end_date = None
         last_filepath = None
         total_files = len(sorted_paths)
+
 
         for file_count, file in enumerate(sorted_paths):
             pt("File " + str(file_count + 1) + " of " + str(total_files))
@@ -312,7 +333,7 @@ class DataObjectReader():
                 last_filepath = None
 
 
-    def load_historic_data(self, sorted_paths):
+    def load_historic_data(self, sorted_paths, load_dates=None):
         """
         First, we get all saved files if exists. After that, we remove the appropiates files in "sorted_paths" to not
         read that file (and not load its data).
@@ -321,15 +342,25 @@ class DataObjectReader():
             sorted_paths: Sorted paths with all paths with interested data.
         """
         global loaded_data_objects_doid
-
+        start_date = None
+        end_date = None
         data_loaded = False
         if load_data and sorted_paths:
+            if load_dates:
+                start_date = load_dates[0]
+                end_date = load_dates[-1]
             for fullpath, root, name in get_files_from_path(paths=checkpoint_path, ends_in=".npy"):
                 sensor_id_data_id_date = name.split("_")
                 sensor_id, data_id, date = sensor_id_data_id_date[0], sensor_id_data_id_date[1], \
                             datetime.strptime(sensor_id_data_id_date[2], "%Y%m%d")
                 sensor_id_data_id_date_string = sensor_id + "_" + data_id + "_" + sensor_id_data_id_date[2]
-                if int(sensor_id) == self.sensor_type:
+                load_flag = False
+                if load_dates:
+                    if date >= start_date and date <= end_date and int(sensor_id) == self.sensor_type:
+                        load_flag = True
+                elif int(sensor_id) == self.sensor_type:
+                    load_flag = True
+                if load_flag:
                     for sorted_path in sorted_paths.copy():
                         info_sorted = os.path.splitext(os.path.basename(sorted_path))[0].split("_")
                         sensor_id_sorted = info_sorted[0]
@@ -341,18 +372,16 @@ class DataObjectReader():
                         pt("Loading data...")
                         data_objects[sensor_id_data_id_date_string] = DataObject().start_load(fullpath=fullpath)
                         loaded_data_objects_doid.append(sensor_id_data_id_date_string)
-                        pt("Data loaded")
-            if data_objects:
-                data_loaded = True
+                        data_loaded = True
+                        pt("Data with id [" + sensor_id_data_id_date_string + "] loaded")
         return data_loaded
 
-def save_data_objects_checkpoint():
+def save_data_objects_checkpoint(save_data=True):
     """
     Args:
         filename: Filename to save
     """
     global saved_data_objects_doid
-    pt("Saving data...")
     for doid, data_object in data_objects.items():
         file_to_check = data_object.information.file_path
         if not doid in saved_data_objects_doid and data_object.information.file_path not in not_to_save_paths:
@@ -438,16 +467,30 @@ def calculate_datatypes():
 matplotlib = True
 plotlylib = False
 load_data = True
-update_data(load_data=load_data)
-save_data_objects_checkpoint()
+save_data = False
+load_dates=True
+update_all_data=True
+read_data=False
+update_data(load_data=load_data, load_dates=load_dates, update_all_data=update_all_data, read_data=read_data)
+save_data_objects_checkpoint(save_data=save_data)
 
 def msg():
     big_dict = {}
     for doid, data_object in data_objects.items():
         big_dict[doid] = data_object.serialize()
     import msgpack
-    with open(checkpoint_path + 'data.msgpack', 'w+') as outfile:
-        msgpack.pack(big_dict, outfile)
+    try:
+        with open(checkpoint_path + 'data_with_floats_dates.msgpack', 'wb') as outfile:
+            msgpack.pack(big_dict, outfile)
+    except:
+        pass
+
+    import pickle
+    dic = {}
+    for doid, data_object in data_objects.items():
+        dic[doid] = data_object
+    pickle.dump(big_dict, open(checkpoint_path + "save_float_dates.p", "wb"))
+
 msg()
 #datatypes = calculate_datatypes() # Number of different data
 #calculate_deltas_from_data()
