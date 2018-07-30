@@ -536,16 +536,41 @@ def is_none(object):
     else:
         return False
 
-def check_file_exists_and_change_name(path, i=None):
-    if file_exists_in_path_or_create_path(path):
-        if is_none(i):
-            i = 1
-        else:
-            i += 1
+def number_of_digits(number):
+    count = 0
+    while (number > 0):
+        number = number // 10
+        count = count + 1
+    return count
 
-        path = os.path.splitext(path)[0] + "_" + str(i) + os.path.splitext(path)[1]
+def check_file_exists_and_change_name(path, char="", index=None):
+    """
+    Check if file exists and, if exists, try to change the name to another with a higher 'index'. Example:
+    --> filename = 'name(id).png'. If exists, then try to create a new filename with a new index.
+    --> new filename = 'name(id)_1.png)'. This has '_' as 'char'. If not char, then go only the index.
+    Args:
+        path: filepath
+        char: char to add
+        index: actual index
+    Returns: new path
+    """
+    if file_exists_in_path_or_create_path(path):
+        name = os.path.splitext(path)[0]
+        extension = os.path.splitext(path)[1]
+        if index == 0 or is_none(index):
+            index = 1
+            chars_to_delete = None
+        else:
+            chars_to_delete = number_of_digits(index)
+            index = int(name[-chars_to_delete:]) + 1
+            if char:
+                chars_to_delete += len(char)
+        if chars_to_delete:
+            new_path = name[:-chars_to_delete] + char + str(index) + extension
+        else:
+            new_path = name + char + str(index) + extension
         pt("new_path", path)
-        path = check_file_exists_and_change_name(path, i)
+        path = check_file_exists_and_change_name(path=new_path, char=char, index=index)
     return path
 
 def filename_and_extension_from_fullpath(fullpath):

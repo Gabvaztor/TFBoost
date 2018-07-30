@@ -68,18 +68,31 @@ class InfoDataObject():
     end_date = None
     file_path = None
     client_id = None
+    unique_id = None
 
     def __init__(self, datatype=None, measure=None, sensor_id=None, data_id=None, start_date=None, end_date=None,
-                 file_path=None, client_id=None, information_array=None):
-        if information_array:
-            self.datatype = information_array[0]
-            self.measure = information_array[1]
-            self.sensor_id = information_array[2]
-            self.data_id = information_array[3]
-            self.start_date = information_array[4]
-            self.end_date = information_array[5]
-            self.file_path = information_array[6]
-            self.client_id = information_array[7]
+                 file_path=None, client_id=None, unique_id=None, information_array=None):
+
+        if not is_none(information_array):
+            for i, fact in enumerate(information_array):
+                if i == 0:
+                    self.datatype = information_array[0]
+                elif i == 1:
+                    self.measure = information_array[1]
+                elif i == 2:
+                    self.sensor_id = information_array[2]
+                elif i == 3:
+                    self.data_id = information_array[3]
+                elif i == 4:
+                    self.start_date = information_array[4]
+                elif i == 5:
+                    self.end_date = information_array[5]
+                elif i == 6:
+                    self.file_path = information_array[6]
+                elif i == 7:
+                    self.client_id = information_array[7]
+                elif i == 8:
+                    self.unique_id = information_array[8]
         if datatype:
             self.datatype = datatype
         if measure:
@@ -96,9 +109,11 @@ class InfoDataObject():
             self.file_path = file_path
         if client_id:
             self.client_id = client_id
+        if unique_id:
+            self.unique_id = unique_id
 
     def set_info(self, datatype=None, measure=None, sensor_id=None, data_id=None, start_date=None, end_date=None,
-                 file_path=None, client_id=None, information_array=None):
+                 file_path=None, client_id=None, unique_id=None, information_array=None):
         if information_array:
             self.datatype = information_array[0]
             self.measure = information_array[1]
@@ -108,6 +123,7 @@ class InfoDataObject():
             self.end_date = information_array[5]
             self.file_path = information_array[6]
             self.client_id = information_array[7]
+            self.unique_id = information_array[8]
         if datatype:
             self.datatype = datatype
         if measure:
@@ -124,6 +140,8 @@ class InfoDataObject():
             self.file_path = file_path
         if client_id:
             self.client_id = client_id
+        if unique_id:
+            self.unique_id = unique_id
 
     def array(self):
         """Return an array of features"""
@@ -146,9 +164,10 @@ class DataObject():
         - First array: date values (or x values)
         - Second array: sensor values (or y values)
         - Third array: DataObject information. The format is:
-            ["datatype", "measure", "sensor_id", "data_id", "start_date", "end_date", "file_path", "client_id"]
+            ["datatype", "measure", "sensor_id", "data_id", "start_date", "end_date", "file_path", "client_id",
+            "unique_id"]
             Example: ["TEMPERATURE", "Cº", "11", "1", "2018-02-02", "2018-02-03", "\\miranda\\sensor1.dat\\",
-            "H5464356"]
+            "H5464356", "11_1_20180202"]
             This is a "InfoDataObject"
     """
 
@@ -163,7 +182,6 @@ class DataObject():
             self.set_data(self.create_data())
         if information:
             self.information = information
-
 
     def set_data(self, data):
         self.all_data = data
@@ -254,8 +272,12 @@ class DataObject():
             return "NOID_ERROR"
 
     @property
-    def unique_doid_date(self, string_date="NODATE_ERROR"):
-        return str(self.unique_doid) + "_" + string_date
+    def unique_doid_date(self):
+        if is_none(self.information.unique_id):
+            string_date = self.information.start_date.strftime("%Y%m%d")
+            return self.unique_doid + "_" + string_date
+        else:
+            return self.information.unique_id
 
     @property
     def deltas_max_min(self):
@@ -403,7 +425,7 @@ class DataObject():
             return self.transform_to_string_date_array(data=self.x)
 
     @staticmethod
-    def transform_to_string_date_array(data, format="%Y-%m-%d %H:%M:%S", to_float=True):
+    def transform_to_string_date_array(data, format="%Y-%m-%d %H:%M:%S", to_float=False):
         if to_float:
             return [DataObject.date_to_float(date.strftime(format)) for date in data]
         else:
