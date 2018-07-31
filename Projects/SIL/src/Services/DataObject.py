@@ -114,16 +114,26 @@ class InfoDataObject():
 
     def set_info(self, datatype=None, measure=None, sensor_id=None, data_id=None, start_date=None, end_date=None,
                  file_path=None, client_id=None, unique_id=None, information_array=None):
-        if information_array:
-            self.datatype = information_array[0]
-            self.measure = information_array[1]
-            self.sensor_id = information_array[2]
-            self.data_id = information_array[3]
-            self.start_date = information_array[4]
-            self.end_date = information_array[5]
-            self.file_path = information_array[6]
-            self.client_id = information_array[7]
-            self.unique_id = information_array[8]
+        if not is_none(information_array):
+            for i, fact in enumerate(information_array):
+                if i == 0:
+                    self.datatype = information_array[0]
+                elif i == 1:
+                    self.measure = information_array[1]
+                elif i == 2:
+                    self.sensor_id = information_array[2]
+                elif i == 3:
+                    self.data_id = information_array[3]
+                elif i == 4:
+                    self.start_date = information_array[4]
+                elif i == 5:
+                    self.end_date = information_array[5]
+                elif i == 6:
+                    self.file_path = information_array[6]
+                elif i == 7:
+                    self.client_id = information_array[7]
+                elif i == 8:
+                    self.unique_id = information_array[8]
         if datatype:
             self.datatype = datatype
         if measure:
@@ -176,10 +186,13 @@ class DataObject():
     information = InfoDataObject()
 
     def __init__(self, information=None, data_objects_list=None):
-        if not data_objects_list:
-            self.multiple_x = []
-            self.multiple_y = []
-            self.set_data(self.create_data())
+        self.multiple_x = []
+        self.multiple_y = []
+        self.set_data(self.create_data())
+        if data_objects_list:
+            for data_object in data_objects_list:
+                self.join_data_object(data_object)
+
         if information:
             self.information = information
 
@@ -258,6 +271,10 @@ class DataObject():
             data = np.load(fullpath)
             self.set_data(data=data)
             self.information = InfoDataObject(information_array=data[2])
+            if self.array_has_multiple_values(array=self.x):
+                self.multiple_x = self.x
+            if self.array_has_multiple_values(array=self.y):
+                self.multiple_y = self.y
             return self
         except Exception:
             traceback.print_exc()
@@ -288,7 +305,7 @@ class DataObject():
         max_value = 0.
         min_value = 0.
         if len(self.y) > 0:
-            if type(self.y[0]) != type([]):
+            if not self.array_has_multiple_values(array=self.y):
                 max_value, min_value = max(self.y), min(self.y)
                 deltas.append(max_value - min_value)
             else:
@@ -297,6 +314,21 @@ class DataObject():
                     delta = max_value - min_value
                     deltas.append(delta)
         return [deltas, max_value, min_value]
+
+    @staticmethod
+    def array_has_multiple_values(array):
+        to_return = False
+        if len(array) > 0:
+            if type(array[0]) == type([]):
+                to_return = True
+        return to_return
+
+    @staticmethod
+    def array_is_not_empty(array):
+        if len(array) > 0:
+            return True
+        else:
+            return False
 
     @property
     def number_datatypes(self):
@@ -323,7 +355,7 @@ class DataObject():
         if not is_none(self.information.end_date) and not is_none(self.information.start_date):
             try:
                 difference = self.information.end_date - self.information.start_date
-                title_array.append("(" + str(difference.days) + " days)")
+                title_array.append("(" + str(difference.days + 1) + " days)")
             except:
                 pt("Error in dates")
         if not is_none(self.information.sensor_id) and not is_none(self.information.data_id):
@@ -457,3 +489,20 @@ class DataObject():
     def serialize_to_bytes(self):
         import pickle
         pickle.dump(self.serialize(), open("save.p", "wb"))
+
+    from numba import jit
+    @jit
+    def join_data_object(self, data_object):
+        if self.array_has_multiple_values(data_object.x):
+            for i, values in enumerate(data_object.x):
+                self.multiple_x[i].extend(values)
+        else:
+            self.x.extend(list(data_object.x))
+        if self.array_has_multiple_values(data_object.y):
+            for i, values in enumerate(data_object.y):
+                self.multiple_y[i].extend(values)
+        else:
+            self.x.extend(list(data_object.y))
+        self.information.set_info(information_array=data_object.information.array(),
+                                  end_date=data_object.information.end_date)
+

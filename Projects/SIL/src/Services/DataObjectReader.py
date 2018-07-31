@@ -33,24 +33,6 @@ style_ = style_list[4]
 pt(style_)
 style.use(style=style_)
 
-# Paths
-clamp_filepath = "\\\\192.168.1.62\\miranda\\10_20180702.dat"
-# clamp_filepath="E:\\SmartIotLabs\\DATA\\nEW\\10_20180702.dat"
-global_sensor_filepath = "\\\\192.168.1.62\\miranda\\1_20180702.dat"
-miranda_path = "\\\\192.168.1.220\\miranda\\"
-#miranda_path = "..\\..\\data\\temp\\"
-#miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
-# global_sensor_filepath="E:\\SmartIotLabs\\DATA\\nEW\\1_20180702.dat"
-# Save image path
-save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
-checkpoint_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\Checkpoints\\"
-checkpoint_path = "..\\..\\data\\intermediate\\"
-
-#figures = []
-#graphs = []
-
-
-delta_data = []
 # Information
 sensor_data_ids = []  # Contains the information of sensors and data_ids. The format is: ["sensorID_dataID", ...]
 # Will be used to check when a type data was used or not.
@@ -74,7 +56,6 @@ def calculate_deltas_from_data():
                 delta = max(data_type) - min(data_type)
                 data_object.deltas.append(delta)
         else:
-            delta_data.append(0)
             raise Exception("Data object has not values in 'y'")
 
 def get_all_sensor_types(actual_sensor_types, path):
@@ -90,16 +71,12 @@ def get_all_sensor_types(actual_sensor_types, path):
             actual_sensor_types.append(sensor_id)
     return actual_sensor_types
 
-def update_data(load_data, load_dates=False, update_all_data=True, read_data=True, sensor_types=None):
+def update_data(load_data, dates_to_load=None, update_all_data=True, read_data=True, sensor_types=None):
     sensor_types = []
     #DataObjectReader(path=miranda_path, sensor_type=20, load_data=load_data).read_refresh_data()
 
-    start_date_to_load = datetime(year=2018, month=7, day=12)
-    end_date_to_load = datetime(year=2018, month=7, day=18) + timedelta(days=1) - timedelta(seconds=1)
-    dates_to_load = [start_date_to_load, end_date_to_load]
-
-    if not load_dates:
-        dates_to_load.clear()
+    if not dates_to_load:
+        dates_to_load = []
     if update_all_data:
         sensor_types = get_all_sensor_types(actual_sensor_types=sensor_types, path=miranda_path)
     else:
@@ -128,14 +105,16 @@ def date_from_format(date, format, to_string_format=None):
     try:
         date = datetime.strptime(date, format)
     except:
-        if len(date) > 19:
-            fix_date = date[-19:]
-            date = datetime.strptime(fix_date, format)
+        try:
+            if len(date) > 19:
+                fix_date = date[-19:]
+                date = datetime.strptime(fix_date, format)
+        except:
+            traceback.print_exc()
     if to_string_format:
         date_string = date.strftime(to_string_format)
         return date, date_string
     return date
-
 
 def update_measure_and_datatype(data_object):
     if is_none(data_object.information.measure) or is_none(data_object.information.datatype):
@@ -240,7 +219,6 @@ class DataObjectReader():
         last_filepath = None
         total_files = len(sorted_paths)
 
-
         for file_count, file in enumerate(sorted_paths):
             pt("File " + str(file_count + 1) + " of " + str(total_files))
             file_sensor_id_date, extension_file = filename_and_extension_from_fullpath(fullpath=file)
@@ -257,9 +235,21 @@ class DataObjectReader():
                                  length=50)
                 if len(line) > 1:
                     date_id_value = line.split(sep=";")
-                    date, ID, value = date_id_value[0], int(date_id_value[1]), date_id_value[2]
-                    date = date_from_format(date=date, format="%Y-%m-%d %H:%M:%S")
-                    sensor_data_date_id = str(self.sensor_type) + "_" + date_id_value[1] + "_" + file_date
+                    date, ID, value = date_id_value[0], date_id_value[1], date_id_value[2]
+                    sensor_data_date_id = str(self.sensor_type) + "_" + ID + "_" + file_date
+                    try:
+                        ID = int(ID)
+                        value = float(value)
+                        date = date_from_format(date=date, format="%Y-%m-%d %H:%M:%S")
+                    except:
+                        traceback.print_exc()
+                        pt("Line count", line_count)
+                        pt("Line", line)
+                        pt("File", file)
+                        pt("Unique ID", sensor_data_date_id)
+                        continue
+
+
                     if ID not in Sensor.sensors_ids():  # sensors_ids must represent all different ids in all types of
                         # sensors
                         continue
@@ -310,7 +300,7 @@ class DataObjectReader():
         start_date = None
         end_date = None
         data_loaded = False
-        if load_data and sorted_paths:
+        if load_data:
             if load_dates:
                 start_date = load_dates[0]
                 end_date = load_dates[-1]
@@ -445,83 +435,140 @@ def msg():
     pickle.dump(big_dict, open(checkpoint_path + actual_time + "_picke_data.p", "wb"))
     del big_dict
 
+def sort_data_objects():
+    global data_objects
+    new_data_objects = {}
+    for key, value in sorted(data_objects.items()):
+        new_data_objects[key] = value
+    data_objects = new_data_objects
+    del new_data_objects
 
-matplotlib = True
-plotlylib = False
-load_data = True
-save_data = False
-load_dates=False
-update_all_data=True
-read_data=False
-update_data(load_data=load_data, load_dates=load_dates, update_all_data=update_all_data, read_data=read_data)
-save_data_objects_checkpoint(save_data=save_data)
-#msg()
+def grahps_process():
+    if plotlylib:
+        for d in data:
+            trace = dict(x=d[0], y=d[1])
+            data_ = [trace]
+            layout = dict(title='Time series with range slider and selectors')
+            fig = dict(data=data_, layout=layout)
+            plotly.plot(fig)
 
-#datatypes = calculate_datatypes() # Number of different data
-#calculate_deltas_from_data()
-#data = statistical_process(data=data, algorithm=1)
+    if matplotlib:  # Matplot lib
+        pt("Creating and saving graphs...")
+        actual_time = datetime.now().strftime("%Y-%m-%d_%Hh%Mm%Ss")
+        for index, (doid, data_object) in enumerate(data_objects.items()):
+            pt("DataObject " + str(index + 1) + " of " + str(len(data_objects)) + "...", data_object.information.datatype)
+            for i in range(data_object.number_datatypes):
+                pt("Creating graph " + str(i + 1) + " of " + str(data_object.number_datatypes) + "...", "")
+                fig = plt.figure(figsize=(7, 7), dpi=160, facecolor='w', edgecolor='k')
+                subplot = fig.add_subplot(1, 1, 1)
+                left = 0.1  # the left side of the subplots of the figure
+                right = 1.  # the right side of the subplots of the figure
+                bottom = 0.05  # the bottom of the subplots of the figure
+                top = 0.9  # the top of the subplots of the figure
+                wspace = 0.2  # the amount of width reserved for space between subplots,
+                # expressed as a fraction of the average axis width
+                hspace = 0.2  # the amount of height reserved for space between subplots,
+                # expressed as a fraction of the average axis height
+                fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top,
+                        wspace=wspace, hspace=hspace)
+                add_to_graph(title=data_object.title)
+                #figures.append(fig)
+                #graphs.append(subplot)
+                subplot.clear()
 
-if plotlylib:
-    for d in data:
-        trace = dict(x=d[0], y=d[1])
-        data_ = [trace]
-        layout = dict(title='Time series with range slider and selectors')
-        fig = dict(data=data_, layout=layout)
-        plotly.plot(fig)
+                x, y = data_object.pair_data(index=i)
+                pt("x shape", x.shape)
+                pt("y shape", y.shape)
+                pt("Size of data_object in bytes", getsizeof(data_object))
+                pt("Size of data_object.x in bytes", getsizeof(data_object.x))
+                pt("Size of data_object.y in bytes", getsizeof(data_object.y))
+                pt("Size of x in bytes", getsizeof(x))
+                pt("Size of y in bytes", getsizeof(y))
+                #total_bytes = data_object.total_bytes()
+                if data_object.information.datatype == DataTypes.PRESENCE:
+                    pass
+                    #s = [1]*len(x)
+                    #plt.scatter(x, y, s=s)
+                else:
+                    lines = subplot.plot(x, y)
+                    plt.setp(lines, linestyle=':', linewidth=.12, color='red')  # set both to dashed
 
-if matplotlib:  # Matplot lib
-    pt("Creating and saving graphs...")
-    actual_time = datetime.now().strftime("%Y-%m-%d_%Hh%Mm%Ss")
-    for index, (doid, data_object) in enumerate(data_objects.items()):
-        pt("DataObject " + str(index + 1) + " of " + str(len(data_objects)) + "...", data_object.information.datatype)
-        for i in range(data_object.number_datatypes):
-            pt("Creating graph " + str(i + 1) + " of " + str(data_object.number_datatypes) + "...", "")
-            fig = plt.figure(figsize=(7, 7), dpi=160, facecolor='w', edgecolor='k')
-            subplot = fig.add_subplot(1, 1, 1)
-            left = 0.1  # the left side of the subplots of the figure
-            right = 1.  # the right side of the subplots of the figure
-            bottom = 0.05  # the bottom of the subplots of the figure
-            top = 0.9  # the top of the subplots of the figure
-            wspace = 0.2  # the amount of width reserved for space between subplots,
-            # expressed as a fraction of the average axis width
-            hspace = 0.2  # the amount of height reserved for space between subplots,
-            # expressed as a fraction of the average axis height
-            fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top,
-                    wspace=wspace, hspace=hspace)
-            add_to_graph(title=data_object.title)
-            #figures.append(fig)
-            #graphs.append(subplot)
-            subplot.clear()
+                    formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
+                    subplot.set_ylabel(data_object.label)
+                    subplot.xaxis.set_major_formatter(formatter)
+                    fig.autofmt_xdate()
+                    # Save graph
+                    save_path_graph = save_path + "Graphs\\" + actual_time + "\\" + \
+                                      data_object.information.datatype + "(" + data_object.unique_doid_date+ ")" + ".png"
+                    save_path_graph = check_file_exists_and_change_name(save_path_graph, char="_")
+                    pt("path_save", save_path_graph)
+                    fig.savefig(fname=save_path_graph, dpi=1000)
+                    gc.collect()
+        #animated_clamp = animation.FuncAnimation(figures[0], clamp_function, interval=1000000000)
+        #animated_global_sensor = animation.FuncAnimation(figures[1], global_sensor_function, interval=10000000)
 
-            x, y = data_object.pair_data(index=i)
-            pt("x shape", x.shape)
-            pt("y shape", y.shape)
-            pt("Size of data_object in bytes", getsizeof(data_object))
-            pt("Size of data_object.x in bytes", getsizeof(data_object.x))
-            pt("Size of data_object.y in bytes", getsizeof(data_object.y))
-            pt("Size of x in bytes", getsizeof(x))
-            pt("Size of y in bytes", getsizeof(y))
-            #total_bytes = data_object.total_bytes()
-            if data_object.information.datatype == DataTypes.PRESENCE + ":dfsadkgmsakfgnmsaknhak":
+
+def data_analysis(cores_ids=None, data_ids=None):
+
+    if not cores_ids:
+        cores_ids = []
+    if not data_ids:
+        data_ids = []
+
+    joined_data_objects = {}
+
+    for unique_id, data_object in data_objects.items():
+        if not data_ids:
+            continue
+        else:
+            if data_object.information.data_id in data_ids and data_object.information.sensor_id in cores_ids:
+                # TODO (@gabvaztor) Finish
                 pass
-                #s = [1]*len(x)
-                #plt.scatter(x, y, s=s)
-            else:
-                lines = subplot.plot(x, y)
-                plt.setp(lines, linestyle='-', linewidth=.09, color='b')  # set both to dashed
 
-            formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
-            subplot.set_ylabel(data_object.label)
-            subplot.xaxis.set_major_formatter(formatter)
-            fig.autofmt_xdate()
-            # Save graph
-            save_path_graph = save_path + "Graphs\\" + actual_time + "\\" + \
-                              data_object.information.datatype + "(" + data_object.unique_doid_date+ ")" + ".png"
-            save_path_graph = check_file_exists_and_change_name(save_path_graph, char="_")
-            pt("path_save", save_path_graph)
-            fig.savefig(fname=save_path_graph, dpi=1800)
-            gc.collect()
-    #animated_clamp = animation.FuncAnimation(figures[0], clamp_function, interval=1000000000)
-    #animated_global_sensor = animation.FuncAnimation(figures[1], global_sensor_function, interval=10000000)
+
+
+
+if __name__ == '__main__':
+
+    # ##### #
+    # PATHS #
+    # ##### #
+    miranda_path = "\\\\192.168.1.220\\miranda\\"
+    # miranda_path = "..\\..\\data\\temp\\"
+    # miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
+    # Save image path
+    save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
+    checkpoint_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\Checkpoints\\"
+    checkpoint_path = "..\\..\\data\\intermediate\\"
+
+    # ######### #
+    # VARIABLES #
+    # ######### #
+    matplotlib = True
+    plotlylib = False
+    read_data = True
+    load_data = True
+    save_data = True
+    load_dates = False
+    update_all_data = True
+
+    start_date_to_load = datetime(year=2018, month=7, day=23)
+    end_date_to_load = datetime(year=2018, month=7, day=30) + timedelta(days=1) - timedelta(seconds=1)
+    dates_to_load = [start_date_to_load, end_date_to_load]
+
+    # ############ #
+    # MAIN PROCESS #
+    # ############ #
+    update_data(load_data=load_data, dates_to_load=dates_to_load, update_all_data=update_all_data, read_data=read_data)
+    sort_data_objects()
+    save_data_objects_checkpoint(save_data=save_data)
+
+    cores_ids = [1]
+    data_ids = [2]
+    data_analysis(cores_ids=cores_ids, data_ids=data_ids)
+    grahps_process()
+    # msg()
+    # data = statistical_process(data=data, algorithm=1)
+
 
 
