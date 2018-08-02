@@ -522,8 +522,15 @@ def data_analysis(cores_ids=None, data_ids=None):
             continue
         else:
             if data_object.information.data_id in data_ids and data_object.information.sensor_id in cores_ids:
-                # TODO (@gabvaztor) Finish
-                pass
+                if not data_object.unique_doid in joined_data_objects:
+                    joined_data_objects[data_object.unique_doid] = data_object
+                else:
+                    joined_data_objects[data_object.unique_doid].join_data_object(data_object)
+
+    if not joined_data_objects:
+        joined_data_objects = data_objects
+
+    for unique_doid, data_object_joined in joined_data_objects.items():
 
 
 

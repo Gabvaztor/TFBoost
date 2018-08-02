@@ -506,3 +506,17 @@ class DataObject():
         self.information.set_info(information_array=data_object.information.array(),
                                   end_date=data_object.information.end_date)
 
+    def d(self, index=None):
+        if index:
+            return np.std(self.y[index])
+        return np.std(self.y)
+
+    def window_sliding_y(self, step_size=1, width=3):
+        return np.hstack(self.y[i:1 + i + i - width:step_size] for i in range(0, width))
+
+    def window_sliding_x(self, step_size=1, width=3):
+        return np.hstack(self.x[i:1 + i + i - width:step_size] for i in range(0, width))
+
+    def window_sliding_pair(self, step_size=1, width=3):
+        return self.window_sliding_x(step_size=step_size, width=width), \
+               self.window_sliding_y(step_size=step_size, width=width)
