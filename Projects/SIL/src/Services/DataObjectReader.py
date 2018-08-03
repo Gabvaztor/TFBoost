@@ -562,14 +562,24 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
     for unique_doid, data_object in joined_data_objects.items():
         data_object_frame = data_object.dataframe()
         # TODO (@gabvaztor) Fix this
-        data_object_frame.plot()
-        data_object_frame.hist()
+        plt.figure()
         pt("std", data_object_frame.std())
-        wind = 20
-        sigma = 2
-        data_object_frame["suelo"] = data_object_frame[0].rolling(window=wind).mean() - (sigma * data_object_frame[0].rolling(window=wind).std())
-        data_object_frame["techo"] = data_object_frame[0].rolling(window=wind).mean() + (sigma * data_object_frame[0].rolling(window=wind).std())
+        wind = 100
+        sigma = 3
+
+        datatype = data_object.information.datatype
+        data_object_frame["Suelo"] = data_object_frame[datatype].rolling(window=wind).mean() - \
+                                     (sigma * data_object_frame[datatype].rolling(window=wind).std())
+        data_object_frame["Techo"] = data_object_frame[datatype].rolling(window=wind).mean() + \
+                                     (sigma * data_object_frame[datatype].rolling(window=wind).std())
+        #data_object_frame.plot()
+        data_object_frame.hist()
         data_object_frame.plot()
+        data_object_frame["Anom"] = data_object_frame.apply(
+            lambda row: row[datatype] if (row[datatype] <= row["Suelo"] or row[datatype] >= row["Techo"]) else 25
+            , axis=1)
+        data_object_frame.plot()
+        pt()
 
 
 
@@ -579,7 +589,7 @@ if __name__ == '__main__':
     # PATHS #
     # ##### #
     miranda_path = "\\\\192.168.1.220\\miranda\\"
-    # miranda_path = "..\\..\\data\\temp\\"
+    miranda_path = "..\\..\\data\\temp\\"
     # miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
     # Save image path
     save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
@@ -598,8 +608,8 @@ if __name__ == '__main__':
     update_all_data = True
     join_data = False
 
-    start_date_to_load = datetime(year=2018, month=7, day=23)
-    end_date_to_load = datetime(year=2018, month=7, day=30) + timedelta(days=1) - timedelta(seconds=1)
+    start_date_to_load = datetime(year=2018, month=7, day=25)
+    end_date_to_load = datetime(year=2018, month=8, day=2) + timedelta(days=1) - timedelta(seconds=1)
     dates_to_load = [start_date_to_load, end_date_to_load]
     if not load_dates:
         dates_to_load.clear()

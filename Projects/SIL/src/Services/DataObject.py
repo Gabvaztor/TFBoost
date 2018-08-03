@@ -523,7 +523,7 @@ class DataObject():
 
     def dataframe(self):
         import pandas
-        columns_data = {"Dates": self.x_array(), self.information.datatype: self.y_array()}
-        dataframe = pandas.DataFrame(data=columns_data)
+        data = {"Date": self.x_array(), self.information.datatype: self.y_array()}
+        dataframe = pandas.DataFrame(data=data).set_index('Date')
         return dataframe
 
