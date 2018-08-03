@@ -194,7 +194,7 @@ class DataObjectReader():
 
         created_data_object = []
 
-        pt("Refresing data...")
+        pt("Refresing data [Core_ID:" + str(self.sensor_type) + "]...")
 
         sorted_paths = []
         sorted_with_dates = []
@@ -248,8 +248,6 @@ class DataObjectReader():
                         pt("File", file)
                         pt("Unique ID", sensor_data_date_id)
                         continue
-
-
                     if ID not in Sensor.sensors_ids():  # sensors_ids must represent all different ids in all types of
                         # sensors
                         continue
@@ -297,9 +295,11 @@ class DataObjectReader():
             sorted_paths: Sorted paths with all paths with interested data.
         """
         global loaded_data_objects_doid
+        global saved_data_objects_doid
         start_date = None
         end_date = None
         data_loaded = False
+        to_delete = []
         if load_data:
             if load_dates:
                 start_date = load_dates[0]
@@ -323,18 +323,21 @@ class DataObjectReader():
                             date_sorted = datetime.strptime(info_sorted[1], "%Y%m%d")
                             if date_sorted == date:
                                 sorted_paths.remove(sorted_path)
+                            if date_sorted < start_date or date_sorted > end_date:
+                                sorted_paths.remove(sorted_path)
                     if sensor_id_data_id_date_string not in loaded_data_objects_doid:
                         pt("Loading data...")
                         data_objects[sensor_id_data_id_date_string] = DataObject().start_load(fullpath=fullpath)
                         loaded_data_objects_doid.append(sensor_id_data_id_date_string)
                         data_loaded = True
                         pt("Data with id [" + sensor_id_data_id_date_string + "] loaded")
+
         return data_loaded
 
 def save_data_objects_checkpoint(save_data=True):
     """
     Args:
-        filename: Filename to save
+        save_data: Filename to save
     """
     global saved_data_objects_doid
     for doid, data_object in data_objects.items():
@@ -508,7 +511,7 @@ def grahps_process():
         #animated_global_sensor = animation.FuncAnimation(figures[1], global_sensor_function, interval=10000000)
 
 
-def data_analysis(cores_ids=None, data_ids=None):
+def data_analysis(cores_ids=None, data_ids=None, join_data=False):
 
     if not cores_ids:
         cores_ids = []
@@ -517,21 +520,56 @@ def data_analysis(cores_ids=None, data_ids=None):
 
     joined_data_objects = {}
 
-    for unique_id, data_object in data_objects.items():
-        if not data_ids:
-            continue
-        else:
+    if cores_ids and data_ids and join_data:  #Join data
+        for unique_id, data_object in data_objects.items():
             if data_object.information.data_id in data_ids and data_object.information.sensor_id in cores_ids:
                 if not data_object.unique_doid in joined_data_objects:
                     joined_data_objects[data_object.unique_doid] = data_object
                 else:
                     joined_data_objects[data_object.unique_doid].join_data_object(data_object)
 
+    def filter_dict_by_id(dictionary, cores_ids=None, data_ids=None):
+
+        to_delete = []
+
+        if not cores_ids:
+            cores_ids = []
+        if not data_ids:
+            data_ids = []
+
+        if cores_ids or data_ids:
+            for unique_id, data_object in dictionary.items():
+                core_id, data_id = int(unique_id.split("_")[0]), int(unique_id.split("_")[1])
+                if core_id not in cores_ids and data_id not in data_ids:
+                    to_delete.append(unique_id)
+                else:
+                    if core_id not in cores_ids:
+                        to_delete.append(unique_id)
+                    elif data_id not in data_ids:
+                        to_delete.append(unique_id)
+
+        # Delete unnecessary data_objects
+        for unique_id in to_delete:
+            del dictionary[unique_id]
+
+        return dictionary
+
     if not joined_data_objects:
         joined_data_objects = data_objects
 
-    for unique_doid, data_object_joined in joined_data_objects.items():
+    joined_data_objects = filter_dict_by_id(dictionary=joined_data_objects, cores_ids=cores_ids, data_ids=data_ids)
 
+    for unique_doid, data_object in joined_data_objects.items():
+        data_object_frame = data_object.dataframe()
+        # TODO (@gabvaztor) Fix this
+        data_object_frame.plot()
+        data_object_frame.hist()
+        pt("std", data_object_frame.std())
+        wind = 20
+        sigma = 2
+        data_object_frame["suelo"] = data_object_frame[0].rolling(window=wind).mean() - (sigma * data_object_frame[0].rolling(window=wind).std())
+        data_object_frame["techo"] = data_object_frame[0].rolling(window=wind).mean() + (sigma * data_object_frame[0].rolling(window=wind).std())
+        data_object_frame.plot()
 
 
 
@@ -553,15 +591,18 @@ if __name__ == '__main__':
     # ######### #
     matplotlib = True
     plotlylib = False
-    read_data = True
+    read_data = False
     load_data = True
     save_data = True
-    load_dates = False
+    load_dates = True
     update_all_data = True
+    join_data = False
 
     start_date_to_load = datetime(year=2018, month=7, day=23)
     end_date_to_load = datetime(year=2018, month=7, day=30) + timedelta(days=1) - timedelta(seconds=1)
     dates_to_load = [start_date_to_load, end_date_to_load]
+    if not load_dates:
+        dates_to_load.clear()
 
     # ############ #
     # MAIN PROCESS #
@@ -572,8 +613,8 @@ if __name__ == '__main__':
 
     cores_ids = [1]
     data_ids = [2]
-    data_analysis(cores_ids=cores_ids, data_ids=data_ids)
-    grahps_process()
+    data_analysis(cores_ids=cores_ids, data_ids=data_ids, join_data=join_data)
+    #grahps_process()
     # msg()
     # data = statistical_process(data=data, algorithm=1)
 
