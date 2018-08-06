@@ -71,7 +71,8 @@ def get_all_sensor_types(actual_sensor_types, path):
             actual_sensor_types.append(sensor_id)
     return actual_sensor_types
 
-def update_data(load_data, dates_to_load=None, update_all_data=True, read_data=True, sensor_types=None):
+def update_data(load_data, dates_to_load=None, update_all_data=True, read_data=True, sensor_types=None,
+                cores_ids=None, data_ids=None):
     sensor_types = []
     #DataObjectReader(path=miranda_path, sensor_type=20, load_data=load_data).read_refresh_data()
 
@@ -82,10 +83,14 @@ def update_data(load_data, dates_to_load=None, update_all_data=True, read_data=T
     else:
         sensor_types = []
     sensor_types.remove(20)
+    for core_id in sensor_types.copy():
+        if core_id not in cores_ids and len(cores_ids) > 0:
+            sensor_types.remove(core_id)
     for sensor_type in sensor_types:
         DataObjectReader(path=miranda_path, sensor_type=sensor_type,
                          load_data=load_data, load_dates=dates_to_load,
-                         read_data=read_data, save_data=True).read_refresh_data()
+                         read_data=read_data, save_data=True,
+                         cores_ids=cores_ids, data_ids=data_ids).read_refresh_data()
     update_data_objects()
     return None
 
@@ -175,9 +180,30 @@ def delete_unused_data_object():
     for doid in to_delete:
         del data_objects[doid]
 
+
+def filter_paths(paths, data_ids, cores_ids, load_dates):
+    if not data_ids:
+        data_ids = []
+    if not cores_ids:
+        cores_ids = []
+    for sorted_path in paths.copy():
+        info_sorted = os.path.splitext(os.path.basename(sorted_path))[0].split("_")
+        sensor_id_sorted = int(info_sorted[0])
+        if cores_ids:
+            if sensor_id_sorted not in cores_ids:
+                paths.remove(sorted_path)
+                continue
+            elif load_dates:
+                end_date = load_dates[1]
+                date_sorted = datetime.strptime(info_sorted[1], "%Y%m%d")
+                if date_sorted <= end_date and sorted_path in paths:
+                    paths.remove(sorted_path)
+
+
+
 class DataObjectReader():
 
-    def __init__(self, path, sensor_type, load_data, save_data, read_data, load_dates):
+    def __init__(self, path, sensor_type, load_data, save_data, read_data, load_dates, cores_ids, data_ids):
         self.path = path
         self.sensor_type = sensor_type
         self.load_data = load_data
@@ -186,6 +212,12 @@ class DataObjectReader():
         if not load_dates:
             load_dates = []
         self.load_dates = load_dates
+        if not cores_ids:
+            cores_ids = []
+        self.cores_ids = cores_ids
+        if not data_ids:
+            data_ids = []
+        self.data_ids = data_ids
 
     def read_refresh_data(self, i=None):
         global data_objects
@@ -209,9 +241,11 @@ class DataObjectReader():
             not_to_save_paths = sorted_paths
         elif sorted_paths:
             not_to_save_paths.append(sorted_paths[-1])
-        data_loaded_flag = self.load_historic_data(sorted_paths, load_dates=self.load_dates)
+        data_loaded_flag = self.load_historic_data(sorted_paths, load_dates=self.load_dates, delete_higher_dates=False,
+                                                   data_ids=self.data_ids, cores_ids=self.cores_ids)
         if not self.read_data:
             sorted_paths.clear()
+        filter_paths(paths=sorted_paths, data_ids=self.data_ids, cores_ids=self.cores_ids, load_dates=self.load_dates)
 
         # Info data
         first_date = None  # To see delta to show data
@@ -248,8 +282,8 @@ class DataObjectReader():
                         pt("File", file)
                         pt("Unique ID", sensor_data_date_id)
                         continue
-                    if ID not in Sensor.sensors_ids():  # sensors_ids must represent all different ids in all types of
-                        # sensors
+                    if ID not in Sensor.sensors_ids() or (ID not in data_ids and data_ids):  # sensors_ids must
+                        # represent all different ids in all types of sensors
                         continue
                     if not sensor_data_date_id in data_objects:  # It means there is a new sensor data type.
                         information = InfoDataObject(sensor_id=self.sensor_type, start_date=date, data_id=ID,
@@ -286,7 +320,8 @@ class DataObjectReader():
                 last_filepath = None
 
 
-    def load_historic_data(self, sorted_paths, load_dates=None):
+    def load_historic_data(self, sorted_paths, load_dates=None, delete_higher_dates=False, data_ids=None,
+                           cores_ids=None):
         """
         First, we get all saved files if exists. After that, we remove the appropiates files in "sorted_paths" to not
         read that file (and not load its data).
@@ -296,10 +331,15 @@ class DataObjectReader():
         """
         global loaded_data_objects_doid
         global saved_data_objects_doid
+
+        if not data_ids:
+            data_ids = []
+        if not cores_ids:
+            cores_ids = []
+
         start_date = None
         end_date = None
         data_loaded = False
-        to_delete = []
         if load_data:
             if load_dates:
                 start_date = load_dates[0]
@@ -310,10 +350,13 @@ class DataObjectReader():
                             datetime.strptime(sensor_id_data_id_date[2], "%Y%m%d")
                 sensor_id_data_id_date_string = sensor_id + "_" + data_id + "_" + sensor_id_data_id_date[2]
                 load_flag = False
+                meets_core_flag = ((int(sensor_id) in cores_ids) or (not cores_ids))
+                meets_data_flag = ((int(data_id) in data_ids) or (not data_ids))
                 if load_dates:
-                    if date >= start_date and date <= end_date and int(sensor_id) == self.sensor_type:
+                    if date >= start_date and date <= end_date and int(sensor_id) == self.sensor_type \
+                            and meets_core_flag and meets_data_flag:
                         load_flag = True
-                elif int(sensor_id) == self.sensor_type:
+                elif int(sensor_id) == self.sensor_type and meets_core_flag and meets_data_flag:
                     load_flag = True
                 if load_flag:
                     for sorted_path in sorted_paths.copy():
@@ -323,8 +366,11 @@ class DataObjectReader():
                             date_sorted = datetime.strptime(info_sorted[1], "%Y%m%d")
                             if date_sorted == date:
                                 sorted_paths.remove(sorted_path)
-                            if date_sorted < start_date or date_sorted > end_date:
+                            if date_sorted < start_date:
                                 sorted_paths.remove(sorted_path)
+                            if delete_higher_dates:
+                                if date_sorted > end_date:
+                                    sorted_paths.remove(sorted_path)
                     if sensor_id_data_id_date_string not in loaded_data_objects_doid:
                         pt("Loading data...")
                         data_objects[sensor_id_data_id_date_string] = DataObject().start_load(fullpath=fullpath)
@@ -494,7 +540,7 @@ def grahps_process():
                     #plt.scatter(x, y, s=s)
                 else:
                     lines = subplot.plot(x, y)
-                    plt.setp(lines, linestyle=':', linewidth=.12, color='red')  # set both to dashed
+                    plt.setp(lines, linestyle=':', linewidth=.2, color='red')  # set both to dashed
 
                     formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
                     subplot.set_ylabel(data_object.label)
@@ -510,6 +556,13 @@ def grahps_process():
         #animated_clamp = animation.FuncAnimation(figures[0], clamp_function, interval=1000000000)
         #animated_global_sensor = animation.FuncAnimation(figures[1], global_sensor_function, interval=10000000)
 
+def save_data_object_graph(path, fig, data_object, actual_time, format=".png"):
+    # Save graph
+    save_path_graph = path + "Graphs\\" + actual_time + "\\" + \
+                      data_object.information.datatype + "(" + data_object.unique_doid_date + ")" + format
+    save_path_graph = check_file_exists_and_change_name(save_path_graph, char="_")
+    pt("path_save", save_path_graph)
+    fig.savefig(fname=save_path_graph, dpi=1000)
 
 def data_analysis(cores_ids=None, data_ids=None, join_data=False):
 
@@ -558,28 +611,98 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
         joined_data_objects = data_objects
 
     joined_data_objects = filter_dict_by_id(dictionary=joined_data_objects, cores_ids=cores_ids, data_ids=data_ids)
+    actual_time = datetime.now().strftime("%Y-%m-%d_%Hh%Mm%Ss")
 
     for unique_doid, data_object in joined_data_objects.items():
-        data_object_frame = data_object.dataframe()
-        # TODO (@gabvaztor) Fix this
-        plt.figure()
-        pt("std", data_object_frame.std())
-        wind = 100
-        sigma = 3
-
         datatype = data_object.information.datatype
-        data_object_frame["Suelo"] = data_object_frame[datatype].rolling(window=wind).mean() - \
-                                     (sigma * data_object_frame[datatype].rolling(window=wind).std())
-        data_object_frame["Techo"] = data_object_frame[datatype].rolling(window=wind).mean() + \
-                                     (sigma * data_object_frame[datatype].rolling(window=wind).std())
-        #data_object_frame.plot()
-        data_object_frame.hist()
-        data_object_frame.plot()
-        data_object_frame["Anom"] = data_object_frame.apply(
-            lambda row: row[datatype] if (row[datatype] <= row["Suelo"] or row[datatype] >= row["Techo"]) else 25
-            , axis=1)
-        data_object_frame.plot()
+        data_object_frame = data_object.dataframe()
+
+        import random
+        wind = random.randint(10, 1000)
+        sigma = random.randint(1, 10)
+        std = data_object_frame.std()[datatype]
+        pt("window", wind)
+        pt("sigma", sigma)
+        pt("std", std)
+
+        from matplotlib.backends.backend_pdf import PdfPages
+        pdf_path = output_path + actual_time + data_object.information.datatype + "(" \
+                   + data_object.unique_doid_date + ")" + ".pdf"
+        n = 0
+        fig = None
+        type_graphs = ["ALL", "", ""]
+        pdf = PdfPages(pdf_path)
+        # TODO (@gabvaztor) Finish
+        for i, element in enumerate(type_graphs):
+            #plot_num = 321
+            #plt.subplot(plot_num)
+            fig = plt.figure(figsize=(10, 10))
+            if i == 0:
+                plt.title("Histogram")
+                ax = plt.gca()
+                data_object_frame.hist(ax=ax)
+            if i == 1:
+                plt.title("Fllor and Ceiling")
+                data_object_frame["Floor"] = data_object_frame[datatype].rolling(window=wind).mean() - \
+                                             (sigma * data_object_frame[datatype].rolling(window=wind).std())
+                data_object_frame["Ceiling"] = data_object_frame[datatype].rolling(window=wind).mean() + \
+                                               (sigma * data_object_frame[datatype].rolling(window=wind).std())
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype])
+                plt.plot(data_object_frame.index.values, data_object_frame["Floor"])
+                plt.plot(data_object_frame.index.values, data_object_frame["Ceiling"])
+            if i == 2:
+                plt.title("Anomalies")
+                data_object_frame["Anomaly"] = data_object_frame.apply(
+                    lambda row: row[datatype] if (
+                            row[datatype] <= row["Floor"] or row[datatype] >= row["Ceiling"]) else 25
+                    , axis=1)
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype])
+                plt.plot(data_object_frame.index.values, data_object_frame["Anomaly"])
+            text = "Windows Size:" + str(wind) + " \n Sigma:" + str(sigma) + " \n Std:" + str(std)
+            plt.text(0.3, 0.95, text, transform=fig.transFigure, size=16)
+            plt.grid(True)
+            #fig.autofmt_xdate()
+            pdf.savefig(fig)
+        pdf.close()
+        plt.close()
+        fig.clear()
+        """
+        for i in range(0):
+            fig = plt.figure(figsize=(15, 15), dpi=1000)
+            n += 1
+            ax = fig.add_subplot(5, 5, n)
+            if i == 0:
+                data_object_frame.plot(ax=ax)
+                #ax.plot(data_object_frame)
+            if i == 2:
+                data_object_frame["Anomaly"] = data_object_frame.apply(
+                    lambda row: row[datatype] if (
+                                row[datatype] <= row["Floor"] or row[datatype] >= row["Ceiling"]) else 25
+                    , axis=1)
+                data_object_frame.plot(ax=ax)
+                #ax.plot(data_object_frame)
+            if i == 1:
+                data_object_frame["Floor"] = data_object_frame[datatype].rolling(window=wind).mean() - \
+                                             (sigma * data_object_frame[datatype].rolling(window=wind).std())
+                data_object_frame["Ceiling"] = data_object_frame[datatype].rolling(window=wind).mean() + \
+                                               (sigma * data_object_frame[datatype].rolling(window=wind).std())
+                data_object_frame.plot(ax=ax)
+
+            #if i == 2:
+            #   data_object_frame.hist(column=datatype, ax=ax)
+            #e = data_object_frame.hist(column=datatype)[0][0]
+            #ax = fig.axes.append(data_object_frame.hist(column=datatype)[0][0])
+            #ax.set_ylim(0, 100)
+            #ax.legend()
+            #ax.yaxis.set_label_text('Excess movement (%)')
+            #plt.setp(ax.xaxis.get_ticklabels(), rotation='45')
+    """
+        """
+        save_data_object_graph(path=output_path, data_object=data_object, actual_time=actual_time,
+                               fig=data_object_frame.plot()[0][0])
+                               
         pt()
+        """
 
 
 
@@ -589,12 +712,13 @@ if __name__ == '__main__':
     # PATHS #
     # ##### #
     miranda_path = "\\\\192.168.1.220\\miranda\\"
-    miranda_path = "..\\..\\data\\temp\\"
+    #miranda_path = "..\\..\\data\\temp\\"
     # miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
     # Save image path
     save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
     checkpoint_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\Checkpoints\\"
     checkpoint_path = "..\\..\\data\\intermediate\\"
+    output_path = "..\\..\\results\\output\\"
 
     # ######### #
     # VARIABLES #
@@ -614,15 +738,17 @@ if __name__ == '__main__':
     if not load_dates:
         dates_to_load.clear()
 
+    cores_ids = [1]
+    data_ids = [2]
+
     # ############ #
     # MAIN PROCESS #
     # ############ #
-    update_data(load_data=load_data, dates_to_load=dates_to_load, update_all_data=update_all_data, read_data=read_data)
+    update_data(load_data=load_data, dates_to_load=dates_to_load, update_all_data=update_all_data, read_data=read_data,
+                cores_ids=cores_ids, data_ids=data_ids)
     sort_data_objects()
     save_data_objects_checkpoint(save_data=save_data)
 
-    cores_ids = [1]
-    data_ids = [2]
     data_analysis(cores_ids=cores_ids, data_ids=data_ids, join_data=join_data)
     #grahps_process()
     # msg()
