@@ -355,7 +355,10 @@ class DataObject():
         if not is_none(self.information.end_date) and not is_none(self.information.start_date):
             try:
                 difference = self.information.end_date - self.information.start_date
-                title_array.append("(" + str(difference.days + 1) + " days)")
+                days = "days"
+                if str(difference.days + 1) == "1":
+                    days = "day"
+                title_array.append("(" + str(difference.days + 1) + " " + days + ")")
             except:
                 pt("Error in dates")
         if not is_none(self.information.sensor_id) and not is_none(self.information.data_id):

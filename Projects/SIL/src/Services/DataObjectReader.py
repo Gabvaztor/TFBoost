@@ -29,7 +29,7 @@ style_list = ['default', 'classic', 'Solarize_Light2', '_classic_test', 'bmh', '
               'seaborn-dark', 'seaborn-dark-palette', 'seaborn-darkgrid', 'seaborn-deep', 'seaborn-muted',
               'seaborn-notebook', 'seaborn-paper', 'seaborn-pastel', 'seaborn-poster', 'seaborn-talk', 'seaborn-ticks',
               'seaborn-white', 'seaborn-whitegrid', 'tableau-colorblind10']
-style_ = style_list[4]
+style_ = style_list[19]
 pt(style_)
 style.use(style=style_)
 
@@ -630,19 +630,20 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                    + data_object.unique_doid_date + ")" + ".pdf"
         n = 0
         fig = None
-        type_graphs = ["ALL", "", ""]
+        type_graphs = ["ALL", "", "", ""]
         pdf = PdfPages(pdf_path)
         # TODO (@gabvaztor) Finish
         for i, element in enumerate(type_graphs):
             #plot_num = 321
             #plt.subplot(plot_num)
-            fig = plt.figure(figsize=(10, 10))
+            fig = plt.figure(figsize=(10, 10), dpi=1000)
+            fig.clf()
             if i == 0:
-                plt.title("Histogram")
+                plt.title("Histogram|" + data_object.title)
                 ax = plt.gca()
                 data_object_frame.hist(ax=ax)
             if i == 1:
-                plt.title("Fllor and Ceiling")
+                plt.title("Floor and Ceiling|" + data_object.title)
                 data_object_frame["Floor"] = data_object_frame[datatype].rolling(window=wind).mean() - \
                                              (sigma * data_object_frame[datatype].rolling(window=wind).std())
                 data_object_frame["Ceiling"] = data_object_frame[datatype].rolling(window=wind).mean() + \
@@ -651,21 +652,34 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.plot(data_object_frame.index.values, data_object_frame["Floor"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Ceiling"])
             if i == 2:
-                plt.title("Anomalies")
+                plt.title("Anomalies|" + data_object.title)
                 data_object_frame["Anomaly"] = data_object_frame.apply(
                     lambda row: row[datatype] if (
                             row[datatype] <= row["Floor"] or row[datatype] >= row["Ceiling"]) else 25
                     , axis=1)
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, data_object_frame["Anomaly"])
-            text = "Windows Size:" + str(wind) + " \n Sigma:" + str(sigma) + " \n Std:" + str(std)
+                plt.plot(data_object_frame.index.values, data_object_frame["Anomaly"], "o")
+
+            #formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
+
+            text = "Windows Size:" + str(wind) + " | Sigma:" + str(sigma) + " | Std:" + "{0:.2f}".format(std)
             plt.text(0.3, 0.95, text, transform=fig.transFigure, size=16)
+            if i == 3:
+                txt = "Correlations"
+                plt.text(0.5, 0.4, txt, horizontalalignment='center', verticalalignment='center',
+                         transform=fig.transFigure, size=16)
+                string_correlation = str(data_object_frame.corr())
+                plt.text(0.5, 0.55, string_correlation, horizontalalignment='center', verticalalignment='center',
+                         transform=fig.transFigure, size=16)
+                #plt.table()
             plt.grid(True)
             #fig.autofmt_xdate()
-            pdf.savefig(fig)
+            pdf.savefig(fig, transparent=True)
+        pt("PDF saved")
         pdf.close()
         plt.close()
         fig.clear()
+        gc.collect()
         """
         for i in range(0):
             fig = plt.figure(figsize=(15, 15), dpi=1000)
@@ -712,7 +726,7 @@ if __name__ == '__main__':
     # PATHS #
     # ##### #
     miranda_path = "\\\\192.168.1.220\\miranda\\"
-    #miranda_path = "..\\..\\data\\temp\\"
+    miranda_path = "..\\..\\data\\temp\\"
     # miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
     # Save image path
     save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
