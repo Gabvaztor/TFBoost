@@ -415,7 +415,6 @@ def histogram(vector, iteration=None, save=False, q=None):
 
     return ret
 
-
 def fourier(data, iteration=None, save=False):
     fft = np.fft.fft(data)
     frequencies = np.fft.fftfreq(data.shape[-1])
@@ -426,7 +425,6 @@ def fourier(data, iteration=None, save=False):
     plt.title("Fourier")
     #plt.ylabel("Normal value --> " + str(ret[1][index]))
     plt.show()
-
 
 def log_transormation(data, iteration, save):
     pt("data", data[1])
@@ -618,19 +616,23 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
         data_object_frame = data_object.dataframe()
 
         import random
-        wind = random.randint(10, 1000)
-        sigma = random.randint(1, 10)
+        wind = random.randint(10, 300)
+        wind = 6
+        sigma = random.uniform(0.7, 3)
         std = data_object_frame.std()[datatype]
         pt("window", wind)
         pt("sigma", sigma)
         pt("std", std)
+
+        from scipy.signal import savgol_filter
+        data_object_frame[datatype] = savgol_filter(data_object_frame[datatype], 59, 6) # window size 51, polynomial order 3
 
         from matplotlib.backends.backend_pdf import PdfPages
         pdf_path = output_path + actual_time + data_object.information.datatype + "(" \
                    + data_object.unique_doid_date + ")" + ".pdf"
         n = 0
         fig = None
-        type_graphs = ["ALL", "", "", ""]
+        type_graphs = ["ALL", "", "", "", "", ""]
         pdf = PdfPages(pdf_path)
         # TODO (@gabvaztor) Finish
         for i, element in enumerate(type_graphs):
@@ -638,79 +640,83 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
             #plt.subplot(plot_num)
             fig = plt.figure(figsize=(10, 10), dpi=1000)
             fig.clf()
+            text = "Windows Size:" + str(wind) + " | Sigma:" + str(sigma) + " | Std:" + "{0:.2f}".format(std)
+            #plt.text(0.2, 0.95, text, transform=fig.transFigure, size=16)
+            fig.suptitle(text, fontsize=14, fontweight='bold')
             if i == 0:
                 plt.title("Histogram|" + data_object.title)
                 ax = plt.gca()
                 data_object_frame.hist(ax=ax)
-            if i == 1:
+                plt.grid(True)
+            elif i == 1:
                 plt.title("Floor and Ceiling|" + data_object.title)
                 data_object_frame["Floor"] = data_object_frame[datatype].rolling(window=wind).mean() - \
                                              (sigma * data_object_frame[datatype].rolling(window=wind).std())
                 data_object_frame["Ceiling"] = data_object_frame[datatype].rolling(window=wind).mean() + \
                                                (sigma * data_object_frame[datatype].rolling(window=wind).std())
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, data_object_frame["Floor"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Ceiling"])
-            if i == 2:
+                data_object_frame.cumsum(axis=1)
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype], label=datatype, linewidth=0.2)
+                plt.plot(data_object_frame.index.values, data_object_frame["Floor"], label="Floor", linewidth=0.05)
+                plt.plot(data_object_frame.index.values, data_object_frame["Ceiling"], label="Ceiling", linewidth=0.05)
+                plt.grid(True)
+                plt.gca().legend()
+            elif i == 2:
                 plt.title("Anomalies|" + data_object.title)
+                min_column = min(data_object_frame[datatype]) - .3
                 data_object_frame["Anomaly"] = data_object_frame.apply(
                     lambda row: row[datatype] if (
-                            row[datatype] <= row["Floor"] or row[datatype] >= row["Ceiling"]) else 25
+                            row[datatype] <= row["Floor"] or row[datatype] >= row["Ceiling"]) else None
                     , axis=1)
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, data_object_frame["Anomaly"], "o")
 
-            #formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
+                s = np.full(len(data_object_frame[datatype]), 0.05)
+                plt.scatter(data_object_frame.index.values, data_object_frame["Anomaly"], s=s, color="r",
+                            label="Anomalies")
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype], label=datatype, linewidth=0.05)
+                plt.grid(False)
+                plt.gca().legend()
+            else:
+                fig, ax = plt.subplots()
+                fig.patch.set_visible(False)
+                ax.axis('off')
+                fig.set_size_inches(8.3, 11.7)
+                if i == 3:
+                    txt = "Correlations"
+                    plt.text(0.5, 0.9, txt, horizontalalignment='center', verticalalignment='center',
+                             transform=fig.transFigure, size=16, color='blue', style='italic')
+                    string_correlation = str(data_object_frame.corr())
+                    plt.text(0.5, 0.55, string_correlation, horizontalalignment='center', verticalalignment='center',
+                             transform=fig.transFigure, size=16)
+                    #plt.table()
+                elif i == 4:
+                    fig.patch.set_visible(False)
+                    txt = "Summary"
+                    plt.text(0.5, 0.9, txt, horizontalalignment='center', verticalalignment='center',
+                             transform=fig.transFigure, size=16, color='blue', style='italic')
+                    string_summary = str(data_object_frame.describe())
+                    plt.text(0.5, 0.5, string_summary, horizontalalignment='center', verticalalignment='center',
+                             transform=fig.transFigure, size=13)
+                elif i == 5:
+                    import statsmodels.api as sm
+                    # pip3 install statsmodels
+                    # pip3 install patsy
+                    fig.patch.set_visible(False)
+                    seconds = data_object.seconds_array()
+                    mod = sm.OLS(seconds, data_object_frame[datatype])
+                    res = mod.fit()
+                    txt = "Stats Model Summary"
+                    plt.text(0.5, 0.9, txt, horizontalalignment='center', verticalalignment='center',
+                             transform=fig.transFigure, size=16, color='blue', style='italic')
+                    string_summary = str(res.summary())
+                    plt.text(0.5, 0.6, string_summary, horizontalalignment='center', verticalalignment='center',
+                             transform=fig.transFigure, size=13)
 
-            text = "Windows Size:" + str(wind) + " | Sigma:" + str(sigma) + " | Std:" + "{0:.2f}".format(std)
-            plt.text(0.3, 0.95, text, transform=fig.transFigure, size=16)
-            if i == 3:
-                txt = "Correlations"
-                plt.text(0.5, 0.4, txt, horizontalalignment='center', verticalalignment='center',
-                         transform=fig.transFigure, size=16)
-                string_correlation = str(data_object_frame.corr())
-                plt.text(0.5, 0.55, string_correlation, horizontalalignment='center', verticalalignment='center',
-                         transform=fig.transFigure, size=16)
-                #plt.table()
-            plt.grid(True)
             #fig.autofmt_xdate()
             pdf.savefig(fig, transparent=True)
-        pt("PDF saved")
+        # formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
+        pt("PDF of data_object [" + unique_doid + "] saved")
+        plt.close("all")
         pdf.close()
-        plt.close()
-        fig.clear()
         gc.collect()
-        """
-        for i in range(0):
-            fig = plt.figure(figsize=(15, 15), dpi=1000)
-            n += 1
-            ax = fig.add_subplot(5, 5, n)
-            if i == 0:
-                data_object_frame.plot(ax=ax)
-                #ax.plot(data_object_frame)
-            if i == 2:
-                data_object_frame["Anomaly"] = data_object_frame.apply(
-                    lambda row: row[datatype] if (
-                                row[datatype] <= row["Floor"] or row[datatype] >= row["Ceiling"]) else 25
-                    , axis=1)
-                data_object_frame.plot(ax=ax)
-                #ax.plot(data_object_frame)
-            if i == 1:
-                data_object_frame["Floor"] = data_object_frame[datatype].rolling(window=wind).mean() - \
-                                             (sigma * data_object_frame[datatype].rolling(window=wind).std())
-                data_object_frame["Ceiling"] = data_object_frame[datatype].rolling(window=wind).mean() + \
-                                               (sigma * data_object_frame[datatype].rolling(window=wind).std())
-                data_object_frame.plot(ax=ax)
-
-            #if i == 2:
-            #   data_object_frame.hist(column=datatype, ax=ax)
-            #e = data_object_frame.hist(column=datatype)[0][0]
-            #ax = fig.axes.append(data_object_frame.hist(column=datatype)[0][0])
-            #ax.set_ylim(0, 100)
-            #ax.legend()
-            #ax.yaxis.set_label_text('Excess movement (%)')
-            #plt.setp(ax.xaxis.get_ticklabels(), rotation='45')
-    """
         """
         save_data_object_graph(path=output_path, data_object=data_object, actual_time=actual_time,
                                fig=data_object_frame.plot()[0][0])
@@ -732,7 +738,7 @@ if __name__ == '__main__':
     save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
     checkpoint_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\Checkpoints\\"
     checkpoint_path = "..\\..\\data\\intermediate\\"
-    output_path = "..\\..\\results\\output\\"
+    output_path = "..\\..\\results\\output\\PDFs\\"
 
     # ######### #
     # VARIABLES #
@@ -747,7 +753,7 @@ if __name__ == '__main__':
     join_data = False
 
     start_date_to_load = datetime(year=2018, month=7, day=25)
-    end_date_to_load = datetime(year=2018, month=8, day=2) + timedelta(days=1) - timedelta(seconds=1)
+    end_date_to_load = datetime(year=2018, month=7, day=25) + timedelta(days=1) - timedelta(seconds=1)
     dates_to_load = [start_date_to_load, end_date_to_load]
     if not load_dates:
         dates_to_load.clear()

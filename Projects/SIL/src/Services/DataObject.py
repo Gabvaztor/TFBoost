@@ -530,3 +530,22 @@ class DataObject():
         dataframe = pandas.DataFrame(data=data).set_index('Date')
         return dataframe
 
+    @property
+    def datatype(self):
+        return self.information.datatype
+
+    @property
+    def core_id(self):
+        return self.information.sensor_id
+
+    @property
+    def data_id(self):
+        return self.information.data_id
+
+    def seconds_array(self, index=None):
+        if index:
+            pass
+        else:
+            return np.asarray([second_from_datatime(datetime=datetime) for datetime in self.x])
+
+

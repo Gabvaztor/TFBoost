@@ -576,3 +576,6 @@ def check_file_exists_and_change_name(path, char="", index=None):
 def filename_and_extension_from_fullpath(fullpath):
     filename, extension = os.path.splitext(fullpath)[0], os.path.splitext(fullpath)[1]
     return filename, extension
+
+def second_from_datatime(datetime, format="%Y-%m-%d %H:%M:%S"):
+    return (datetime.hour * 3600) + (datetime.minute * 60) + datetime.second
