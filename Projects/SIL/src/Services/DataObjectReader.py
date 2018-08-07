@@ -624,9 +624,6 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
         pt("sigma", sigma)
         pt("std", std)
 
-        from scipy.signal import savgol_filter
-        data_object_frame[datatype] = savgol_filter(data_object_frame[datatype], 59, 6) # window size 51, polynomial order 3
-
         from matplotlib.backends.backend_pdf import PdfPages
         pdf_path = output_path + actual_time + data_object.information.datatype + "(" \
                    + data_object.unique_doid_date + ")" + ".pdf"
