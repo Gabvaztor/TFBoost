@@ -548,4 +548,3 @@ class DataObject():
         else:
             return np.asarray([second_from_datatime(datetime=datetime) for datetime in self.x])
 
-
