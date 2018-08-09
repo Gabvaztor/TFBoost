@@ -579,3 +579,8 @@ def filename_and_extension_from_fullpath(fullpath):
 
 def second_from_datatime(datetime, format="%Y-%m-%d %H:%M:%S"):
     return (datetime.hour * 3600) + (datetime.minute * 60) + datetime.second
+
+def transform_to_list(array):
+    if isinstance(array, list):
+        array = list(array)
+    return array

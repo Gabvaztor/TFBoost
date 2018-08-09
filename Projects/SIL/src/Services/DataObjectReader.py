@@ -6,7 +6,8 @@ from Projects.SIL.src.DTO.Luminosity import Luminosity
 from Projects.SIL.src.DTO.Presence import Presence
 from Projects.SIL.src.DTO.Temperature import Temperature
 from UsefulTools.UtilsFunctions import pt, printProgressBar, get_files_from_path, create_directory_from_fullpath, \
-    file_exists_in_path_or_create_path, is_none, check_file_exists_and_change_name, filename_and_extension_from_fullpath
+    file_exists_in_path_or_create_path, is_none, check_file_exists_and_change_name, \
+    filename_and_extension_from_fullpath, transform_to_list
 from AsynchronousThreading import execute_asynchronous_thread
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -562,6 +563,34 @@ def save_data_object_graph(path, fig, data_object, actual_time, format=".png"):
     pt("path_save", save_path_graph)
     fig.savefig(fname=save_path_graph, dpi=1000)
 
+
+def filter_changes_list(changes, values, top_limit=None, bottom_limit=None):
+    """
+
+    Args:
+        changes:
+        values:
+        top_limit:
+        bottom_limit:
+
+    Returns:
+
+    """
+    changes = transform_to_list(changes)
+    values = transform_to_list(values)
+    for change_index in changes.copy():
+        value = values[change_index]
+        if not is_none(top_limit) and not is_none(bottom_limit):
+            top_limit = transform_to_list(top_limit)
+            bottom_limit = transform_to_list(bottom_limit)
+            top_value = top_limit[change_index]
+            bottom_value = bottom_limit[change_index]
+            if value > bottom_value and value < top_value:
+                changes.remove(change_index)
+        else:
+            break
+    return changes
+
 def data_analysis(cores_ids=None, data_ids=None, join_data=False):
 
     if not cores_ids:
@@ -635,7 +664,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                    + data_object.unique_doid_date + ")" + ".pdf"
         n = 0
         fig = None
-        type_graphs = [""] * 20
+        type_graphs = [""] * 24
         pdf = PdfPages(pdf_path)
         # TODO (@gabvaztor) Finish
         for i, element in enumerate(type_graphs):
@@ -698,17 +727,26 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 gaps = np.diff(large) > window
                 begins = np.insert(large[1:][gaps], 0, large[0])
                 ends = np.append(large[:-1][gaps], large[-1])
-                changes = ((begins + ends) / 2).astype(np.int)
+                changes = list(((begins + ends) / 2).astype(np.int))
                 pt("changes", changes)
 
                 index_series = 0
 
-                def value_update_i(value, list):
+                def value_update_i(value, list, top_limit=None, bottom_limit=None):
                     nonlocal index_series
                     value_return = None
+                    index = -1
                     if index_series in list:
+                        index = list.index(index_series)
                         value_return = value
-                    index_series += 1
+                        if top_limit and bottom_limit:
+                            if value_return > bottom_limit and value_return < top_limit:
+                                value_return = None
+                    # Check if last element
+                    if len(list) - 1 == index:
+                        index_series = 0
+                    else:
+                        index_series += 1
                     return value_return
 
                 data_object_frame["Events"] = data_object_frame.apply(
@@ -722,9 +760,10 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 s = np.asarray(data_object_frame[datatype].tolist())
                 a_sign = np.sign(s)
                 sign_change = ((np.roll(a_sign, 1) - a_sign) != 0).astype(int)
-                changes = np.nonzero(sign_change == 1)
+                changes = list(np.nonzero(sign_change == 1))
                 data_object_frame["Events2"] = data_object_frame.apply(
                     lambda row: value_update_i(value=row[datatype], list=changes), axis=1)
+                index_series = 0
                 pt("changes2", changes)
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype])
                 plt.plot(data_object_frame.index.values, data_object_frame["Events2"], 'ro')
@@ -765,23 +804,77 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.gca().legend()
             elif i == 16:
                 g = np.gradient(data_object_frame["Filtered_Interpolated"])
-                pt("Gradients_Filtered_Interpolated", g)
                 data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Gradients_Filtered_Interpolated"])
                 plt.gca().legend()
             elif i == 17:
                 g = np.gradient(data_object_frame[datatype])
-                pt("grandients", g)
                 data_object_frame["Gradients"] = np.gradient(data_object_frame[datatype])
                 plt.plot(data_object_frame.index.values, data_object_frame["Gradients"])
                 plt.gca().legend()
             elif i == 18:
-                data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame[datatype])
-                # TODO (@gabvaztor) With sign, we can find which elements changes of gradient, and with that, we
-                # can create the good graph. USE i = 10
-
+                data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
                 sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Gradients_Filtered_Interpolated"])
+                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                changes = list(np.nonzero(sign_change == 1)[0])
+                data_object_frame["Events2"] = data_object_frame.apply(
+                    lambda row: value_update_i(value=row["Filtered_Interpolated"], list=changes), axis=1)
+                index_series = 0
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
+                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "ro")
+                plt.gca().legend()
+            elif i == 19:
+                data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
+                sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
+                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                changes = list(np.nonzero(sign_change == 1)[0])
+
+                mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
+                lent = len(data_object_frame.index)
+                data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (
+                            1 * data_object_frame["Filtered_Interpolated"].std()))
+                data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (
+                            1 * data_object_frame["Filtered_Interpolated"].std()))
+                data_object_frame["Events2"] = data_object_frame.apply(
+                    lambda row: value_update_i(value=row["Filtered_Interpolated"], list=changes,
+                                               top_limit=row["Ceiling_savgol_filter"],
+                                               bottom_limit=row["Floor_savgol_filter"]), axis=1)
+
+                index_series = 0
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
+                plt.plot(data_object_frame.index.values, data_object_frame["Floor_savgol_filter"])
+                plt.plot(data_object_frame.index.values, data_object_frame["Ceiling_savgol_filter"])
+                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "ro")
+                plt.gca().legend()
+            elif i == 20:
+                data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
+                sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
+                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                changes = list(np.nonzero(sign_change == 1)[0])
+                data_object_frame["Events_1"] = data_object_frame.apply(
+                    lambda row: value_update_i(value=row["Filtered"], list=changes), axis=1)
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"])
+                plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "ro")
+                plt.gca().legend()
+            elif i == 21:
+                data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
+                mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
+                lent = len(data_object_frame.index)
+                data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (
+                            1 * data_object_frame["Filtered_Interpolated"].std()))
+                data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (
+                            1 * data_object_frame["Filtered_Interpolated"].std()))
+                sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
+                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                changes = list(np.nonzero(sign_change == 1)[0])
+                changes = filter_changes_list(changes=changes, values=data_object_frame["Filtered_Interpolated"],
+                                              top_limit=data_object_frame["Ceiling_savgol_filter"],
+                                              bottom_limit=data_object_frame["Floor_savgol_filter"])
+                data_object_frame["Events_1"] = data_object_frame.apply(
+                    lambda row: value_update_i(value=row["Filtered"], list=changes), axis=1)
+                index_series = 0
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"])
+                plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "ro")
                 plt.gca().legend()
             else:
                 fig, ax = plt.subplots()
@@ -823,6 +916,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
             pdf.savefig(fig, transparent=True)
         # formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
         pt("PDF of data_object [" + unique_doid + "] saved")
+        fig.clear()
         plt.close("all")
         pdf.close()
         gc.collect()
