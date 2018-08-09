@@ -647,13 +647,14 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
         from scipy.signal import savgol_filter
         data_object_frame["Filtered"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3)
         data_object_frame["Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=99, polyorder=3, deriv=2, delta=.5)
-        data_object_frame["Filtered_Interpolated"] = savgol_filter(data_object_frame["Filtered"], window_length=199, polyorder=3, deriv=2, delta=1)
+        data_object_frame["Filtered_Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3, deriv=2, delta=1)
         data_object_frame["savgol_filter"] = savgol_filter(data_object_frame[datatype], window_length=3, polyorder=2, deriv=2)
 
         import random
         wind = random.randint(10, 300)
         wind = 6
         sigma = random.uniform(0.7, 3)
+        sigma = 0.4
         std = data_object_frame.std()[datatype]
         pt("window", wind)
         pt("sigma", sigma)
@@ -776,8 +777,8 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 percent2 = 0.8
                 mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
                 lent = len(data_object_frame.index)
-                data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (1 * data_object_frame["Filtered_Interpolated"].std()))
-                data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (1 * data_object_frame["Filtered_Interpolated"].std()))
+                data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (sigma * data_object_frame["Filtered_Interpolated"].std()))
+                data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (sigma * data_object_frame["Filtered_Interpolated"].std()))
                 data_object_frame["Mean_savgol_filter"] = np.full(shape=lent, fill_value=mean)
                 data_object_frame["Anomaly_savgol_filter"] = data_object_frame.apply(
                     lambda row: row["Filtered_Interpolated"] if (
@@ -832,9 +833,9 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
                 lent = len(data_object_frame.index)
                 data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (
-                            1 * data_object_frame["Filtered_Interpolated"].std()))
+                        sigma * data_object_frame["Filtered_Interpolated"].std()))
                 data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (
-                            1 * data_object_frame["Filtered_Interpolated"].std()))
+                        sigma * data_object_frame["Filtered_Interpolated"].std()))
                 data_object_frame["Events2"] = data_object_frame.apply(
                     lambda row: value_update_i(value=row["Filtered_Interpolated"], list=changes,
                                                top_limit=row["Ceiling_savgol_filter"],
@@ -853,6 +854,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 changes = list(np.nonzero(sign_change == 1)[0])
                 data_object_frame["Events_1"] = data_object_frame.apply(
                     lambda row: value_update_i(value=row["Filtered"], list=changes), axis=1)
+                index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "ro")
                 plt.gca().legend()
@@ -861,9 +863,9 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
                 lent = len(data_object_frame.index)
                 data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (
-                            1 * data_object_frame["Filtered_Interpolated"].std()))
+                        sigma * data_object_frame["Filtered_Interpolated"].std()))
                 data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (
-                            1 * data_object_frame["Filtered_Interpolated"].std()))
+                            sigma * data_object_frame["Filtered_Interpolated"].std()))
                 sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
                 sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
                 changes = list(np.nonzero(sign_change == 1)[0])
@@ -873,7 +875,8 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 data_object_frame["Events_1"] = data_object_frame.apply(
                     lambda row: value_update_i(value=row["Filtered"], list=changes), axis=1)
                 index_series = 0
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"])
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], alpha=0.3)
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype])
                 plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "ro")
                 plt.gca().legend()
             else:
