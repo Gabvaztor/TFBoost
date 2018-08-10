@@ -641,20 +641,21 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
     actual_time = datetime.now().strftime("%Y-%m-%d_%Hh%Mm%Ss")
 
     for unique_doid, data_object in joined_data_objects.items():
+        pt("Generating PDF of [" + str(unique_doid) + "]...")
         datatype = data_object.information.datatype
         data_object_frame = data_object.dataframe()
 
         from scipy.signal import savgol_filter
         data_object_frame["Filtered"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3)
         data_object_frame["Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=99, polyorder=3, deriv=2, delta=.5)
-        data_object_frame["Filtered_Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3, deriv=2, delta=1)
+        data_object_frame["Filtered_Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3, deriv=2, delta=0.5)
         data_object_frame["savgol_filter"] = savgol_filter(data_object_frame[datatype], window_length=3, polyorder=2, deriv=2)
 
         import random
         wind = random.randint(10, 300)
         wind = 6
         sigma = random.uniform(0.7, 3)
-        sigma = 0.4
+        sigma = 0.5
         std = data_object_frame.std()[datatype]
         pt("window", wind)
         pt("sigma", sigma)
@@ -667,8 +668,8 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
         fig = None
         type_graphs = [""] * 24
         pdf = PdfPages(pdf_path)
-        # TODO (@gabvaztor) Finish
         for i, element in enumerate(type_graphs):
+
             #plot_num = 321
             #plt.subplot(plot_num)
             fig = plt.figure(figsize=(10, 10), dpi=1000)
@@ -875,8 +876,8 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 data_object_frame["Events_1"] = data_object_frame.apply(
                     lambda row: value_update_i(value=row["Filtered"], list=changes), axis=1)
                 index_series = 0
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], alpha=0.3)
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype])
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], )
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
                 plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "ro")
                 plt.gca().legend()
             else:
@@ -959,7 +960,7 @@ if __name__ == '__main__':
     join_data = False
 
     start_date_to_load = datetime(year=2018, month=7, day=25)
-    end_date_to_load = datetime(year=2018, month=7, day=25) + timedelta(days=1) - timedelta(seconds=1)
+    end_date_to_load = datetime(year=2018, month=7, day=31) + timedelta(days=1) - timedelta(seconds=1)
     dates_to_load = [start_date_to_load, end_date_to_load]
     if not load_dates:
         dates_to_load.clear()
