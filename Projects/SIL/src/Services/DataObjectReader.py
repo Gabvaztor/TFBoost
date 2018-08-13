@@ -880,6 +880,9 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
                 plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "ro")
                 plt.gca().legend()
+            elif i == 22:
+                # TODO (@gabvaztor) Do i=18 to raw data. Check events and filter with gradient and % of change.
+                pass
             else:
                 fig, ax = plt.subplots()
                 fig.patch.set_visible(False)
