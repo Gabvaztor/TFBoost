@@ -674,6 +674,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
             #plt.subplot(plot_num)
             fig = plt.figure(figsize=(10, 10), dpi=1000)
             fig.clf()
+            fig.text(4.25 / 8.5, 0.5 / 11., str(i + 1), ha='center', fontsize=8)
             text = "Windows Size:" + str(wind) + " | Sigma:" + str(sigma) + " | Std:" + "{0:.2f}".format(std)
             #plt.text(0.2, 0.95, text, transform=fig.transFigure, size=16)
             fig.suptitle(text, fontsize=14, fontweight='bold')
@@ -882,12 +883,50 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.gca().legend()
             elif i == 22:
                 # TODO (@gabvaztor) Do i=18 to raw data. Check events and filter with gradient and % of change.
-                pass
+                data_object_frame["Gradients_Raw"] = np.gradient(
+                    data_object_frame[datatype])
+                sign = np.sign(data_object_frame["Gradients_Raw"])
+                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                changes = list(np.nonzero(sign_change == 1)[0])
+                data_object_frame["Events3"] = data_object_frame.apply(
+                    lambda row: value_update_i(value=row[datatype], list=changes), axis=1)
+                index_series = 0
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype], "blue")
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "green", alpha=0.5)
+                plt.plot(data_object_frame.index.values, data_object_frame["Events3"], "ro")
+                plt.gca().legend()
+            elif i == 23:
+                data_object_frame["Gradients_Raw"] = np.gradient(
+                    data_object_frame[datatype])
+
+                mean = data_object_frame[datatype].median(axis=0)
+                lent = len(data_object_frame.index)
+                std_ = data_object_frame[datatype].std()
+                # TODO (@gabvaztor) Change floor and ceiling to be a curve across datatype
+                floor_raw = np.full(shape=lent, fill_value=(mean - (sigma * std_)))
+                ceiling_raw = np.full(shape=lent, fill_value=(mean + (sigma * std_)))
+
+                sign = np.sign(data_object_frame["Gradients_Raw"])
+                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                changes = list(np.nonzero(sign_change == 1)[0])
+                changes = filter_changes_list(changes=changes, values=data_object_frame[datatype],
+                                              top_limit=ceiling_raw,
+                                              bottom_limit=floor_raw)
+                data_object_frame["Events4"] = data_object_frame.apply(
+                    lambda row: value_update_i(value=row[datatype], list=changes), axis=1)
+                index_series = 0
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype], "blue")
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "green", alpha=0.5)
+                plt.plot(data_object_frame.index.values, data_object_frame["Events4"], "ro")
+                plt.plot(data_object_frame.index.values, ceiling_raw, label="Ceiling_raw")
+                plt.plot(data_object_frame.index.values, floor_raw, label="Floor_raw")
+                plt.gca().legend()
             else:
                 fig, ax = plt.subplots()
                 fig.patch.set_visible(False)
                 ax.axis('off')
                 fig.set_size_inches(8.3, 11.7)
+                plt.text(4.25 / 8.5, 0.5 / 11., str(i + 1), ha='center', fontsize=8)
                 if i == 3:
                     txt = "Correlations"
                     plt.text(0.5, 0.9, txt, horizontalalignment='center', verticalalignment='center',
@@ -963,7 +1002,8 @@ if __name__ == '__main__':
     join_data = False
 
     start_date_to_load = datetime(year=2018, month=7, day=25)
-    end_date_to_load = datetime(year=2018, month=7, day=31) + timedelta(days=1) - timedelta(seconds=1)
+    end_date_to_load = datetime(year=2018, month=7, day=25) + timedelta(days=1) - timedelta(seconds=1)
+    #end_date_to_load = datetime(year=2018, month=7, day=31) + timedelta(days=1) - timedelta(seconds=1)
     dates_to_load = [start_date_to_load, end_date_to_load]
     if not load_dates:
         dates_to_load.clear()
