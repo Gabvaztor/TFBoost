@@ -927,6 +927,15 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.gca().legend()
             elif i == 24:
                 # TODO (@gabvaztor) All process
+                # 1 - RAW
+                # 2 - Filtered Interpolated / Raw interpolated
+                # 3:
+                #   3.1 Gradient
+                #   3.2 Sign
+                #   3.3 Changes
+                #   3.4 Mean
+                #   3.5 Std()
+                # 4 - Changes filtered by percent and floor and ceiling
                 pass
             else:
                 fig, ax = plt.subplots()
