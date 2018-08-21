@@ -564,7 +564,7 @@ def save_data_object_graph(path, fig, data_object, actual_time, format=".png"):
     fig.savefig(fname=save_path_graph, dpi=1000)
 
 
-def filter_changes_list(changes, values, top_limit=None, bottom_limit=None):
+def filter_changes_list(changes, values, top_limit=None, bottom_limit=None, percent=None):
     """
 
     Args:
@@ -572,12 +572,13 @@ def filter_changes_list(changes, values, top_limit=None, bottom_limit=None):
         values:
         top_limit:
         bottom_limit:
-
+        percent:
     Returns:
 
     """
     changes = transform_to_list(changes)
     values = transform_to_list(values)
+    last_value = None
     for change_index in changes.copy():
         value = values[change_index]
         if not is_none(top_limit) and not is_none(bottom_limit):
@@ -587,8 +588,11 @@ def filter_changes_list(changes, values, top_limit=None, bottom_limit=None):
             bottom_value = bottom_limit[change_index]
             if value > bottom_value and value < top_value:
                 changes.remove(change_index)
-        else:
-            break
+        if not is_none(percent):
+            if not is_none(last_value):
+                # El porcentaje se hace a la diferencia en el grado de inclinación de la derivada entre el valor actual y el anterior
+                pass
+        last_value = value
     return changes
 
 def data_analysis(cores_ids=None, data_ids=None, join_data=False):
@@ -666,7 +670,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                    + data_object.unique_doid_date + ")" + ".pdf"
         n = 0
         fig = None
-        type_graphs = [""] * 24
+        type_graphs = [""] * 25
         pdf = PdfPages(pdf_path)
         for i, element in enumerate(type_graphs):
 
@@ -797,16 +801,15 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
             elif i == 13:
                 #plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"].resample(), style=':')
                 #plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"].asfreq(), style='--')
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"], alpha=0.5)
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
                 plt.gca().legend()
             elif i == 14:
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype].pct_change(), alpha=0.5)
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype].pct_change())
                 plt.gca().legend()
             elif i == 15:
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype].pct_change(periods=30), alpha=0.7)
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype].pct_change(periods=30))
                 plt.gca().legend()
             elif i == 16:
-                g = np.gradient(data_object_frame["Filtered_Interpolated"])
                 data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Gradients_Filtered_Interpolated"])
                 plt.gca().legend()
@@ -847,7 +850,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Floor_savgol_filter"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Ceiling_savgol_filter"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "ro")
+                #plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "ro")
                 plt.gca().legend()
             elif i == 20:
                 data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
@@ -871,6 +874,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
                 sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
                 changes = list(np.nonzero(sign_change == 1)[0])
+
                 changes = filter_changes_list(changes=changes, values=data_object_frame["Filtered_Interpolated"],
                                               top_limit=data_object_frame["Ceiling_savgol_filter"],
                                               bottom_limit=data_object_frame["Floor_savgol_filter"])
@@ -921,6 +925,9 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.plot(data_object_frame.index.values, ceiling_raw, label="Ceiling_raw")
                 plt.plot(data_object_frame.index.values, floor_raw, label="Floor_raw")
                 plt.gca().legend()
+            elif i == 24:
+                # TODO (@gabvaztor) All process
+                pass
             else:
                 fig, ax = plt.subplots()
                 fig.patch.set_visible(False)
