@@ -648,7 +648,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
         pt("Generating PDF of [" + str(unique_doid) + "]...")
         datatype = data_object.information.datatype
         data_object_frame = data_object.dataframe()
-
+        raw_data = data_object.y_array()
         from scipy.signal import savgol_filter
         data_object_frame["Filtered"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3)
         data_object_frame["Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=99, polyorder=3, deriv=2, delta=.5)
@@ -739,18 +739,19 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
 
                 index_series = 0
 
-                def value_update_i(value, list, top_limit=None, bottom_limit=None):
+                def value_update_i(indexes, value=None, values=None, top_limit=None, bottom_limit=None):
+                    # TODO (@gabvaztor) Do this with values
                     nonlocal index_series
                     value_return = None
                     index = -1
-                    if index_series in list:
-                        index = list.index(index_series)
+                    if index_series in indexes:
+                        index = indexes.index(index_series)
                         value_return = value
                         if top_limit and bottom_limit:
                             if value_return > bottom_limit and value_return < top_limit:
                                 value_return = None
                     # Check if last element
-                    if len(list) - 1 == index:
+                    if len(indexes) - 1 == index:
                         index_series = 0
                     else:
                         index_series += 1
@@ -936,7 +937,39 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 #   3.4 Mean
                 #   3.5 Std()
                 # 4 - Changes filtered by percent and floor and ceiling
-                pass
+                """
+                RAW
+                """
+                raw_data = raw_data
+                """
+                FILTERED INTERPOLATED with Savgol_filter 
+                We must 
+                """
+                filtered_interpolated = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=2, delta=0.5)
+                filtered = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3)
+                gradients = np.gradient(filtered_interpolated)
+                mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
+                mean2 = filtered_interpolated.mean(axis=0)
+                lent = len(data_object_frame.index)
+                std1 = filtered_interpolated.std()
+                std = data_object_frame["Filtered_Interpolated"].std()
+                floor_savgol_filter = np.full(shape=lent, fill_value=mean2 - (sigma * std1))
+                ceiling_savgol_filter = np.full(shape=lent, fill_value=mean2 + (sigma * std1))
+                sign = np.sign(gradients)
+                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                changes = list(np.nonzero(sign_change == 1)[0])
+
+                changes = filter_changes_list(changes=changes, values=filtered_interpolated,
+                                              top_limit=ceiling_savgol_filter,
+                                              bottom_limit=floor_savgol_filter)
+                events_1 = [value_update_i(value=x, list=changes, ) for x in filtered]
+                data_object_frame["Events_1"] = data_object_frame.apply(
+                    lambda row: value_update_i(value=row["Filtered"], list=changes), axis=1)
+                index_series = 0
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "black")
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
+                plt.plot(data_object_frame.index.values, events_1, "ro")
+                plt.gca().legend()
             else:
                 fig, ax = plt.subplots()
                 fig.patch.set_visible(False)
