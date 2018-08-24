@@ -595,6 +595,90 @@ def filter_changes_list(changes, values, top_limit=None, bottom_limit=None, perc
         last_value = value
     return changes
 
+index_series = 0
+
+def value_update_i(indexes, value=None, values=None, top_limit=None, bottom_limit=None):
+    # TODO (@gabvaztor) Do this with values
+    #nonlocal index_series
+    global index_series
+    value_return = None
+    index = -1
+    if index_series in indexes:
+        index = indexes.index(index_series)
+        value_return = value
+        if top_limit and bottom_limit:
+            if value_return > bottom_limit and value_return < top_limit:
+                value_return = None
+    # Check if last element
+    if len(indexes) - 1 <= index or index_series > max(indexes):
+        index_series = 0
+    else:
+        index_series += 1
+    return value_return
+
+
+def update_events_with_new_values(analyzed_values, events, values):
+    """
+    Add or remove values and events if "analyzed_values" contains interesting values.
+    Must add or remove in both "events" and "values" arrays.
+    Args:
+        analyzed_values: All analyzed values
+        events: Position of actual interesting values
+        values: All actual values
+    """
+    # TODO(@gabvaztor) Finsih
+    # Gradients
+    gradients = np.gradient(analyzed_values)
+    sign = np.sign(gradients)
+    sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+    new_events = list(np.nonzero(sign_change == 1)[0])
+    events_list = []
+    for i, value in enumerate(analyzed_values):
+        if i in new_events:
+            events_list.append(value)
+        else:
+            events_list.append(None)
+
+
+def find_exceptional_events(events, values):
+    """
+    Detect new events. From events array, it tries to find past or subsequent events. This will check past values and,
+    if its value has a percent of change and its derivate is interesting (...).
+    Args:
+        events: Actual interesting events
+        values: Event values
+
+    Returns: Actual events with new events
+
+    """
+    values_len = len(values)
+    actual_values = []  # This array contains the analyzed values
+    for event in events.copy():
+        analyze_flag = False
+        place_value = values[event]
+        actual_values.append(place_value)  # First value
+        while True:
+            # Check if analyze_flag must be true or false. For example, is delta time is higher than X
+            # checks()
+            count = 0  # Number of saved values
+            if event - 1 >= 0: # Get past values
+                actual_event = event - 1
+                actual_value = values[actual_event]
+                actual_values.append(actual_value)
+                count += 1
+            else:
+                if len(actual_values) > 1:
+                    analyze_flag = True
+                break
+            if count > 10:
+                analyze_flag = True
+                break
+        if analyze_flag:
+
+            update_events_with_new_values(analyzed_values=actual_values, events=events, values=values)
+
+    return events
+
 def data_analysis(cores_ids=None, data_ids=None, join_data=False):
 
     if not cores_ids:
@@ -655,6 +739,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
         data_object_frame["Filtered_Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3, deriv=2, delta=0.5)
         data_object_frame["savgol_filter"] = savgol_filter(data_object_frame[datatype], window_length=3, polyorder=2, deriv=2)
 
+        global index_series
         import random
         wind = random.randint(10, 300)
         wind = 6
@@ -737,29 +822,8 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 changes = list(((begins + ends) / 2).astype(np.int))
                 pt("changes", changes)
 
-                index_series = 0
-
-                def value_update_i(indexes, value=None, values=None, top_limit=None, bottom_limit=None):
-                    # TODO (@gabvaztor) Do this with values
-                    nonlocal index_series
-                    value_return = None
-                    index = -1
-                    if index_series in indexes:
-                        index = indexes.index(index_series)
-                        value_return = value
-                        if top_limit and bottom_limit:
-                            if value_return > bottom_limit and value_return < top_limit:
-                                value_return = None
-                    # Check if last element
-                    if len(indexes) - 1 == index:
-                        index_series = 0
-                    else:
-                        index_series += 1
-                    return value_return
-
                 data_object_frame["Events"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row[datatype], list=changes), axis=1)
-                pt("index", index_series)
+                    lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype])
                 plt.plot(data_object_frame.index.values, data_object_frame["Events"], 'ro')
@@ -770,7 +834,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 sign_change = ((np.roll(a_sign, 1) - a_sign) != 0).astype(int)
                 changes = list(np.nonzero(sign_change == 1))
                 data_object_frame["Events2"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row[datatype], list=changes), axis=1)
+                    lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
                 index_series = 0
                 pt("changes2", changes)
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype])
@@ -792,6 +856,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                             row["Filtered_Interpolated"] <= row["Floor_savgol_filter"]
                             or row["Filtered_Interpolated"] >= row["Ceiling_savgol_filter"]) else None
                     , axis=1)
+                index_series = 0
                 #plt.plot(data_object_frame.index.values, data_object_frame[datatype])
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Floor_savgol_filter"])
@@ -825,7 +890,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
                 changes = list(np.nonzero(sign_change == 1)[0])
                 data_object_frame["Events2"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row["Filtered_Interpolated"], list=changes), axis=1)
+                    lambda row: value_update_i(value=row["Filtered_Interpolated"], indexes=changes), axis=1)
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "ro")
@@ -843,10 +908,9 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (
                         sigma * data_object_frame["Filtered_Interpolated"].std()))
                 data_object_frame["Events2"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row["Filtered_Interpolated"], list=changes,
+                    lambda row: value_update_i(value=row["Filtered_Interpolated"], indexes=changes,
                                                top_limit=row["Ceiling_savgol_filter"],
                                                bottom_limit=row["Floor_savgol_filter"]), axis=1)
-
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Floor_savgol_filter"])
@@ -859,7 +923,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
                 changes = list(np.nonzero(sign_change == 1)[0])
                 data_object_frame["Events_1"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row["Filtered"], list=changes), axis=1)
+                    lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "ro")
@@ -880,7 +944,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                                               top_limit=data_object_frame["Ceiling_savgol_filter"],
                                               bottom_limit=data_object_frame["Floor_savgol_filter"])
                 data_object_frame["Events_1"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row["Filtered"], list=changes), axis=1)
+                    lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], )
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
@@ -894,7 +958,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
                 changes = list(np.nonzero(sign_change == 1)[0])
                 data_object_frame["Events3"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row[datatype], list=changes), axis=1)
+                    lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype], "blue")
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "green", alpha=0.5)
@@ -918,7 +982,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                                               top_limit=ceiling_raw,
                                               bottom_limit=floor_raw)
                 data_object_frame["Events4"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row[datatype], list=changes), axis=1)
+                    lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype], "blue")
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "green", alpha=0.5)
@@ -948,27 +1012,37 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 filtered_interpolated = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=2, delta=0.5)
                 filtered = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3)
                 gradients = np.gradient(filtered_interpolated)
-                mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
+                median = data_object_frame["Filtered_Interpolated"].median(axis=0)
+                median2 = np.median(filtered_interpolated, axis=0)
+                median3 = np.median(filtered_interpolated)
+                mean = data_object_frame["Filtered_Interpolated"].mean(axis=0)
                 mean2 = filtered_interpolated.mean(axis=0)
+                mean3 = filtered_interpolated.mean()
                 lent = len(data_object_frame.index)
                 std1 = filtered_interpolated.std()
                 std = data_object_frame["Filtered_Interpolated"].std()
-                floor_savgol_filter = np.full(shape=lent, fill_value=mean2 - (sigma * std1))
-                ceiling_savgol_filter = np.full(shape=lent, fill_value=mean2 + (sigma * std1))
+                floor_savgol_filter = np.full(shape=lent, fill_value=median2 - (sigma * std1))
+                ceiling_savgol_filter = np.full(shape=lent, fill_value=median2 + (sigma * std1))
                 sign = np.sign(gradients)
                 sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
-                changes = list(np.nonzero(sign_change == 1)[0])
+                events_without_filter = list(np.nonzero(sign_change == 1)[0])
 
-                changes = filter_changes_list(changes=changes, values=filtered_interpolated,
+                changes_filtered = filter_changes_list(changes=events_without_filter, values=filtered_interpolated,
                                               top_limit=ceiling_savgol_filter,
                                               bottom_limit=floor_savgol_filter)
-                events_1 = [value_update_i(value=x, list=changes, ) for x in filtered]
-                data_object_frame["Events_1"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row["Filtered"], list=changes), axis=1)
+
+                changes = find_exceptional_events(events=changes_filtered, values=filtered_interpolated)
+
+                pt("Index_Value", index_series)
+                events_1 = [[value_update_i(value=x, indexes=changes)] for x in filtered]
                 index_series = 0
+                pt("Index_Value", index_series)
+                data_object_frame["Events_1"] = data_object_frame.apply(
+                    lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "black")
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
-                plt.plot(data_object_frame.index.values, events_1, "ro")
+                plt.plot(data_object_frame.index.values, events_1, "ro", label="events")
+                #plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "bo")
                 plt.gca().legend()
             else:
                 fig, ax = plt.subplots()
