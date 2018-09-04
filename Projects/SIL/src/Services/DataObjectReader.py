@@ -616,6 +616,23 @@ def value_update_i(indexes, value=None, values=None, top_limit=None, bottom_limi
         index_series += 1
     return value_return
 
+def real_values_or_none(positions, real_values):
+    """
+
+    Args:
+        positions:
+        real_values:
+
+    Returns:
+
+    """
+    events_list = []
+    for i, value in enumerate(real_values):
+        if i in positions:
+            events_list.append(value)
+        else:
+            events_list.append(None)
+    return events_list
 
 def update_events_with_new_values(analyzed_values, events, values):
     """
@@ -626,23 +643,18 @@ def update_events_with_new_values(analyzed_values, events, values):
         events: Position of actual interesting values
         values: All actual values
     """
-    # TODO(@gabvaztor) Finsih
+    # TODO(@gabvaztor) Finish
     # Gradients
     gradients = np.gradient(analyzed_values)
     sign = np.sign(gradients)
     sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
     new_events = list(np.nonzero(sign_change == 1)[0])
-    events_list = []
-    for i, value in enumerate(analyzed_values):
-        if i in new_events:
-            events_list.append(value)
-        else:
-            events_list.append(None)
+    events_list = real_values_or_none(positions=new_events, real_values=analyzed_values)
 
 
 def find_exceptional_events(events, values):
     """
-    Detect new events. From events array, it tries to find past or subsequent events. This will check past values and,
+    Detects new events. From events array, it tries to find past or subsequent events. This will check past values and,
     if its value has a percent of change and its derivate is interesting (...).
     Args:
         events: Actual interesting events
@@ -674,7 +686,6 @@ def find_exceptional_events(events, values):
                 analyze_flag = True
                 break
         if analyze_flag:
-
             update_events_with_new_values(analyzed_values=actual_values, events=events, values=values)
 
     return events
@@ -755,7 +766,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                    + data_object.unique_doid_date + ")" + ".pdf"
         n = 0
         fig = None
-        type_graphs = [""] * 25
+        type_graphs = [""] * 30
         pdf = PdfPages(pdf_path)
         for i, element in enumerate(type_graphs):
 
@@ -826,7 +837,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                     lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, data_object_frame["Events"], 'ro')
+                plt.plot(data_object_frame.index.values, data_object_frame["Events"], 'r+')
                 plt.gca().legend()
             elif i == 10:
                 s = np.asarray(data_object_frame[datatype].tolist())
@@ -838,7 +849,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 index_series = 0
                 pt("changes2", changes)
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], 'ro')
+                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], 'r+')
                 plt.gca().legend()
             elif i == 11:
                 plt.plot(data_object_frame.index.values, data_object_frame["savgol_filter"])
@@ -862,7 +873,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.plot(data_object_frame.index.values, data_object_frame["Floor_savgol_filter"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Ceiling_savgol_filter"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Mean_savgol_filter"], "black")
-                plt.plot(data_object_frame.index.values, data_object_frame["Anomaly_savgol_filter"], 'ro')
+                plt.plot(data_object_frame.index.values, data_object_frame["Anomaly_savgol_filter"], 'r+')
                 plt.gca().legend()
             elif i == 13:
                 #plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"].resample(), style=':')
@@ -881,8 +892,10 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.gca().legend()
             elif i == 17:
                 g = np.gradient(data_object_frame[datatype])
+                g2 = np.gradient(g)
+                g_absolute = np.absolute(g)
                 data_object_frame["Gradients"] = np.gradient(data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, data_object_frame["Gradients"])
+                plt.plot(data_object_frame.index.values, g_absolute)
                 plt.gca().legend()
             elif i == 18:
                 data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
@@ -893,7 +906,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                     lambda row: value_update_i(value=row["Filtered_Interpolated"], indexes=changes), axis=1)
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "ro")
+                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "r+")
                 plt.gca().legend()
             elif i == 19:
                 data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
@@ -915,7 +928,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Floor_savgol_filter"])
                 plt.plot(data_object_frame.index.values, data_object_frame["Ceiling_savgol_filter"])
-                #plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "ro")
+                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "r+")
                 plt.gca().legend()
             elif i == 20:
                 data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
@@ -926,7 +939,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                     lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "ro")
+                plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "r+")
                 plt.gca().legend()
             elif i == 21:
                 data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
@@ -948,7 +961,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], )
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
-                plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "ro")
+                plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "r+")
                 plt.gca().legend()
             elif i == 22:
                 # TODO (@gabvaztor) Do i=18 to raw data. Check events and filter with gradient and % of change.
@@ -962,7 +975,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 index_series = 0
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype], "blue")
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "green", alpha=0.5)
-                plt.plot(data_object_frame.index.values, data_object_frame["Events3"], "ro")
+                plt.plot(data_object_frame.index.values, data_object_frame["Events3"], "r+")
                 plt.gca().legend()
             elif i == 23:
                 data_object_frame["Gradients_Raw"] = np.gradient(
@@ -971,7 +984,6 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 mean = data_object_frame[datatype].median(axis=0)
                 lent = len(data_object_frame.index)
                 std_ = data_object_frame[datatype].std()
-                # TODO (@gabvaztor) Change floor and ceiling to be a curve across datatype
                 floor_raw = np.full(shape=lent, fill_value=(mean - (sigma * std_)))
                 ceiling_raw = np.full(shape=lent, fill_value=(mean + (sigma * std_)))
 
@@ -984,13 +996,13 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 data_object_frame["Events4"] = data_object_frame.apply(
                     lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
                 index_series = 0
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype], "blue")
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "green", alpha=0.5)
-                plt.plot(data_object_frame.index.values, data_object_frame["Events4"], "ro")
+                plt.plot(data_object_frame.index.values, data_object_frame[datatype], "g")
+                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "b", alpha=0.5)
+                plt.plot(data_object_frame.index.values, data_object_frame["Events4"], "r+")
                 plt.plot(data_object_frame.index.values, ceiling_raw, label="Ceiling_raw")
                 plt.plot(data_object_frame.index.values, floor_raw, label="Floor_raw")
                 plt.gca().legend()
-            elif i == 24:
+            elif i == 240000000:
                 # TODO (@gabvaztor) All process
                 # 1 - RAW
                 # 2 - Filtered Interpolated / Raw interpolated
@@ -1041,8 +1053,16 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                     lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
                 plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "black")
                 plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
-                plt.plot(data_object_frame.index.values, events_1, "ro", label="events")
+                plt.plot(data_object_frame.index.values, events_1, "r+", label="events")
                 #plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "bo")
+                plt.gca().legend()
+            elif i == 25:
+                # TODO
+                g = np.gradient(data_object_frame[datatype])
+                g2 = np.gradient(g)
+                g_absolute = np.absolute(g2)
+                data_object_frame["Gradients"] = np.gradient(data_object_frame[datatype])
+                plt.plot(data_object_frame.index.values, g_absolute)
                 plt.gca().legend()
             else:
                 fig, ax = plt.subplots()
