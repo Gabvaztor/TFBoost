@@ -690,6 +690,53 @@ def find_exceptional_events(events, values):
 
     return events
 
+
+def find_changes(values, ceiling, floor):
+    """
+
+    Args:
+        values:
+        ceiling:
+        floor:
+
+    Returns:
+
+    """
+    changes = []
+    for i, value in enumerate(values):
+        ceiling_value = None
+        floor_value = None
+        if not is_none(ceiling):
+            ceiling_value = ceiling[i]
+        if not is_none(floor):
+            floor_value = floor[i]
+        if ceiling_value and floor_value:
+            if value >= floor_value and value <= ceiling_value:
+                changes.append(i)
+        elif ceiling_value:
+            if value <= ceiling_value:
+                changes.append(i)
+        elif floor_value:
+            if value >= floor_value:
+                changes.append(i)
+    return changes
+
+
+def get_values_from_changes(changes, values):
+    """
+    From a changes array, this method return its real values in other array.
+    Args:
+        changes:
+        values:
+
+    Returns: Array with real values from changes (real values from positions in changes array)
+    """
+    real_values = []
+    for position_change in changes:
+        real_values.append(values[position_change])
+    return real_values
+
+
 def data_analysis(cores_ids=None, data_ids=None, join_data=False):
 
     if not cores_ids:
@@ -766,7 +813,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                    + data_object.unique_doid_date + ")" + ".pdf"
         n = 0
         fig = None
-        type_graphs = [""] * 30
+        type_graphs = [""] * 35
         pdf = PdfPages(pdf_path)
         for i, element in enumerate(type_graphs):
 
@@ -892,10 +939,8 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.gca().legend()
             elif i == 17:
                 g = np.gradient(data_object_frame[datatype])
-                g2 = np.gradient(g)
-                g_absolute = np.absolute(g)
                 data_object_frame["Gradients"] = np.gradient(data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, g_absolute)
+                plt.plot(data_object_frame.index.values, g, label="Gradients_Normal")
                 plt.gca().legend()
             elif i == 18:
                 data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
@@ -1057,12 +1102,92 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 #plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "bo")
                 plt.gca().legend()
             elif i == 25:
-                # TODO
+                g = np.gradient(data_object_frame[datatype])
+                g_absolute = np.absolute(g)
+                data_object_frame["Gradients"] = np.gradient(data_object_frame[datatype])
+                plt.plot(data_object_frame.index.values, g_absolute, label="Gradient")
+                plt.gca().legend()
+            elif i == 26:
                 g = np.gradient(data_object_frame[datatype])
                 g2 = np.gradient(g)
                 g_absolute = np.absolute(g2)
-                data_object_frame["Gradients"] = np.gradient(data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, g_absolute)
+                plt.plot(data_object_frame.index.values, g_absolute, label="Gradients2")
+                plt.gca().legend()
+            elif i == 27:
+                g = np.gradient(data_object_frame[datatype])
+                g2 = np.gradient(g)
+                g_absolute = np.absolute(g2)
+                filtered = savgol_filter(g_absolute, window_length=199, polyorder=3)
+                plt.plot(data_object_frame.index.values, filtered, label="Gradients2_Filtered")
+                plt.gca().legend()
+            elif i == 28:
+                # Gradients 2 Filtered with events more than Delta X
+                g = np.gradient(data_object_frame[datatype])
+                g2 = np.gradient(g)
+                g_absolute = np.absolute(g2)
+                lent = len(data_object_frame.index)
+                gradient_absolute_filtered = savgol_filter(g_absolute, window_length=199, polyorder=3)
+                std = gradient_absolute_filtered.std()
+                median = np.median(gradient_absolute_filtered, axis=0)
+                #floor_g_absolute = np.full(shape=lent, fill_value=median - (sigma * std))
+                ceiling_g_absolute = np.full(shape=lent, fill_value=median + (sigma * std))
+                changes_from_ceiling = find_changes(values=gradient_absolute_filtered, ceiling=None,
+                                                    floor=ceiling_g_absolute)
+                values_from_changes = real_values_or_none(positions=changes_from_ceiling,
+                                                          real_values=gradient_absolute_filtered)
+                plt.plot(data_object_frame.index.values, gradient_absolute_filtered, "b-", label="Gradient absolute filtered")
+                plt.plot(data_object_frame.index.values, values_from_changes, "r+", label="Events")
+                plt.plot(data_object_frame.index.values, ceiling_g_absolute, "orange", label="Ceiling")
+                plt.gca().legend()
+            elif i == 29:
+                #deriv2 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=2)
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                plt.plot(data_object_frame.index.values, deriv1, "b-",label="deriv1")
+                plt.gca().legend()
+            elif i == 30:
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
+                plt.plot(data_object_frame.index.values, deriv2, "r-", label="deriv2")
+                plt.gca().legend()
+            elif i == 31:
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                absolute = np.absolute(deriv1)
+                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
+                plt.gca().legend()
+            elif i == 32:
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
+                absolute = np.absolute(deriv2)
+                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv2")
+                plt.gca().legend()
+            elif i == 33:
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                absolute = np.absolute(deriv1)
+                lent = len(data_object_frame.index)
+                std = absolute.std()
+                median = np.median(absolute)
+                limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                changes_from_ceiling = find_changes(values=absolute, ceiling=None, floor=limit)
+                values_from_changes = real_values_or_none(positions=changes_from_ceiling,
+                                                          real_values=absolute)
+                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
+                plt.plot(data_object_frame.index.values, values_from_changes, "r+",label="values")
+                plt.plot(data_object_frame.index.values, limit, "--",label="limit")
+                plt.gca().legend()
+            elif i == 34:
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
+                absolute = np.absolute(deriv2)
+                lent = len(data_object_frame.index)
+                std = absolute.std()
+                median = np.median(absolute)
+                limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                changes_from_ceiling = find_changes(values=absolute, ceiling=None, floor=limit)
+                values_from_changes = real_values_or_none(positions=changes_from_ceiling,
+                                                          real_values=absolute)
+                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv2")
+                plt.plot(data_object_frame.index.values, values_from_changes, "r+",label="values")
+                plt.plot(data_object_frame.index.values, limit, "--", label="limit")
                 plt.gca().legend()
             else:
                 fig, ax = plt.subplots()
