@@ -591,12 +591,12 @@ def filter_changes_list(changes, values, top_limit=None, bottom_limit=None, perc
         elif not is_none(top_limit):
             top_limit = transform_to_list(top_limit)
             top_value = top_limit[change_index]
-            if value < top_value:
+            if top_value <= value:
                 changes.remove(change_index)
         elif not is_none(bottom_limit):
-            top_limit = transform_to_list(bottom_limit)
+            bottom_limit = transform_to_list(bottom_limit)
             bottom_value = bottom_limit[change_index]
-            if value < bottom_value:
+            if bottom_value >= value:
                 changes.remove(change_index)
         if not is_none(percent):
             if not is_none(last_value):
@@ -823,7 +823,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                    + data_object.unique_doid_date + ")" + ".pdf"
         n = 0
         fig = None
-        type_graphs = [""] * 45
+        type_graphs = [""] * 55
         pdf = PdfPages(pdf_path)
         for i, element in enumerate(type_graphs):
 
@@ -1177,10 +1177,10 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 std = absolute.std()
                 median = np.median(absolute)
                 limit = np.full(shape=lent, fill_value=median + (sigma * std))
-                sign = np.sign(deriv1)
-                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
-                changes = list(np.nonzero(sign_change == 1)[0])
-                changes_filtered = filter_changes_list(changes=changes, values=absolute,
+                from scipy.signal import argrelextrema
+                # determine the indices of the local maxima
+                maxInd = argrelextrema(absolute, np.greater)[0]
+                changes_filtered = filter_changes_list(changes=maxInd, values=absolute,
                                                        top_limit=None,
                                                        bottom_limit=limit)
                 values_from_changes = real_values_or_none(positions=changes_filtered,
@@ -1188,7 +1188,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 events_1 = [[value_update_i(value=x, indexes=changes_filtered)] for x in absolute]
                 plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
                 plt.plot(data_object_frame.index.values, values_from_changes, "k+",label="values")
-                plt.plot(data_object_frame.index.values, events_1, "ro",label="values")
+                #plt.plot(data_object_frame.index.values, events_1, "ro",label="values")
                 plt.plot(data_object_frame.index.values, limit, "--",label="limit")
                 plt.gca().legend()
             elif i == 34:
@@ -1203,33 +1203,32 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 r = real_values_or_none(maxInd, absolute)
 
                 plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
-                plt.plot(data_object_frame.index.values, r, "r+",label="values")
+                plt.plot(data_object_frame.index.values, r, "ro",label="values")
                 plt.gca().legend()
             elif i == 35:
                 deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-
-                sign = np.sign(deriv1)
-                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
-                changes = list(np.nonzero(sign_change == 1)[0])
-
-                r = real_values_or_none(changes, raw_data)
+                from scipy.signal import argrelextrema
+                maxInd = argrelextrema(deriv1, np.greater)[0]
+                r = real_values_or_none(maxInd, raw_data)
 
                 plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
-                plt.plot(data_object_frame.index.values, r, "r+", label="values with deriv1")
+                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv1")
                 plt.gca().legend()
             elif i == 36:
                 deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                absolute = np.absolute(deriv1)
-
                 from scipy.signal import argrelextrema
-                # determine the indices of the local maxima
-                maxInd = argrelextrema(absolute, np.greater)[0]
-                # get the actual values using these indices
-                r = absolute[maxInd]
-                r = real_values_or_none(maxInd, raw_data)
+                maxInd = argrelextrema(deriv1, np.greater)[0]
+                lent = len(data_object_frame.index)
+                std = deriv1.std()
+                median = np.median(deriv1)
+                limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                max_ind_filter = filter_changes_list(changes=maxInd, values=deriv1,
+                                                     top_limit=None,
+                                                     bottom_limit=limit)
+                r = real_values_or_none(max_ind_filter, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data")
-                plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
+                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
+                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv1 filtered")
                 plt.gca().legend()
             elif i == 37:
                 deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
@@ -1238,6 +1237,27 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 from scipy.signal import argrelextrema
                 # determine the indices of the local maxima
                 maxInd = argrelextrema(absolute, np.greater)[0]
+                lent = len(data_object_frame.index)
+                std = absolute.std()
+                median = np.median(absolute)
+                limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                max_ind_filter = filter_changes_list(changes=maxInd, values=absolute,
+                                                       top_limit=None,
+                                                       bottom_limit=limit)
+
+                r = real_values_or_none(max_ind_filter, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data")
+                plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute filtered")
+                plt.gca().legend()
+            elif i == 38:
+                # pass
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                absolute = np.absolute(deriv1)
+
+                from scipy.signal import argrelextrema
+                # determine the indices of the local maxima
+                maxInd = argrelextrema(absolute, np.greater)[0]
                 # get the actual values using these indices
                 r = absolute[maxInd]
                 r = real_values_or_none(maxInd, raw_data)
@@ -1245,50 +1265,99 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data")
                 plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
                 plt.gca().legend()
-            elif i == 340:
+            elif i == 39:
                 deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
                 deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
-                absolute = np.absolute(deriv2)
-                lent = len(data_object_frame.index)
-                std = absolute.std()
-                median = np.median(absolute)
-                limit = np.full(shape=lent, fill_value=median + (sigma * std))
-                changes_from_ceiling = find_changes(values=absolute, ceiling=None, floor=limit)
-                values_from_changes = real_values_or_none(positions=changes_from_ceiling,
-                                                          real_values=absolute)
-                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv2")
-                plt.plot(data_object_frame.index.values, values_from_changes, "r+",label="values")
-                plt.plot(data_object_frame.index.values, limit, "orange", "--", label="limit")
+                from scipy.signal import argrelextrema
+                maxInd = argrelextrema(deriv2, np.greater)[0]
+                r = real_values_or_none(maxInd, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
+                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2")
                 plt.gca().legend()
-            elif i == 350:
+            elif i == 40:
                 deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
+                from scipy.signal import argrelextrema
+                maxInd = argrelextrema(deriv2, np.greater)[0]
+                lent = len(data_object_frame.index)
+                std = deriv2.std()
+                median = np.median(deriv2)
+                limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                max_ind_filter = filter_changes_list(changes=maxInd, values=deriv2,
+                                                     top_limit=None,
+                                                     bottom_limit=limit)
+                r = real_values_or_none(max_ind_filter, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
+                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2 filtered")
+                plt.gca().legend()
+            elif i == 41:
+                # pass
+                deriv1 = savgol_filter(raw_data, window_length=299, polyorder=3, deriv=1)
                 absolute = np.absolute(deriv1)
-                lent = len(data_object_frame.index)
-                std = absolute.std()
-                median = np.median(absolute)
-                limit = np.full(shape=lent, fill_value=median + (sigma * std))
-                changes_from_ceiling = find_changes(values=absolute, ceiling=None, floor=limit)
-                values_from_changes = real_values_or_none(positions=changes_from_ceiling,
-                                                          real_values=absolute)
-                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv2")
-                plt.plot(data_object_frame.index.values, values_from_changes, "r+",label="values")
-                plt.plot(data_object_frame.index.values, limit, "orange", "--", label="limit")
+
+                from scipy.signal import argrelextrema
+                # determine the indices of the local maxima
+                maxInd = argrelextrema(absolute, np.greater)[0]
+                # get the actual values using these indices
+                r = absolute[maxInd]
+                r = real_values_or_none(maxInd, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data 299")
+                plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
                 plt.gca().legend()
-            elif i == 360:
+            elif i == 42:
+                deriv1 = savgol_filter(raw_data, window_length=299, polyorder=3, deriv=1)
+                deriv2 = savgol_filter(deriv1, window_length=299, polyorder=3, deriv=1)
+                from scipy.signal import argrelextrema
+                maxInd = argrelextrema(deriv2, np.greater)[0]
+                lent = len(data_object_frame.index)
+                std = deriv2.std()
+                median = np.median(deriv2)
+                limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                max_ind_filter = filter_changes_list(changes=maxInd, values=deriv2,
+                                                     top_limit=None,
+                                                     bottom_limit=limit)
+                r = real_values_or_none(max_ind_filter, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 299")
+                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2 filtered")
+                plt.gca().legend()
+            elif i == 43:
                 deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
                 deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
-                absolute = np.absolute(deriv2)
-                lent = len(data_object_frame.index)
-                std = absolute.std()
-                median = np.median(absolute)
-                limit = np.full(shape=lent, fill_value=median + (sigma * std))
-                changes_from_ceiling = find_changes(values=absolute, ceiling=None, floor=limit)
-                values_from_changes = real_values_or_none(positions=changes_from_ceiling,
-                                                          real_values=absolute)
-                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv2")
-                plt.plot(data_object_frame.index.values, values_from_changes, "r+",label="values")
-                plt.plot(data_object_frame.index.values, limit, "orange", "--", label="limit")
+                deriv3 = savgol_filter(deriv2, window_length=199, polyorder=3, deriv=1)
+                from scipy.signal import argrelextrema
+                maxInd = argrelextrema(deriv3, np.greater)[0]
+                r = real_values_or_none(maxInd, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199")
+                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv3")
                 plt.gca().legend()
+            elif i == 44:
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
+                deriv3 = savgol_filter(deriv2, window_length=199, polyorder=3, deriv=1)
+                from scipy.signal import argrelextrema
+                maxInd = argrelextrema(deriv3, np.greater)[0]
+                lent = len(data_object_frame.index)
+                std = deriv3.std()
+                median = np.median(deriv3)
+                limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                max_ind_filter = filter_changes_list(changes=maxInd, values=deriv3,
+                                                     top_limit=None,
+                                                     bottom_limit=limit)
+                r = real_values_or_none(max_ind_filter, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199")
+                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv3 filtered")
+                plt.gca().legend()
+            elif i == 45:
+                # TODO (@gabvaztor) From Absolute (if this is the best way to find relevant events), filtering
+                # positions where information is not relevant and, after that, save relevant values as deltas and
+                # percents (...)
+                pass
             else:
                 fig, ax = plt.subplots()
                 fig.patch.set_visible(False)

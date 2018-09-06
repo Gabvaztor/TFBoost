@@ -7,3 +7,4 @@ class HighAPI():
     Contains all highs variables that represents multiple ideas.
     """
     # TODO (@gabvaztor) Finish
+    
