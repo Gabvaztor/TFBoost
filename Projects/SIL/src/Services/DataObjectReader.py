@@ -1203,7 +1203,48 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 r = real_values_or_none(maxInd, absolute)
 
                 plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
-                plt.plot(data_object_frame.index.values, r, "k+",label="values")
+                plt.plot(data_object_frame.index.values, r, "r+",label="values")
+                plt.gca().legend()
+            elif i == 35:
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+
+                sign = np.sign(deriv1)
+                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                changes = list(np.nonzero(sign_change == 1)[0])
+
+                r = real_values_or_none(changes, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
+                plt.plot(data_object_frame.index.values, r, "r+", label="values with deriv1")
+                plt.gca().legend()
+            elif i == 36:
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                absolute = np.absolute(deriv1)
+
+                from scipy.signal import argrelextrema
+                # determine the indices of the local maxima
+                maxInd = argrelextrema(absolute, np.greater)[0]
+                # get the actual values using these indices
+                r = absolute[maxInd]
+                r = real_values_or_none(maxInd, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data")
+                plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
+                plt.gca().legend()
+            elif i == 37:
+                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                absolute = np.absolute(deriv1)
+
+                from scipy.signal import argrelextrema
+                # determine the indices of the local maxima
+                maxInd = argrelextrema(absolute, np.greater)[0]
+                # get the actual values using these indices
+                r = absolute[maxInd]
+                r = real_values_or_none(maxInd, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data")
+                plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
+                plt.gca().legend()
             elif i == 340:
                 deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
                 deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
