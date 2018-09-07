@@ -747,7 +747,7 @@ def get_values_from_changes(changes, values):
     return real_values
 
 
-def data_analysis(cores_ids=None, data_ids=None, join_data=False):
+def data_analysis(cores_ids=None, data_ids=None, join_data=False, generate_pdf=True):
 
     if not cores_ids:
         cores_ids = []
@@ -793,6 +793,9 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
     if not joined_data_objects:
         joined_data_objects = data_objects
 
+    if not generate_pdf:
+        joined_data_objects.clear()
+
     joined_data_objects = filter_dict_by_id(dictionary=joined_data_objects, cores_ids=cores_ids, data_ids=data_ids)
     actual_time = datetime.now().strftime("%Y-%m-%d_%Hh%Mm%Ss")
 
@@ -823,18 +826,19 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                    + data_object.unique_doid_date + ")" + ".pdf"
         n = 0
         fig = None
-        type_graphs = [""] * 55
+        type_graphs = [""] * 50
         pdf = PdfPages(pdf_path)
         for i, element in enumerate(type_graphs):
-
             #plot_num = 321
             #plt.subplot(plot_num)
-            fig = plt.figure(figsize=(10, 10), dpi=1000)
+            fig = plt.figure(figsize=(10, 10), dpi=800)
             fig.clf()
             fig.text(4.25 / 8.5, 0.5 / 11., str(i + 1), ha='center', fontsize=8)
             text = "Windows Size:" + str(wind) + " | Sigma:" + str(sigma) + " | Std:" + "{0:.2f}".format(std)
             #plt.text(0.2, 0.95, text, transform=fig.transFigure, size=16)
             fig.suptitle(text, fontsize=14, fontweight='bold')
+            if i % 10:
+                gc.collect()
             if i == 0:
                 plt.title("Histogram|" + data_object.title)
                 ax = plt.gca()
@@ -1293,7 +1297,6 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2 filtered")
                 plt.gca().legend()
             elif i == 41:
-                # pass
                 deriv1 = savgol_filter(raw_data, window_length=299, polyorder=3, deriv=1)
                 absolute = np.absolute(deriv1)
 
@@ -1303,10 +1306,14 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 # get the actual values using these indices
                 r = absolute[maxInd]
                 r = real_values_or_none(maxInd, raw_data)
-
-                plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data 299")
+                pt("0")
+                minInd = argrelextrema(deriv1, np.less)[0]
+                r_min = real_values_or_none(minInd, raw_data)
+                plt.plot(data_object_frame.index.values, r_min, "o", color="orange",label="values min with deriv1")
+                plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data 299", linewidth=0.2)
                 plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
                 plt.gca().legend()
+                pt("1")
             elif i == 42:
                 deriv1 = savgol_filter(raw_data, window_length=299, polyorder=3, deriv=1)
                 deriv2 = savgol_filter(deriv1, window_length=299, polyorder=3, deriv=1)
@@ -1321,9 +1328,14 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                                                      bottom_limit=limit)
                 r = real_values_or_none(max_ind_filter, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 299")
+                minInd = argrelextrema(deriv2, np.less)[0]
+                r_min = real_values_or_none(minInd, raw_data)
+                plt.plot(data_object_frame.index.values, r_min, "o", color="orange",label="values min with deriv2 filtered")
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 299", linewidth=0.2)
                 plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2 filtered")
                 plt.gca().legend()
+                pt("2")
             elif i == 43:
                 deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
                 deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
@@ -1332,15 +1344,20 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 maxInd = argrelextrema(deriv3, np.greater)[0]
                 r = real_values_or_none(maxInd, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199")
+                minInd = argrelextrema(deriv3, np.less)[0]
+                r_min = real_values_or_none(minInd, raw_data)
+                plt.plot(data_object_frame.index.values, r_min, "o", color="orange",label="values min with deriv3")
+                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199", linewidth=0.2)
                 plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv3")
                 plt.gca().legend()
+                pt("3")
             elif i == 44:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
-                deriv3 = savgol_filter(deriv2, window_length=199, polyorder=3, deriv=1)
+                deriv1 = savgol_filter(raw_data, window_length=149, polyorder=3, deriv=1)
+                deriv2 = savgol_filter(deriv1, window_length=149, polyorder=3, deriv=1)
+                deriv3 = savgol_filter(deriv2, window_length=149, polyorder=3, deriv=1)
                 from scipy.signal import argrelextrema
                 maxInd = argrelextrema(deriv3, np.greater)[0]
+                minInd = argrelextrema(deriv3, np.less)[0]
                 lent = len(data_object_frame.index)
                 std = deriv3.std()
                 median = np.median(deriv3)
@@ -1348,16 +1365,20 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False):
                 max_ind_filter = filter_changes_list(changes=maxInd, values=deriv3,
                                                      top_limit=None,
                                                      bottom_limit=limit)
-                r = real_values_or_none(max_ind_filter, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199")
+                r = real_values_or_none(max_ind_filter, raw_data)
+                r_min = real_values_or_none(minInd, raw_data)
+
+                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199", linewidth=0.2)
                 plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv3 filtered")
+                plt.plot(data_object_frame.index.values, r_min, "o", color="orange", label="values min with deriv3 filtered")
                 plt.gca().legend()
+                pt("4")
             elif i == 45:
                 # TODO (@gabvaztor) From Absolute (if this is the best way to find relevant events), filtering
                 # positions where information is not relevant and, after that, save relevant values as deltas and
                 # percents (...)
-                pass
+                pt("5")
             else:
                 fig, ax = plt.subplots()
                 fig.patch.set_visible(False)
@@ -1437,6 +1458,7 @@ if __name__ == '__main__':
     load_dates = True
     update_all_data = True
     join_data = False
+    generate_pdf = False
 
     start_date_to_load = datetime(year=2018, month=7, day=25)
     end_date_to_load = datetime(year=2018, month=7, day=25) + timedelta(days=1) - timedelta(seconds=1)
@@ -1456,7 +1478,7 @@ if __name__ == '__main__':
     sort_data_objects()
     save_data_objects_checkpoint(save_data=save_data)
 
-    data_analysis(cores_ids=cores_ids, data_ids=data_ids, join_data=join_data)
+    data_analysis(cores_ids=cores_ids, data_ids=data_ids, join_data=join_data, generate_pdf=generate_pdf)
     #grahps_process()
     # msg()
     # data = statistical_process(data=data, algorithm=1)
