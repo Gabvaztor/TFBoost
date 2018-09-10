@@ -81,6 +81,8 @@ def update_data(load_data, dates_to_load=None, update_all_data=True, read_data=T
         dates_to_load = []
     if update_all_data:
         sensor_types = get_all_sensor_types(actual_sensor_types=sensor_types, path=miranda_path)
+        cores_ids = []
+        data_ids = []
     else:
         sensor_types = []
     sensor_types.remove(20)
@@ -343,12 +345,16 @@ class DataObjectReader():
         data_loaded = False
         if load_data:
             if load_dates:
+                # TODO (@gabvaztor) Fix this with empty load_dates
                 start_date = load_dates[0]
                 end_date = load_dates[-1]
             for fullpath, root, name in get_files_from_path(paths=checkpoint_path, ends_in=".npy"):
                 sensor_id_data_id_date = name.split("_")
                 sensor_id, data_id, date = sensor_id_data_id_date[0], sensor_id_data_id_date[1], \
                             datetime.strptime(sensor_id_data_id_date[2], "%Y%m%d")
+                if is_none(date):
+                    pt("date", date)
+                    pt("You must configure a rupture point here because this can not be None")
                 sensor_id_data_id_date_string = sensor_id + "_" + data_id + "_" + sensor_id_data_id_date[2]
                 load_flag = False
                 meets_core_flag = ((int(sensor_id) in cores_ids) or (not cores_ids))
@@ -365,6 +371,9 @@ class DataObjectReader():
                         sensor_id_sorted = info_sorted[0]
                         if sensor_id_sorted == sensor_id:
                             date_sorted = datetime.strptime(info_sorted[1], "%Y%m%d")
+                            if is_none(date_sorted):
+                                pt("Date_sorted", date_sorted)
+                                pt("You must configure a rupture point here because this can not be None")
                             if date_sorted == date:
                                 sorted_paths.remove(sorted_path)
                             if date_sorted < start_date:
@@ -1432,6 +1441,15 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False, generate_pdf=T
         """
 
 
+def dates_process(load_dates):
+    start_date_to_load = datetime(year=2018, month=7, day=25)
+    end_date_to_load = datetime(year=2018, month=7, day=25) + timedelta(days=1) - timedelta(seconds=1)
+    # end_date_to_load = datetime(year=2018, month=7, day=31) + timedelta(days=1) - timedelta(seconds=1)
+    dates_to_load = [start_date_to_load, end_date_to_load]
+    if not load_dates:
+        dates_to_load.clear()
+    return dates_to_load
+
 
 if __name__ == '__main__':
 
@@ -1440,7 +1458,8 @@ if __name__ == '__main__':
     # ##### #
     miranda_path = "\\\\192.168.1.220\\miranda\\"
     miranda_path = "..\\..\\data\\temp\\"
-    # miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
+    #miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
+    miranda_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Backup_10-September-2018\\"
     # Save image path
     save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
     checkpoint_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\Checkpoints\\"
@@ -1452,20 +1471,15 @@ if __name__ == '__main__':
     # ######### #
     matplotlib = True
     plotlylib = False
-    read_data = False
+    read_data = True
     load_data = True
     save_data = True
-    load_dates = True
+    load_dates = False
     update_all_data = True
     join_data = False
     generate_pdf = False
 
-    start_date_to_load = datetime(year=2018, month=7, day=25)
-    end_date_to_load = datetime(year=2018, month=7, day=25) + timedelta(days=1) - timedelta(seconds=1)
-    #end_date_to_load = datetime(year=2018, month=7, day=31) + timedelta(days=1) - timedelta(seconds=1)
-    dates_to_load = [start_date_to_load, end_date_to_load]
-    if not load_dates:
-        dates_to_load.clear()
+    dates_to_load = dates_process(load_dates=load_dates)
 
     cores_ids = [1]
     data_ids = [2]
@@ -1479,7 +1493,7 @@ if __name__ == '__main__':
     save_data_objects_checkpoint(save_data=save_data)
 
     data_analysis(cores_ids=cores_ids, data_ids=data_ids, join_data=join_data, generate_pdf=generate_pdf)
-    #grahps_process()
+    # grahps_process()
     # msg()
     # data = statistical_process(data=data, algorithm=1)
     pt("Run timestamp", datetime.now())
