@@ -1,0 +1,171 @@
+Option Explicit
+
+
+'''Sub test()
+'''MsgBox "text"
+'''Debug.Print "Something"
+'''End Sub
+
+'''Delete inmediate console'''
+Sub clear_console(i)
+    Dim x As Long
+    If i = 1 Then
+        For x = 1 To 10
+            Debug.Print x
+        Next
+
+        Debug.Print Now
+        Application.SendKeys "^g ^a {DEL}"
+    End If
+End Sub
+
+Function GetTestConnectionString() As String
+
+    Dim cnn As ADODB.Connection
+
+    Set cnn = New ADODB.Connection
+    cnn.ConnectionString = "Provider=SQLNCLI11;" _
+             & "Server=(local);" _
+             & "Database=ckgab;" _
+             & "Integrated Security=SSPI;" _
+             & "DataTypeCompatibility=80;" _
+             & "MARS Connection=True;"
+
+End Function
+
+Function GetTestQuery() As String
+
+    GetTestQuery = "select * from dbo.se"
+    ' GetTestQuery = "EXEC dbo04.uspExcelTest"
+
+End Function
+
+Sub connect()
+'''To clear console'''
+'''TODO Fix this'''
+Dim i As Integer
+i = 0
+If i = 1 Then
+    clear_console (i)
+End If
+
+'''To record data'''
+Dim Rs As ADODB.Recordset
+' TO conect
+Dim cnn As ADODB.Connection
+' To get procedure
+Dim cmd As ADODB.Command
+
+Set cmd = New ADODB.Command
+Set Rs = New ADODB.Recordset
+Set cnn = New ADODB.Connection
+cnn.ConnectionString = "Provider=SQLNCLI11;" _
+         & "Server=(local);" _
+         & "Database=ckgab;" _
+         & "Integrated Security=SSPI;" _
+         & "DataTypeCompatibility=80;" _
+         & "MARS Connection=True;"
+cnn.Open
+Set Rs.ActiveConnection = cnn
+
+Debug.Print "Connect!"
+
+'''Procedure Command'''
+cmd.ActiveConnection = cnn
+cmd.CommandType = adCmdStoredProc
+cmd.CommandText = "DK.insert_procedure"
+cmd.Parameters("@segmentid").Value = 2
+cmd.Parameters("@ab").Value = 3.5
+cmd.Parameters("@bc").Value = 4.4
+cmd.Parameters("@cd").Value = 4.3
+cmd.Parameters("@de").Value = 2#
+cmd.Parameters("@ef").Value = 2#
+cmd.Parameters("@country").Value = "NO"
+''' To execute '''
+Dim exec As Boolean
+exec = False
+
+If exec = True Then
+    cmd.Execute
+    Debug.Print "Procedure insert executed!"
+End If
+
+Debug.Print "Call to Procedure Insert"
+
+'''Extraction'''
+Rs.Source = "select * from dbo.SegmentationDefinitions"
+Rs.Open
+
+'''Print'''
+Do While (Not Rs.EOF)
+    Debug.Print Rs(0)
+    Rs.MoveNext
+Loop
+
+Rs.Close
+
+cnn.Close
+Debug.Print "Close!"
+
+End Sub
+
+Sub test()
+Debug.Print getBU
+End Sub
+
+Function getBU() As String
+
+''' Get excel features
+Dim wb As Excel.Workbook
+Set wb = ThisWorkbook
+Debug.Print wb.Name
+
+Dim ws As Excel.Worksheet
+Set ws = wb.Worksheets("Config")
+Debug.Print ws.Name
+
+Dim rg As Excel.Range
+Set rg = ws.Range("B2")
+Debug.Print rg.Value
+
+getBU = rg.Value
+
+End Function
+
+
+
+Function Sproc()
+
+    Dim cnn As New ADODB.Connection
+    Dim rst As New ADODB.Recordset
+    Dim cmd As ADODB.Command
+    Dim cnnStr As String
+    Dim Rs As New ADODB.Recordset
+    Dim StrSproc As String
+
+
+
+    cnnStr = "Provider=SQLOLEDB;Data Source=DBSource;" & "Initial Catalog=CurrentDb;" & _
+             "Integrated Security=SSPI;"
+    With cnn
+        .CommandTimeout = 900
+        .ConnectionString = cnnStr
+        .Open
+    End With
+    With cmd
+        .ActiveConnection = cnn
+        .CommandType = adCmdStoredProc
+        .CommandText = "[StoredProcedureName]"
+        .Parameters.Append .CreateParameter("@parameter1", adInteger, adParamInput, , 0)
+        .Parameters.Append .CreateParameter("@parameter2", adInteger, adParamInput, , 0)
+        .Parameters.Append .CreateParameter("@parameter2", adInteger, adParamInput, , 0)
+    End With
+    With Rs
+        .CursorType = adOpenStatic
+        .CursorLocation = adUseClient
+        .LockType = adLockOptimistic
+        .Open cmd
+    End With
+    Application.StatusBar = "Running stored procedure..."
+    Set rst = cmd.Execute
+End Function
