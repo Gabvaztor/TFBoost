@@ -185,16 +185,17 @@ class DataObject():
     datatypes = DataTypes()
     information = InfoDataObject()
 
-    def __init__(self, information=None, data_objects_list=None):
+    def __init__(self, information=None, data_objects_list=None, high_level_object=None):
         self.multiple_x = []
         self.multiple_y = []
         self.set_data(self.create_data())
         if data_objects_list:
             for data_object in data_objects_list:
                 self.join_data_object(data_object)
-
         if information:
             self.information = information
+        if high_level_object:
+            self.high_level_object = high_level_object
 
     def set_data(self, data):
         self.all_data = data
@@ -547,4 +548,5 @@ class DataObject():
             pass
         else:
             return np.asarray([second_from_datatime(datetime=datetime) for datetime in self.x])
+
 

@@ -109,7 +109,7 @@ def sort_paths_by_date_in_basename(sorted_paths, sorted_with_dates, fullpath, na
         sorted_paths.insert(index, fullpath)
     return sorted_paths, sorted_with_dates
 
-def date_from_format(date, format, to_string_format=None):
+def date_from_format(date, format, to_string_format=False):
     try:
         date = datetime.strptime(date, format)
     except:
@@ -118,6 +118,7 @@ def date_from_format(date, format, to_string_format=None):
                 fix_date = date[-19:]
                 date = datetime.strptime(fix_date, format)
         except:
+            date = None
             traceback.print_exc()
     if to_string_format:
         date_string = date.strftime(to_string_format)
@@ -261,7 +262,15 @@ class DataObjectReader():
             file_sensor_id_date, extension_file = filename_and_extension_from_fullpath(fullpath=file)
             file_date = file_sensor_id_date.split(sep="_")[1]
             # Open file
-            file_data = open(file, "r").read()
+            try:
+                file_data = open(file, "r").read()
+            except:
+                try:
+                    file_data = open(file.encode('utf-8'), "r", errors='ignore').read()
+                except:
+                    pt("File name", file)
+                    traceback.print_exc()
+                    raise ValueError("Can not open file")
             lines = file_data.split("\n")
             total_lines = len(lines)
             pt("file", file)
@@ -272,7 +281,15 @@ class DataObjectReader():
                                  length=50)
                 if len(line) > 1:
                     date_id_value = line.split(sep=";")
-                    date, ID, value = date_id_value[0], date_id_value[1], date_id_value[2]
+                    try:
+                        date, ID, value = date_id_value[0], date_id_value[1], date_id_value[2]
+                    except:
+                        traceback.print_exc()
+                        pt("Line count", line_count)
+                        pt("Line", line)
+                        pt("File", file)
+                        pt("This line will be avoided")
+                        continue
                     sensor_data_date_id = str(self.sensor_type) + "_" + ID + "_" + file_date
                     try:
                         ID = int(ID)
@@ -285,7 +302,7 @@ class DataObjectReader():
                         pt("File", file)
                         pt("Unique ID", sensor_data_date_id)
                         continue
-                    if ID not in Sensor.sensors_ids() or (ID not in data_ids and data_ids):  # sensors_ids must
+                    if ID not in Sensor.sensors_ids() or (ID not in data_ids and data_ids) or not date:  # sensors_ids must
                         # represent all different ids in all types of sensors
                         continue
                     if not sensor_data_date_id in data_objects:  # It means there is a new sensor data type.
@@ -376,18 +393,18 @@ class DataObjectReader():
                                 pt("You must configure a rupture point here because this can not be None")
                             if date_sorted == date:
                                 sorted_paths.remove(sorted_path)
-                            if date_sorted < start_date:
-                                sorted_paths.remove(sorted_path)
-                            if delete_higher_dates:
-                                if date_sorted > end_date:
+                            if load_dates:
+                                if date_sorted < start_date:
                                     sorted_paths.remove(sorted_path)
+                                if delete_higher_dates:
+                                    if date_sorted > end_date:
+                                        sorted_paths.remove(sorted_path)
                     if sensor_id_data_id_date_string not in loaded_data_objects_doid:
                         pt("Loading data...")
                         data_objects[sensor_id_data_id_date_string] = DataObject().start_load(fullpath=fullpath)
                         loaded_data_objects_doid.append(sensor_id_data_id_date_string)
                         data_loaded = True
                         pt("Data with id [" + sensor_id_data_id_date_string + "] loaded")
-
         return data_loaded
 
 def save_data_objects_checkpoint(save_data=True):
@@ -484,12 +501,16 @@ def msg():
     actual_time = datetime.now().strftime("%Y-%m-%d_%Hh%Mm%Ss")
     try:
         with open(checkpoint_path + actual_time + '_data.msgpack', 'wb') as outfile:
+            pt("Saving msgpack...")
             msgpack.pack(big_dict, outfile)
+            pt("msgpack done!")
     except:
         pass
 
     import pickle
+    pt("Saving pickle...")
     pickle.dump(big_dict, open(checkpoint_path + actual_time + "_picke_data.p", "wb"))
+    pt("pickle done!")
     del big_dict
 
 def sort_data_objects():
@@ -800,7 +821,7 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False, generate_pdf=T
         return dictionary
 
     if not joined_data_objects:
-        joined_data_objects = data_objects
+        joined_data_objects = data_objects.copy()
 
     if not generate_pdf:
         joined_data_objects.clear()
@@ -1315,14 +1336,12 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False, generate_pdf=T
                 # get the actual values using these indices
                 r = absolute[maxInd]
                 r = real_values_or_none(maxInd, raw_data)
-                pt("0")
                 minInd = argrelextrema(deriv1, np.less)[0]
                 r_min = real_values_or_none(minInd, raw_data)
                 plt.plot(data_object_frame.index.values, r_min, "o", color="orange",label="values min with deriv1")
                 plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data 299", linewidth=0.2)
                 plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
                 plt.gca().legend()
-                pt("1")
             elif i == 42:
                 deriv1 = savgol_filter(raw_data, window_length=299, polyorder=3, deriv=1)
                 deriv2 = savgol_filter(deriv1, window_length=299, polyorder=3, deriv=1)
@@ -1344,7 +1363,6 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False, generate_pdf=T
                 plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 299", linewidth=0.2)
                 plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2 filtered")
                 plt.gca().legend()
-                pt("2")
             elif i == 43:
                 deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
                 deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
@@ -1359,7 +1377,6 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False, generate_pdf=T
                 plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199", linewidth=0.2)
                 plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv3")
                 plt.gca().legend()
-                pt("3")
             elif i == 44:
                 deriv1 = savgol_filter(raw_data, window_length=149, polyorder=3, deriv=1)
                 deriv2 = savgol_filter(deriv1, window_length=149, polyorder=3, deriv=1)
@@ -1382,7 +1399,6 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False, generate_pdf=T
                 plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv3 filtered")
                 plt.plot(data_object_frame.index.values, r_min, "o", color="orange", label="values min with deriv3 filtered")
                 plt.gca().legend()
-                pt("4")
             elif i == 45:
                 # TODO (@gabvaztor) From Absolute (if this is the best way to find relevant events), filtering
                 # positions where information is not relevant and, after that, save relevant values as deltas and
@@ -1439,8 +1455,6 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False, generate_pdf=T
                                
         pt()
         """
-
-
 def dates_process(load_dates):
     start_date_to_load = datetime(year=2018, month=7, day=25)
     end_date_to_load = datetime(year=2018, month=7, day=25) + timedelta(days=1) - timedelta(seconds=1)
@@ -1457,9 +1471,9 @@ if __name__ == '__main__':
     # PATHS #
     # ##### #
     miranda_path = "\\\\192.168.1.220\\miranda\\"
-    miranda_path = "..\\..\\data\\temp\\"
+    #miranda_path = "..\\..\\data\\temp\\"
     #miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
-    miranda_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Backup_10-September-2018\\"
+    #miranda_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Backup_10-September-2018\\"
     # Save image path
     save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
     checkpoint_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\Checkpoints\\"
@@ -1477,11 +1491,11 @@ if __name__ == '__main__':
     load_dates = False
     update_all_data = True
     join_data = False
-    generate_pdf = False
+    generate_pdf = True
 
     dates_to_load = dates_process(load_dates=load_dates)
 
-    cores_ids = [1]
+    cores_ids = [1,2,3,4,5,6]
     data_ids = [2]
 
     # ############ #
@@ -1497,6 +1511,3 @@ if __name__ == '__main__':
     # msg()
     # data = statistical_process(data=data, algorithm=1)
     pt("Run timestamp", datetime.now())
-
-
-
