@@ -57,7 +57,7 @@ class Measures():
 
 class InfoDataObject():
     """
-    Represent the data information. It will be in the third position of an DataObject
+    Represents the data information. It will be in the third position of an DataObject
     """
 
     datatype = None
