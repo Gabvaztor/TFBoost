@@ -63,7 +63,7 @@ class SqlLite():
 
     def connect(self, database_dir="C:\Software\SqlLite\SIL.db"):
         database = database_dir
-
+        # TODO (@gabvaztor) Finish
         # create a database connection
         self.connection = self.create_connection(database)
         with self.connection:
@@ -72,3 +72,4 @@ class SqlLite():
 
             print("2. Query all tasks")
             select_all_tasks(conn)
+
