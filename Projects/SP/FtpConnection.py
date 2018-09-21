@@ -1,9 +1,18 @@
 import ftplib
 from ftplib import FTP
 import traceback
+import os
 
 class FtpConnection():
     server = None
+    ip = None
+    port = 12
+    user = None
+    password = None
+    attempts = 0
+    actual_dir = ""
+
+
     def connect(self, ip, port, user, password):
         """
         Connect to FTP server
@@ -15,25 +24,86 @@ class FtpConnection():
         """
         print("Trying to connect...")
         try:
-            self.server = FTP("ftp.debian.org")
-            #self.server.login(user='username', passwd = 'password')
-            self.server.login()
+            if not port:
+                self.server = FTP(ip)
+            else:
+                self.server = FTP()
+                self.server.connect(host=ip, port=port)
+            self.server.login(user=user, passwd=password)
+            #self.server.login()
             print("Connected")
             #self.server.connect(', 21)
             #self.server.login(user='username', passwd='password')
             # You don't have to print this, because this command itself prints dir contents
             self.server.dir()
-
         except Exception:
             print("Can not connect because...")
             traceback.print_exc()
     def folder_to_download(self, ftp_folder, local_folder):
-        # TODO (@gabvaztor) Finish
-        pass
+        """
+        Connect to a folder and download all files
+        Args:
+            ftp_folder:
+            local_folder:
 
-    def delete_files_from_folder(self, tfp_folder):
-        # TODO (@gabvaztor) Finish
-        pass
+        Returns:
+
+        """
+        self.server.cwd(ftp_folder)
+        self.actual_dir = ftp_folder
+        filenames = self.server.nlst()  # get filenames within the directory
+        print(filenames)
+        for filename in filenames:
+            print("Downloading: " + filename + " ...")
+            local_filename = os.path.join(local_folder, filename)
+            file = open(local_filename, 'wb')
+            self.server.retrbinary('RETR ' + filename, file.write)
+            file.close()
+        #self.server.quit()
+
+
+    def delete_files_from_folder(self, ftp_folder):
+        """
+        Delete files from FTP folder
+        Args:
+            tfp_folder:
+        """
+        try:
+            if self.actual_dir != ftp_folder:
+                self.server.cwd(ftp_folder)
+            print("Folder status before delete")
+            filenames = self.server.nlst()  # get filenames within the directory
+            print("Deleting files from FTP folder if any...")
+            for filename in filenames:
+                self.server.delete(filename)
+            print("Actual folder status after delete")
+            filenames = self.server.nlst()  # get filenames within the directory
+            print(filenames)
+        except Exception:
+            traceback.print_exc()
+            self.attempts += 1
+            if self.reset_connection():
+                self.delete_files_from_folder(ftp_folder=ftp_folder)
+
+    def reset_connection(self):
+        success = False
+        if self.attempts < 3:
+            if self.server:
+                self.close_connection()
+                if self.ip and self.port and self.password and self.user:
+                    self.connect(self.ip, self.port, self.password, self.user)
+                    success = True
+                else:
+                    print("Can not reconnect")
+            else:
+                if self.ip and self.port and self.password and self.user:
+                    self.connect(self.ip, self.port, self.password, self.user)
+                    success = True
+                else:
+                    print("Can not reconnect")
+        else:
+            print("After 3 attempts, it can not connect")
+        return success
 
     def close_connection(self):
         """
@@ -42,17 +112,34 @@ class FtpConnection():
 
         """
         if self.server:
+            #self.server.quit()  # This is the “polite” way to close a connection
             self.server.close()
+            print("Connection closed")
 
-def main():
-    ip, port, user, password = "", 12, "", ""
-    folder_to_download  = ""
-    local_folder = ""
+def main(ip, port, user, password, ftp_folder, local_folder):
 
-    ftp_connection = FtpConnection().connect(ip, port, user, password)
-    #ftp_connection.folder_to_download(ftp_folder=folder_to_download,
-    #                                  local_folder=local_folder)
-    #  TODO Finish
-    pass
+    ftp_connection = FtpConnection()
+    ftp_connection.connect(ip, port, user, password)
+    ftp_connection.folder_to_download(ftp_folder=ftp_folder,
+                                      local_folder=local_folder)
+    ftp_connection.delete_files_from_folder(ftp_folder=ftp_folder)
+    if ftp_connection.server:
+        ftp_connection.close_connection()
 
-main()
+if __name__ == "__main__":
+    prism_connection_data = ["prism.nacse.org", None, "anonymous", "email@email.com", "monthly/ppt/1895/", "Downloads\\"]
+    localhost_connection = ["localhost", 9898, "", "", "", "Downloads\\"]
+
+    # To change when change connection
+    current_data = localhost_connection
+
+    ip = current_data[0]
+    port = current_data[1]
+    user = current_data[2]
+    password = current_data[3]
+    ftp_folder = current_data[4]
+    local_folder = current_data[5]
+
+    main(ip=ip, port=port, user=user, password=password,
+         ftp_folder=ftp_folder, local_folder=local_folder)
+
