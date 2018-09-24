@@ -172,7 +172,7 @@ class FtpConnection():
     def load_json(self):
         # Change with your setting file if necessary
         import json
-        with open("info.json") as json_data:
+        with open("C:\\info.json") as json_data:
             settings = json.load(json_data)
             self.ip=settings["ftp_name"]
             self.port=settings["port_number"]
