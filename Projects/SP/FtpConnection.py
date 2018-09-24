@@ -20,6 +20,7 @@
 """
 from ftplib import FTP
 import traceback
+import os
 
 class FtpConnection():
     server = None
