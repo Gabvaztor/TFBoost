@@ -842,11 +842,14 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False, generate_pdf=T
         data_object_frame = data_object.dataframe()
         raw_data = data_object.y_array()
 
+        # Global variables
+
+
         # TODO (@gabvaztor) Create different functions to analyze data depending on datatype
         def analyze_luminosity():
             # TODO FINISH
-            getattr()  # Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.
-            callable()
+            #getattr()  # Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.
+            #callable()  # Get a function
             pass
 
 

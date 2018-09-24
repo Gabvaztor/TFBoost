@@ -1,7 +1,25 @@
-import ftplib
+"""
+    Steps:
+        - Create a new array connection in the end of file
+        - Set "current_data" variable with the name of your new array connection
+
+        - You must have Python3 installed.
+        NOTE: All lines that must be modified have "TODO" word
+              You must have installed python3
+
+    Array connections (position information):
+         1: ftp_name
+         2: port, (if None, get ftp default)
+         3: user name
+         4: password
+         5: ftp folder where files are located
+         6: local folder where files will be downloaded
+
+    If any downloaded file has "gz" extension, it will be uncompressed in the same folder and, after that,
+    will be deleted
+"""
 from ftplib import FTP
 import traceback
-import os
 
 class FtpConnection():
     server = None
@@ -85,7 +103,7 @@ class FtpConnection():
             traceback.print_exc()
             self.attempts += 1
             if self.reset_connection():
-                self.delete_files_from_folder(ftp_folder=ftp_folder)
+                self.delete_files_from_ftp_folder(ftp_folder=ftp_folder)
 
     def reset_connection(self):
         success = False
@@ -148,12 +166,33 @@ def main(ip, port, user, password, ftp_folder, local_folder):
         ftp_connection.close_connection()
 
 if __name__ == "__main__":
-    prism_connection_data = ["prism.nacse.org", None, "anonymous", "email@email.com", "monthly/ppt/1895/", "Downloads\\"]
+    """
+    Array connections (position information):
+         1: ftp_name
+         2: port, (if None, get ftp default)
+         3: user name
+         4: password
+         5: ftp folder where files are located
+         6: local folder where files will be downloaded
+         
+    If any downloaded file has "gz" extension, it will be uncompressed in the same folder and, after that, 
+    will be deleted
+    """
+
+    prism_connection_data = ["prism.nacse.org", None, "anonymous", "email@email.com",
+                             "monthly/ppt/1895/", "Downloads\\"]
     localhost_connection = ["localhost", 9898, "", "", "", "Downloads\\"]
+    # TODO Create a new one array connection here:
+    new_connection = ["ftp_name",
+                      port number,
+                      "user_name",
+                      "password",
+                      "ftp_folder_name/",
+                      "local_folder"]
 
     "GZIp --> Unzip: 1: All files will be downloaded, unzipped and, after that, that will be deleted"
 
-    # To change when change connection
+    # TODO To change when change connection (in the right, set the name of your array)
     current_data = localhost_connection
 
     ip = current_data[0]
