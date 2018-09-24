@@ -7,7 +7,7 @@ from Projects.SIL.src.DTO.Presence import Presence
 from Projects.SIL.src.DTO.Temperature import Temperature
 from UsefulTools.UtilsFunctions import pt, printProgressBar, get_files_from_path, create_directory_from_fullpath, \
     file_exists_in_path_or_create_path, is_none, check_file_exists_and_change_name, \
-    filename_and_extension_from_fullpath, transform_to_list
+    filename_and_extension_from_fullpath, transform_to_list, check_is_iterable
 from AsynchronousThreading import execute_asynchronous_thread
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -643,17 +643,24 @@ def value_update_i(indexes, value=None, values=None, top_limit=None, bottom_limi
     global index_series
     value_return = None
     index = -1
-    if index_series in indexes:
-        index = indexes.index(index_series)
-        value_return = value
-        if top_limit and bottom_limit:
-            if value_return > bottom_limit and value_return < top_limit:
-                value_return = None
-    # Check if last element
-    if len(indexes) - 1 <= index or index_series > max(indexes):
-        index_series = 0
-    else:
-        index_series += 1
+    if indexes:
+        if check_is_iterable(indexes[0]):
+            indexes = indexes[0]
+    indexes = transform_to_list(indexes)
+    try:
+        if index_series in indexes:
+            index = indexes.index(index_series)
+            value_return = value
+            if top_limit and bottom_limit:
+                if value_return > bottom_limit and value_return < top_limit:
+                    value_return = None
+        # Check if last element
+        if len(indexes) - 1 <= index or index_series > max(indexes):
+            index_series = 0
+        else:
+            index_series += 1
+    except Exception:
+        traceback.print_exc()
     return value_return
 
 def real_values_or_none(positions, real_values):
@@ -834,621 +841,633 @@ def data_analysis(cores_ids=None, data_ids=None, join_data=False, generate_pdf=T
         datatype = data_object.information.datatype
         data_object_frame = data_object.dataframe()
         raw_data = data_object.y_array()
-        from scipy.signal import savgol_filter
-        data_object_frame["Filtered"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3)
-        data_object_frame["Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=99, polyorder=3, deriv=2, delta=.5)
-        data_object_frame["Filtered_Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3, deriv=2, delta=0.5)
-        data_object_frame["savgol_filter"] = savgol_filter(data_object_frame[datatype], window_length=3, polyorder=2, deriv=2)
 
-        global index_series
-        import random
-        wind = random.randint(10, 300)
-        wind = 6
-        sigma = random.uniform(0.7, 3)
-        sigma = 0.5
-        std = data_object_frame.std()[datatype]
-        pt("window", wind)
-        pt("sigma", sigma)
-        pt("std", std)
+        # TODO (@gabvaztor) Create different functions to analyze data depending on datatype
+        def analyze_luminosity():
+            # TODO FINISH
+            getattr()  # Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.
+            callable()
+            pass
 
-        from matplotlib.backends.backend_pdf import PdfPages
-        pdf_path = output_path + actual_time + data_object.information.datatype + "(" \
-                   + data_object.unique_doid_date + ")" + ".pdf"
-        n = 0
-        fig = None
-        type_graphs = [""] * 50
-        pdf = PdfPages(pdf_path)
-        for i, element in enumerate(type_graphs):
-            #plot_num = 321
-            #plt.subplot(plot_num)
-            fig = plt.figure(figsize=(10, 10), dpi=800)
-            fig.clf()
-            fig.text(4.25 / 8.5, 0.5 / 11., str(i + 1), ha='center', fontsize=8)
-            text = "Windows Size:" + str(wind) + " | Sigma:" + str(sigma) + " | Std:" + "{0:.2f}".format(std)
-            #plt.text(0.2, 0.95, text, transform=fig.transFigure, size=16)
-            fig.suptitle(text, fontsize=14, fontweight='bold')
-            if i % 10:
-                gc.collect()
-            if i == 0:
-                plt.title("Histogram|" + data_object.title)
-                ax = plt.gca()
-                data_object_frame.hist(ax=ax)
-                plt.grid(True)
-            elif i == 1:
-                plt.title("Floor and Ceiling|" + data_object.title)
-                data_object_frame["Floor"] = data_object_frame[datatype].rolling(window=wind).mean() - \
-                                             (sigma * data_object_frame[datatype].rolling(window=wind).std())
-                data_object_frame["Ceiling"] = data_object_frame[datatype].rolling(window=wind).mean() + \
-                                               (sigma * data_object_frame[datatype].rolling(window=wind).std())
-                #data_object_frame.cumsum(axis=1)
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype], label=datatype, linewidth=0.2)
-                plt.plot(data_object_frame.index.values, data_object_frame["Floor"], label="Floor", linewidth=0.05)
-                plt.plot(data_object_frame.index.values, data_object_frame["Ceiling"], label="Ceiling", linewidth=0.05)
-                plt.grid(True)
-                plt.gca().legend()
-            elif i == 2:
-                plt.title("Anomalies|" + data_object.title)
-                data_object_frame["Anomaly"] = data_object_frame.apply(
-                    lambda row: row[datatype] if (
-                            row[datatype] <= row["Floor"] or row[datatype] >= row["Ceiling"]) else None
-                    , axis=1)
 
-                s = np.full(len(data_object_frame[datatype]), 0.05)
-                plt.scatter(data_object_frame.index.values, data_object_frame["Anomaly"], s=s, color="r",
-                            label="Anomalies")
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype], label=datatype, linewidth=0.05)
-                plt.grid(False)
-                plt.gca().legend()
-            elif i == 6:
-                plt.title("Filtered|" + data_object.title)
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], label=datatype, linewidth=0.05)
-                plt.gca().legend()
-            elif i == 7:
-                plt.title("Interpolated|" + data_object.title)
-                plt.plot(data_object_frame.index.values, data_object_frame["Interpolated"], label=datatype, linewidth=0.05)
-                plt.gca().legend()
-            elif i == 8:
-                plt.title("Filtered_Interpolated|" + data_object.title)
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"], label=datatype, linewidth=0.05)
-                plt.gca().legend()
-            elif i == 9:
-                plt.title("Events|" + data_object.title)
-                window = 101
-                #der2 = savgol_filter(data_object_frame[datatype], window_length=3, polyorder=2, deriv=2)
-                der2 = data_object_frame["savgol_filter"]
-                max_der2 = np.max(np.abs(der2))
-                large = np.where(np.abs(der2) > max_der2 / 4)[0]
-                gaps = np.diff(large) > window
-                begins = np.insert(large[1:][gaps], 0, large[0])
-                ends = np.append(large[:-1][gaps], large[-1])
-                changes = list(((begins + ends) / 2).astype(np.int))
-                pt("changes", changes)
+        def analyze_temperature():
+            # TODO Delete "dataFrame"
+            # TODO Centralize with general variables (...)
+            from scipy.signal import savgol_filter
+            data_object_frame["Filtered"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3)
+            data_object_frame["Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=99, polyorder=3, deriv=2, delta=.5)
+            data_object_frame["Filtered_Interpolated"] = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3, deriv=2, delta=0.5)
+            data_object_frame["savgol_filter"] = savgol_filter(data_object_frame[datatype], window_length=3, polyorder=2, deriv=2)
 
-                data_object_frame["Events"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
-                index_series = 0
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, data_object_frame["Events"], 'r+')
-                plt.gca().legend()
-            elif i == 10:
-                s = np.asarray(data_object_frame[datatype].tolist())
-                a_sign = np.sign(s)
-                sign_change = ((np.roll(a_sign, 1) - a_sign) != 0).astype(int)
-                changes = list(np.nonzero(sign_change == 1))
-                data_object_frame["Events2"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
-                index_series = 0
-                pt("changes2", changes)
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], 'r+')
-                plt.gca().legend()
-            elif i == 11:
-                plt.plot(data_object_frame.index.values, data_object_frame["savgol_filter"])
-                plt.gca().legend()
-            elif i == 12:
-                percent = 1.2
-                percent2 = 0.8
-                mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
-                lent = len(data_object_frame.index)
-                data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (sigma * data_object_frame["Filtered_Interpolated"].std()))
-                data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (sigma * data_object_frame["Filtered_Interpolated"].std()))
-                data_object_frame["Mean_savgol_filter"] = np.full(shape=lent, fill_value=mean)
-                data_object_frame["Anomaly_savgol_filter"] = data_object_frame.apply(
-                    lambda row: row["Filtered_Interpolated"] if (
-                            row["Filtered_Interpolated"] <= row["Floor_savgol_filter"]
-                            or row["Filtered_Interpolated"] >= row["Ceiling_savgol_filter"]) else None
-                    , axis=1)
-                index_series = 0
-                #plt.plot(data_object_frame.index.values, data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Floor_savgol_filter"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Ceiling_savgol_filter"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Mean_savgol_filter"], "black")
-                plt.plot(data_object_frame.index.values, data_object_frame["Anomaly_savgol_filter"], 'r+')
-                plt.gca().legend()
-            elif i == 13:
-                #plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"].resample(), style=':')
-                #plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"].asfreq(), style='--')
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
-                plt.gca().legend()
-            elif i == 14:
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype].pct_change())
-                plt.gca().legend()
-            elif i == 15:
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype].pct_change(periods=30))
-                plt.gca().legend()
-            elif i == 16:
-                data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Gradients_Filtered_Interpolated"])
-                plt.gca().legend()
-            elif i == 17:
-                g = np.gradient(data_object_frame[datatype])
-                data_object_frame["Gradients"] = np.gradient(data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, g, label="Gradients_Normal")
-                plt.gca().legend()
-            elif i == 18:
-                data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
-                sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
-                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
-                changes = list(np.nonzero(sign_change == 1)[0])
-                data_object_frame["Events2"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row["Filtered_Interpolated"], indexes=changes), axis=1)
-                index_series = 0
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "r+")
-                plt.gca().legend()
-            elif i == 19:
-                data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
-                sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
-                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
-                changes = list(np.nonzero(sign_change == 1)[0])
+            global index_series
+            import random
+            wind = random.randint(10, 300)
+            wind = 6
+            sigma = random.uniform(0.7, 3)
+            sigma = 0.5
+            std = data_object_frame.std()[datatype]
+            pt("window", wind)
+            pt("sigma", sigma)
+            pt("std", std)
 
-                mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
-                lent = len(data_object_frame.index)
-                data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (
-                        sigma * data_object_frame["Filtered_Interpolated"].std()))
-                data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (
-                        sigma * data_object_frame["Filtered_Interpolated"].std()))
-                data_object_frame["Events2"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row["Filtered_Interpolated"], indexes=changes,
-                                               top_limit=row["Ceiling_savgol_filter"],
-                                               bottom_limit=row["Floor_savgol_filter"]), axis=1)
-                index_series = 0
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Floor_savgol_filter"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Ceiling_savgol_filter"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "r+")
-                plt.gca().legend()
-            elif i == 20:
-                data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
-                sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
-                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
-                changes = list(np.nonzero(sign_change == 1)[0])
-                data_object_frame["Events_1"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
-                index_series = 0
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"])
-                plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "r+")
-                plt.gca().legend()
-            elif i == 21:
-                data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
-                mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
-                lent = len(data_object_frame.index)
-                data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (
-                        sigma * data_object_frame["Filtered_Interpolated"].std()))
-                data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (
+            from matplotlib.backends.backend_pdf import PdfPages
+            pdf_path = output_path + actual_time + data_object.information.datatype + "(" \
+                       + data_object.unique_doid_date + ")" + ".pdf"
+            n = 0
+            fig = None
+            type_graphs = [""] * 50
+            pdf = PdfPages(pdf_path)
+            for i, element in enumerate(type_graphs):
+                #plot_num = 321
+                #plt.subplot(plot_num)
+                fig = plt.figure(figsize=(10, 10), dpi=800)
+                fig.clf()
+                fig.text(4.25 / 8.5, 0.5 / 11., str(i + 1), ha='center', fontsize=8)
+                text = "Windows Size:" + str(wind) + " | Sigma:" + str(sigma) + " | Std:" + "{0:.2f}".format(std)
+                #plt.text(0.2, 0.95, text, transform=fig.transFigure, size=16)
+                fig.suptitle(text, fontsize=14, fontweight='bold')
+                if i % 10:
+                    gc.collect()
+                if i == 0:
+                    plt.title("Histogram|" + data_object.title)
+                    ax = plt.gca()
+                    data_object_frame.hist(ax=ax)
+                    plt.grid(True)
+                elif i == 1:
+                    plt.title("Floor and Ceiling|" + data_object.title)
+                    data_object_frame["Floor"] = data_object_frame[datatype].rolling(window=wind).mean() - \
+                                                 (sigma * data_object_frame[datatype].rolling(window=wind).std())
+                    data_object_frame["Ceiling"] = data_object_frame[datatype].rolling(window=wind).mean() + \
+                                                   (sigma * data_object_frame[datatype].rolling(window=wind).std())
+                    #data_object_frame.cumsum(axis=1)
+                    plt.plot(data_object_frame.index.values, data_object_frame[datatype], label=datatype, linewidth=0.2)
+                    plt.plot(data_object_frame.index.values, data_object_frame["Floor"], label="Floor", linewidth=0.05)
+                    plt.plot(data_object_frame.index.values, data_object_frame["Ceiling"], label="Ceiling", linewidth=0.05)
+                    plt.grid(True)
+                    plt.gca().legend()
+                elif i == 2:
+                    plt.title("Anomalies|" + data_object.title)
+                    data_object_frame["Anomaly"] = data_object_frame.apply(
+                        lambda row: row[datatype] if (
+                                row[datatype] <= row["Floor"] or row[datatype] >= row["Ceiling"]) else None
+                        , axis=1)
+
+                    s = np.full(len(data_object_frame[datatype]), 0.05)
+                    plt.scatter(data_object_frame.index.values, data_object_frame["Anomaly"], s=s, color="r",
+                                label="Anomalies")
+                    plt.plot(data_object_frame.index.values, data_object_frame[datatype], label=datatype, linewidth=0.05)
+                    plt.grid(False)
+                    plt.gca().legend()
+                elif i == 6:
+                    plt.title("Filtered|" + data_object.title)
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], label=datatype, linewidth=0.05)
+                    plt.gca().legend()
+                elif i == 7:
+                    plt.title("Interpolated|" + data_object.title)
+                    plt.plot(data_object_frame.index.values, data_object_frame["Interpolated"], label=datatype, linewidth=0.05)
+                    plt.gca().legend()
+                elif i == 8:
+                    plt.title("Filtered_Interpolated|" + data_object.title)
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"], label=datatype, linewidth=0.05)
+                    plt.gca().legend()
+                elif i == 9:
+                    plt.title("Events|" + data_object.title)
+                    window = 101
+                    #der2 = savgol_filter(data_object_frame[datatype], window_length=3, polyorder=2, deriv=2)
+                    der2 = data_object_frame["savgol_filter"]
+                    max_der2 = np.max(np.abs(der2))
+                    large = np.where(np.abs(der2) > max_der2 / 4)[0]
+                    gaps = np.diff(large) > window
+                    begins = np.insert(large[1:][gaps], 0, large[0])
+                    ends = np.append(large[:-1][gaps], large[-1])
+                    changes = list(((begins + ends) / 2).astype(np.int))
+                    pt("changes", changes)
+
+                    data_object_frame["Events"] = data_object_frame.apply(
+                        lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
+                    index_series = 0
+                    plt.plot(data_object_frame.index.values, data_object_frame[datatype])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Events"], 'r+')
+                    plt.gca().legend()
+                elif i == 10:
+                    s = np.asarray(data_object_frame[datatype].tolist())
+                    a_sign = np.sign(s)
+                    sign_change = ((np.roll(a_sign, 1) - a_sign) != 0).astype(int)
+                    changes = list(np.nonzero(sign_change == 1))
+                    data_object_frame["Events2"] = data_object_frame.apply(
+                        lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
+                    index_series = 0
+                    pt("changes2", changes)
+                    plt.plot(data_object_frame.index.values, data_object_frame[datatype])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Events2"], 'r+')
+                    plt.gca().legend()
+                elif i == 11:
+                    plt.plot(data_object_frame.index.values, data_object_frame["savgol_filter"])
+                    plt.gca().legend()
+                elif i == 12:
+                    percent = 1.2
+                    percent2 = 0.8
+                    mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
+                    lent = len(data_object_frame.index)
+                    data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (sigma * data_object_frame["Filtered_Interpolated"].std()))
+                    data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (sigma * data_object_frame["Filtered_Interpolated"].std()))
+                    data_object_frame["Mean_savgol_filter"] = np.full(shape=lent, fill_value=mean)
+                    data_object_frame["Anomaly_savgol_filter"] = data_object_frame.apply(
+                        lambda row: row["Filtered_Interpolated"] if (
+                                row["Filtered_Interpolated"] <= row["Floor_savgol_filter"]
+                                or row["Filtered_Interpolated"] >= row["Ceiling_savgol_filter"]) else None
+                        , axis=1)
+                    index_series = 0
+                    #plt.plot(data_object_frame.index.values, data_object_frame[datatype])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Floor_savgol_filter"])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Ceiling_savgol_filter"])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Mean_savgol_filter"], "black")
+                    plt.plot(data_object_frame.index.values, data_object_frame["Anomaly_savgol_filter"], 'r+')
+                    plt.gca().legend()
+                elif i == 13:
+                    #plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"].resample(), style=':')
+                    #plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"].asfreq(), style='--')
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
+                    plt.gca().legend()
+                elif i == 14:
+                    plt.plot(data_object_frame.index.values, data_object_frame[datatype].pct_change())
+                    plt.gca().legend()
+                elif i == 15:
+                    plt.plot(data_object_frame.index.values, data_object_frame[datatype].pct_change(periods=30))
+                    plt.gca().legend()
+                elif i == 16:
+                    data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Gradients_Filtered_Interpolated"])
+                    plt.gca().legend()
+                elif i == 17:
+                    g = np.gradient(data_object_frame[datatype])
+                    data_object_frame["Gradients"] = np.gradient(data_object_frame[datatype])
+                    plt.plot(data_object_frame.index.values, g, label="Gradients_Normal")
+                    plt.gca().legend()
+                elif i == 18:
+                    data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
+                    sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
+                    sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                    changes = list(np.nonzero(sign_change == 1)[0])
+                    data_object_frame["Events2"] = data_object_frame.apply(
+                        lambda row: value_update_i(value=row["Filtered_Interpolated"], indexes=changes), axis=1)
+                    index_series = 0
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "r+")
+                    plt.gca().legend()
+                elif i == 19:
+                    data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
+                    sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
+                    sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                    changes = list(np.nonzero(sign_change == 1)[0])
+
+                    mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
+                    lent = len(data_object_frame.index)
+                    data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (
                             sigma * data_object_frame["Filtered_Interpolated"].std()))
-                sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
-                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
-                changes = list(np.nonzero(sign_change == 1)[0])
+                    data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (
+                            sigma * data_object_frame["Filtered_Interpolated"].std()))
+                    data_object_frame["Events2"] = data_object_frame.apply(
+                        lambda row: value_update_i(value=row["Filtered_Interpolated"], indexes=changes,
+                                                   top_limit=row["Ceiling_savgol_filter"],
+                                                   bottom_limit=row["Floor_savgol_filter"]), axis=1)
+                    index_series = 0
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered_Interpolated"])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Floor_savgol_filter"])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Ceiling_savgol_filter"])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Events2"], "r+")
+                    plt.gca().legend()
+                elif i == 20:
+                    data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
+                    sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
+                    sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                    changes = list(np.nonzero(sign_change == 1)[0])
+                    data_object_frame["Events_1"] = data_object_frame.apply(
+                        lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
+                    index_series = 0
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered"])
+                    plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "r+")
+                    plt.gca().legend()
+                elif i == 21:
+                    data_object_frame["Gradients_Filtered_Interpolated"] = np.gradient(data_object_frame["Filtered_Interpolated"])
+                    mean = data_object_frame["Filtered_Interpolated"].median(axis=0)
+                    lent = len(data_object_frame.index)
+                    data_object_frame["Floor_savgol_filter"] = np.full(shape=lent, fill_value=mean - (
+                            sigma * data_object_frame["Filtered_Interpolated"].std()))
+                    data_object_frame["Ceiling_savgol_filter"] = np.full(shape=lent, fill_value=mean + (
+                                sigma * data_object_frame["Filtered_Interpolated"].std()))
+                    sign = np.sign(data_object_frame["Gradients_Filtered_Interpolated"])
+                    sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                    changes = list(np.nonzero(sign_change == 1)[0])
 
-                changes = filter_changes_list(changes=changes, values=data_object_frame["Filtered_Interpolated"],
-                                              top_limit=data_object_frame["Ceiling_savgol_filter"],
-                                              bottom_limit=data_object_frame["Floor_savgol_filter"])
-                data_object_frame["Events_1"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
-                index_series = 0
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], )
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
-                plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "r+")
-                plt.gca().legend()
-            elif i == 22:
-                # TODO (@gabvaztor) Do i=18 to raw data. Check events and filter with gradient and % of change.
-                data_object_frame["Gradients_Raw"] = np.gradient(
-                    data_object_frame[datatype])
-                sign = np.sign(data_object_frame["Gradients_Raw"])
-                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
-                changes = list(np.nonzero(sign_change == 1)[0])
-                data_object_frame["Events3"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
-                index_series = 0
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype], "blue")
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "green", alpha=0.5)
-                plt.plot(data_object_frame.index.values, data_object_frame["Events3"], "r+")
-                plt.gca().legend()
-            elif i == 23:
-                data_object_frame["Gradients_Raw"] = np.gradient(
-                    data_object_frame[datatype])
+                    changes = filter_changes_list(changes=changes, values=data_object_frame["Filtered_Interpolated"],
+                                                  top_limit=data_object_frame["Ceiling_savgol_filter"],
+                                                  bottom_limit=data_object_frame["Floor_savgol_filter"])
+                    data_object_frame["Events_1"] = data_object_frame.apply(
+                        lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
+                    index_series = 0
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], )
+                    plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
+                    plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "r+")
+                    plt.gca().legend()
+                elif i == 22:
+                    # TODO (@gabvaztor) Do i=18 to raw data. Check events and filter with gradient and % of change.
+                    data_object_frame["Gradients_Raw"] = np.gradient(
+                        data_object_frame[datatype])
+                    sign = np.sign(data_object_frame["Gradients_Raw"])
+                    sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                    changes = list(np.nonzero(sign_change == 1)[0])
+                    data_object_frame["Events3"] = data_object_frame.apply(
+                        lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
+                    index_series = 0
+                    plt.plot(data_object_frame.index.values, data_object_frame[datatype], "blue")
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "green", alpha=0.5)
+                    plt.plot(data_object_frame.index.values, data_object_frame["Events3"], "r+")
+                    plt.gca().legend()
+                elif i == 23:
+                    data_object_frame["Gradients_Raw"] = np.gradient(
+                        data_object_frame[datatype])
 
-                mean = data_object_frame[datatype].median(axis=0)
-                lent = len(data_object_frame.index)
-                std_ = data_object_frame[datatype].std()
-                floor_raw = np.full(shape=lent, fill_value=(mean - (sigma * std_)))
-                ceiling_raw = np.full(shape=lent, fill_value=(mean + (sigma * std_)))
+                    mean = data_object_frame[datatype].median(axis=0)
+                    lent = len(data_object_frame.index)
+                    std_ = data_object_frame[datatype].std()
+                    floor_raw = np.full(shape=lent, fill_value=(mean - (sigma * std_)))
+                    ceiling_raw = np.full(shape=lent, fill_value=(mean + (sigma * std_)))
 
-                sign = np.sign(data_object_frame["Gradients_Raw"])
-                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
-                changes = list(np.nonzero(sign_change == 1)[0])
-                changes = filter_changes_list(changes=changes, values=data_object_frame[datatype],
-                                              top_limit=ceiling_raw,
-                                              bottom_limit=floor_raw)
-                data_object_frame["Events4"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
-                index_series = 0
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype], "g")
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "b", alpha=0.5)
-                plt.plot(data_object_frame.index.values, data_object_frame["Events4"], "r+")
-                plt.plot(data_object_frame.index.values, ceiling_raw, label="Ceiling_raw")
-                plt.plot(data_object_frame.index.values, floor_raw, label="Floor_raw")
-                plt.gca().legend()
-            elif i == 240000000:
-                # TODO (@gabvaztor) All process
-                # 1 - RAW
-                # 2 - Filtered Interpolated / Raw interpolated
-                # 3:
-                #   3.1 Gradient
-                #   3.2 Sign
-                #   3.3 Changes
-                #   3.4 Mean
-                #   3.5 Std()
-                # 4 - Changes filtered by percent and floor and ceiling
-                """
-                RAW
-                """
-                raw_data = raw_data
-                """
-                FILTERED INTERPOLATED with Savgol_filter 
-                We must 
-                """
-                filtered_interpolated = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=2, delta=0.5)
-                filtered = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3)
-                gradients = np.gradient(filtered_interpolated)
-                median = data_object_frame["Filtered_Interpolated"].median(axis=0)
-                median2 = np.median(filtered_interpolated, axis=0)
-                median3 = np.median(filtered_interpolated)
-                mean = data_object_frame["Filtered_Interpolated"].mean(axis=0)
-                mean2 = filtered_interpolated.mean(axis=0)
-                mean3 = filtered_interpolated.mean()
-                lent = len(data_object_frame.index)
-                std1 = filtered_interpolated.std()
-                std = data_object_frame["Filtered_Interpolated"].std()
-                floor_savgol_filter = np.full(shape=lent, fill_value=median2 - (sigma * std1))
-                ceiling_savgol_filter = np.full(shape=lent, fill_value=median2 + (sigma * std1))
-                sign = np.sign(gradients)
-                sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
-                events_without_filter = list(np.nonzero(sign_change == 1)[0])
+                    sign = np.sign(data_object_frame["Gradients_Raw"])
+                    sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                    changes = list(np.nonzero(sign_change == 1)[0])
+                    changes = filter_changes_list(changes=changes, values=data_object_frame[datatype],
+                                                  top_limit=ceiling_raw,
+                                                  bottom_limit=floor_raw)
+                    data_object_frame["Events4"] = data_object_frame.apply(
+                        lambda row: value_update_i(value=row[datatype], indexes=changes), axis=1)
+                    index_series = 0
+                    plt.plot(data_object_frame.index.values, data_object_frame[datatype], "g")
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "b", alpha=0.5)
+                    plt.plot(data_object_frame.index.values, data_object_frame["Events4"], "r+")
+                    plt.plot(data_object_frame.index.values, ceiling_raw, label="Ceiling_raw")
+                    plt.plot(data_object_frame.index.values, floor_raw, label="Floor_raw")
+                    plt.gca().legend()
+                elif i == 240000000:
+                    # TODO (@gabvaztor) All process
+                    # 1 - RAW
+                    # 2 - Filtered Interpolated / Raw interpolated
+                    # 3:
+                    #   3.1 Gradient
+                    #   3.2 Sign
+                    #   3.3 Changes
+                    #   3.4 Mean
+                    #   3.5 Std()
+                    # 4 - Changes filtered by percent and floor and ceiling
+                    """
+                    RAW
+                    """
+                    raw_data = raw_data
+                    """
+                    FILTERED INTERPOLATED with Savgol_filter 
+                    We must 
+                    """
+                    filtered_interpolated = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=2, delta=0.5)
+                    filtered = savgol_filter(data_object_frame[datatype], window_length=199, polyorder=3)
+                    gradients = np.gradient(filtered_interpolated)
+                    median = data_object_frame["Filtered_Interpolated"].median(axis=0)
+                    median2 = np.median(filtered_interpolated, axis=0)
+                    median3 = np.median(filtered_interpolated)
+                    mean = data_object_frame["Filtered_Interpolated"].mean(axis=0)
+                    mean2 = filtered_interpolated.mean(axis=0)
+                    mean3 = filtered_interpolated.mean()
+                    lent = len(data_object_frame.index)
+                    std1 = filtered_interpolated.std()
+                    std = data_object_frame["Filtered_Interpolated"].std()
+                    floor_savgol_filter = np.full(shape=lent, fill_value=median2 - (sigma * std1))
+                    ceiling_savgol_filter = np.full(shape=lent, fill_value=median2 + (sigma * std1))
+                    sign = np.sign(gradients)
+                    sign_change = ((np.roll(sign, 1) - sign) != 0).astype(int)
+                    events_without_filter = list(np.nonzero(sign_change == 1)[0])
 
-                changes_filtered = filter_changes_list(changes=events_without_filter, values=filtered_interpolated,
-                                              top_limit=ceiling_savgol_filter,
-                                              bottom_limit=floor_savgol_filter)
+                    changes_filtered = filter_changes_list(changes=events_without_filter, values=filtered_interpolated,
+                                                  top_limit=ceiling_savgol_filter,
+                                                  bottom_limit=floor_savgol_filter)
 
-                changes = find_exceptional_events(events=changes_filtered, values=filtered_interpolated)
+                    changes = find_exceptional_events(events=changes_filtered, values=filtered_interpolated)
 
-                pt("Index_Value", index_series)
-                events_1 = [[value_update_i(value=x, indexes=changes)] for x in filtered]
-                index_series = 0
-                pt("Index_Value", index_series)
-                data_object_frame["Events_1"] = data_object_frame.apply(
-                    lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
-                plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "black")
-                plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
-                plt.plot(data_object_frame.index.values, events_1, "r+", label="events")
-                #plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "bo")
-                plt.gca().legend()
-            elif i == 25:
-                g = np.gradient(data_object_frame[datatype])
-                g_absolute = np.absolute(g)
-                data_object_frame["Gradients"] = np.gradient(data_object_frame[datatype])
-                plt.plot(data_object_frame.index.values, g_absolute, label="Gradient")
-                plt.gca().legend()
-            elif i == 26:
-                g = np.gradient(data_object_frame[datatype])
-                g2 = np.gradient(g)
-                g_absolute = np.absolute(g2)
-                plt.plot(data_object_frame.index.values, g_absolute, label="Gradients2")
-                plt.gca().legend()
-            elif i == 27:
-                g = np.gradient(data_object_frame[datatype])
-                g2 = np.gradient(g)
-                g_absolute = np.absolute(g2)
-                filtered = savgol_filter(g_absolute, window_length=199, polyorder=3)
-                plt.plot(data_object_frame.index.values, filtered, label="Gradients2_Filtered")
-                plt.gca().legend()
-            elif i == 28:
-                # Gradients 2 Filtered with events more than Delta X
-                g = np.gradient(data_object_frame[datatype])
-                g2 = np.gradient(g)
-                g_absolute = np.absolute(g2)
-                lent = len(data_object_frame.index)
-                gradient_absolute_filtered = savgol_filter(g_absolute, window_length=199, polyorder=3)
-                std = gradient_absolute_filtered.std()
-                median = np.median(gradient_absolute_filtered, axis=0)
-                #floor_g_absolute = np.full(shape=lent, fill_value=median - (sigma * std))
-                ceiling_g_absolute = np.full(shape=lent, fill_value=median + (sigma * std))
-                changes_from_ceiling = find_changes(values=gradient_absolute_filtered, ceiling=None,
-                                                    floor=ceiling_g_absolute)
-                values_from_changes = real_values_or_none(positions=changes_from_ceiling,
-                                                          real_values=gradient_absolute_filtered)
-                plt.plot(data_object_frame.index.values, gradient_absolute_filtered, "b-", label="Gradient absolute filtered")
-                plt.plot(data_object_frame.index.values, values_from_changes, "r+", label="Events")
-                plt.plot(data_object_frame.index.values, ceiling_g_absolute, "orange", label="Ceiling")
-                plt.gca().legend()
-            elif i == 29:
-                #deriv2 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=2)
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                plt.plot(data_object_frame.index.values, deriv1, "b-",label="deriv1")
-                plt.gca().legend()
-            elif i == 30:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
-                plt.plot(data_object_frame.index.values, deriv2, "r-", label="deriv2")
-                plt.gca().legend()
-            elif i == 31:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                absolute = np.absolute(deriv1)
-                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
-                plt.gca().legend()
-            elif i == 32:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
-                absolute = np.absolute(deriv2)
-                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv2")
-                plt.gca().legend()
-            elif i == 33:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                absolute = np.absolute(deriv1)
-                lent = len(data_object_frame.index)
-                std = absolute.std()
-                median = np.median(absolute)
-                limit = np.full(shape=lent, fill_value=median + (sigma * std))
-                from scipy.signal import argrelextrema
-                # determine the indices of the local maxima
-                maxInd = argrelextrema(absolute, np.greater)[0]
-                changes_filtered = filter_changes_list(changes=maxInd, values=absolute,
-                                                       top_limit=None,
-                                                       bottom_limit=limit)
-                values_from_changes = real_values_or_none(positions=changes_filtered,
-                                                          real_values=absolute)
-                events_1 = [[value_update_i(value=x, indexes=changes_filtered)] for x in absolute]
-                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
-                plt.plot(data_object_frame.index.values, values_from_changes, "k+",label="values")
-                #plt.plot(data_object_frame.index.values, events_1, "ro",label="values")
-                plt.plot(data_object_frame.index.values, limit, "--",label="limit")
-                plt.gca().legend()
-            elif i == 34:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                absolute = np.absolute(deriv1)
+                    pt("Index_Value", index_series)
+                    events_1 = [[value_update_i(value=x, indexes=changes)] for x in filtered]
+                    index_series = 0
+                    pt("Index_Value", index_series)
+                    data_object_frame["Events_1"] = data_object_frame.apply(
+                        lambda row: value_update_i(value=row["Filtered"], indexes=changes), axis=1)
+                    plt.plot(data_object_frame.index.values, data_object_frame["Filtered"], "black")
+                    plt.plot(data_object_frame.index.values, data_object_frame[datatype], "green", alpha=0.5)
+                    plt.plot(data_object_frame.index.values, events_1, "r+", label="events")
+                    #plt.plot(data_object_frame.index.values, data_object_frame["Events_1"], "bo")
+                    plt.gca().legend()
+                elif i == 25:
+                    g = np.gradient(data_object_frame[datatype])
+                    g_absolute = np.absolute(g)
+                    data_object_frame["Gradients"] = np.gradient(data_object_frame[datatype])
+                    plt.plot(data_object_frame.index.values, g_absolute, label="Gradient")
+                    plt.gca().legend()
+                elif i == 26:
+                    g = np.gradient(data_object_frame[datatype])
+                    g2 = np.gradient(g)
+                    g_absolute = np.absolute(g2)
+                    plt.plot(data_object_frame.index.values, g_absolute, label="Gradients2")
+                    plt.gca().legend()
+                elif i == 27:
+                    g = np.gradient(data_object_frame[datatype])
+                    g2 = np.gradient(g)
+                    g_absolute = np.absolute(g2)
+                    filtered = savgol_filter(g_absolute, window_length=199, polyorder=3)
+                    plt.plot(data_object_frame.index.values, filtered, label="Gradients2_Filtered")
+                    plt.gca().legend()
+                elif i == 28:
+                    # Gradients 2 Filtered with events more than Delta X
+                    g = np.gradient(data_object_frame[datatype])
+                    g2 = np.gradient(g)
+                    g_absolute = np.absolute(g2)
+                    lent = len(data_object_frame.index)
+                    gradient_absolute_filtered = savgol_filter(g_absolute, window_length=199, polyorder=3)
+                    std = gradient_absolute_filtered.std()
+                    median = np.median(gradient_absolute_filtered, axis=0)
+                    #floor_g_absolute = np.full(shape=lent, fill_value=median - (sigma * std))
+                    ceiling_g_absolute = np.full(shape=lent, fill_value=median + (sigma * std))
+                    changes_from_ceiling = find_changes(values=gradient_absolute_filtered, ceiling=None,
+                                                        floor=ceiling_g_absolute)
+                    values_from_changes = real_values_or_none(positions=changes_from_ceiling,
+                                                              real_values=gradient_absolute_filtered)
+                    plt.plot(data_object_frame.index.values, gradient_absolute_filtered, "b-", label="Gradient absolute filtered")
+                    plt.plot(data_object_frame.index.values, values_from_changes, "r+", label="Events")
+                    plt.plot(data_object_frame.index.values, ceiling_g_absolute, "orange", label="Ceiling")
+                    plt.gca().legend()
+                elif i == 29:
+                    #deriv2 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=2)
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    plt.plot(data_object_frame.index.values, deriv1, "b-",label="deriv1")
+                    plt.gca().legend()
+                elif i == 30:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
+                    plt.plot(data_object_frame.index.values, deriv2, "r-", label="deriv2")
+                    plt.gca().legend()
+                elif i == 31:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    absolute = np.absolute(deriv1)
+                    plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
+                    plt.gca().legend()
+                elif i == 32:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
+                    absolute = np.absolute(deriv2)
+                    plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv2")
+                    plt.gca().legend()
+                elif i == 33:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    absolute = np.absolute(deriv1)
+                    lent = len(data_object_frame.index)
+                    std = absolute.std()
+                    median = np.median(absolute)
+                    limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                    from scipy.signal import argrelextrema
+                    # determine the indices of the local maxima
+                    maxInd = argrelextrema(absolute, np.greater)[0]
+                    changes_filtered = filter_changes_list(changes=maxInd, values=absolute,
+                                                           top_limit=None,
+                                                           bottom_limit=limit)
+                    values_from_changes = real_values_or_none(positions=changes_filtered,
+                                                              real_values=absolute)
+                    events_1 = [[value_update_i(value=x, indexes=changes_filtered)] for x in absolute]
+                    plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
+                    plt.plot(data_object_frame.index.values, values_from_changes, "k+",label="values")
+                    #plt.plot(data_object_frame.index.values, events_1, "ro",label="values")
+                    plt.plot(data_object_frame.index.values, limit, "--",label="limit")
+                    plt.gca().legend()
+                elif i == 34:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    absolute = np.absolute(deriv1)
 
-                from scipy.signal import argrelextrema
-                # determine the indices of the local maxima
-                maxInd = argrelextrema(absolute, np.greater)[0]
-                # get the actual values using these indices
-                r = absolute[maxInd]
-                r = real_values_or_none(maxInd, absolute)
+                    from scipy.signal import argrelextrema
+                    # determine the indices of the local maxima
+                    maxInd = argrelextrema(absolute, np.greater)[0]
+                    # get the actual values using these indices
+                    r = absolute[maxInd]
+                    r = real_values_or_none(maxInd, absolute)
 
-                plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
-                plt.plot(data_object_frame.index.values, r, "ro",label="values")
-                plt.gca().legend()
-            elif i == 35:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                from scipy.signal import argrelextrema
-                maxInd = argrelextrema(deriv1, np.greater)[0]
-                r = real_values_or_none(maxInd, raw_data)
+                    plt.plot(data_object_frame.index.values, absolute, "b-",label="absolute_deriv1")
+                    plt.plot(data_object_frame.index.values, r, "ro",label="values")
+                    plt.gca().legend()
+                elif i == 35:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    from scipy.signal import argrelextrema
+                    maxInd = argrelextrema(deriv1, np.greater)[0]
+                    r = real_values_or_none(maxInd, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
-                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv1")
-                plt.gca().legend()
-            elif i == 36:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                from scipy.signal import argrelextrema
-                maxInd = argrelextrema(deriv1, np.greater)[0]
-                lent = len(data_object_frame.index)
-                std = deriv1.std()
-                median = np.median(deriv1)
-                limit = np.full(shape=lent, fill_value=median + (sigma * std))
-                max_ind_filter = filter_changes_list(changes=maxInd, values=deriv1,
-                                                     top_limit=None,
-                                                     bottom_limit=limit)
-                r = real_values_or_none(max_ind_filter, raw_data)
+                    plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
+                    plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv1")
+                    plt.gca().legend()
+                elif i == 36:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    from scipy.signal import argrelextrema
+                    maxInd = argrelextrema(deriv1, np.greater)[0]
+                    lent = len(data_object_frame.index)
+                    std = deriv1.std()
+                    median = np.median(deriv1)
+                    limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                    max_ind_filter = filter_changes_list(changes=maxInd, values=deriv1,
+                                                         top_limit=None,
+                                                         bottom_limit=limit)
+                    r = real_values_or_none(max_ind_filter, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
-                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv1 filtered")
-                plt.gca().legend()
-            elif i == 37:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                absolute = np.absolute(deriv1)
+                    plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
+                    plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv1 filtered")
+                    plt.gca().legend()
+                elif i == 37:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    absolute = np.absolute(deriv1)
 
-                from scipy.signal import argrelextrema
-                # determine the indices of the local maxima
-                maxInd = argrelextrema(absolute, np.greater)[0]
-                lent = len(data_object_frame.index)
-                std = absolute.std()
-                median = np.median(absolute)
-                limit = np.full(shape=lent, fill_value=median + (sigma * std))
-                max_ind_filter = filter_changes_list(changes=maxInd, values=absolute,
-                                                       top_limit=None,
-                                                       bottom_limit=limit)
+                    from scipy.signal import argrelextrema
+                    # determine the indices of the local maxima
+                    maxInd = argrelextrema(absolute, np.greater)[0]
+                    lent = len(data_object_frame.index)
+                    std = absolute.std()
+                    median = np.median(absolute)
+                    limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                    max_ind_filter = filter_changes_list(changes=maxInd, values=absolute,
+                                                           top_limit=None,
+                                                           bottom_limit=limit)
 
-                r = real_values_or_none(max_ind_filter, raw_data)
+                    r = real_values_or_none(max_ind_filter, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data")
-                plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute filtered")
-                plt.gca().legend()
-            elif i == 38:
-                # pass
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                absolute = np.absolute(deriv1)
+                    plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data")
+                    plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute filtered")
+                    plt.gca().legend()
+                elif i == 38:
+                    # pass
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    absolute = np.absolute(deriv1)
 
-                from scipy.signal import argrelextrema
-                # determine the indices of the local maxima
-                maxInd = argrelextrema(absolute, np.greater)[0]
-                # get the actual values using these indices
-                r = absolute[maxInd]
-                r = real_values_or_none(maxInd, raw_data)
+                    from scipy.signal import argrelextrema
+                    # determine the indices of the local maxima
+                    maxInd = argrelextrema(absolute, np.greater)[0]
+                    # get the actual values using these indices
+                    r = absolute[maxInd]
+                    r = real_values_or_none(maxInd, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data")
-                plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
-                plt.gca().legend()
-            elif i == 39:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
-                from scipy.signal import argrelextrema
-                maxInd = argrelextrema(deriv2, np.greater)[0]
-                r = real_values_or_none(maxInd, raw_data)
+                    plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data")
+                    plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
+                    plt.gca().legend()
+                elif i == 39:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
+                    from scipy.signal import argrelextrema
+                    maxInd = argrelextrema(deriv2, np.greater)[0]
+                    r = real_values_or_none(maxInd, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
-                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2")
-                plt.gca().legend()
-            elif i == 40:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
-                from scipy.signal import argrelextrema
-                maxInd = argrelextrema(deriv2, np.greater)[0]
-                lent = len(data_object_frame.index)
-                std = deriv2.std()
-                median = np.median(deriv2)
-                limit = np.full(shape=lent, fill_value=median + (sigma * std))
-                max_ind_filter = filter_changes_list(changes=maxInd, values=deriv2,
-                                                     top_limit=None,
-                                                     bottom_limit=limit)
-                r = real_values_or_none(max_ind_filter, raw_data)
+                    plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
+                    plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2")
+                    plt.gca().legend()
+                elif i == 40:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
+                    from scipy.signal import argrelextrema
+                    maxInd = argrelextrema(deriv2, np.greater)[0]
+                    lent = len(data_object_frame.index)
+                    std = deriv2.std()
+                    median = np.median(deriv2)
+                    limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                    max_ind_filter = filter_changes_list(changes=maxInd, values=deriv2,
+                                                         top_limit=None,
+                                                         bottom_limit=limit)
+                    r = real_values_or_none(max_ind_filter, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
-                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2 filtered")
-                plt.gca().legend()
-            elif i == 41:
-                deriv1 = savgol_filter(raw_data, window_length=299, polyorder=3, deriv=1)
-                absolute = np.absolute(deriv1)
+                    plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data")
+                    plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2 filtered")
+                    plt.gca().legend()
+                elif i == 41:
+                    deriv1 = savgol_filter(raw_data, window_length=299, polyorder=3, deriv=1)
+                    absolute = np.absolute(deriv1)
 
-                from scipy.signal import argrelextrema
-                # determine the indices of the local maxima
-                maxInd = argrelextrema(absolute, np.greater)[0]
-                # get the actual values using these indices
-                r = absolute[maxInd]
-                r = real_values_or_none(maxInd, raw_data)
-                minInd = argrelextrema(deriv1, np.less)[0]
-                r_min = real_values_or_none(minInd, raw_data)
-                plt.plot(data_object_frame.index.values, r_min, "o", color="orange",label="values min with deriv1")
-                plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data 299", linewidth=0.2)
-                plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
-                plt.gca().legend()
-            elif i == 42:
-                deriv1 = savgol_filter(raw_data, window_length=299, polyorder=3, deriv=1)
-                deriv2 = savgol_filter(deriv1, window_length=299, polyorder=3, deriv=1)
-                from scipy.signal import argrelextrema
-                maxInd = argrelextrema(deriv2, np.greater)[0]
-                lent = len(data_object_frame.index)
-                std = deriv2.std()
-                median = np.median(deriv2)
-                limit = np.full(shape=lent, fill_value=median + (sigma * std))
-                max_ind_filter = filter_changes_list(changes=maxInd, values=deriv2,
-                                                     top_limit=None,
-                                                     bottom_limit=limit)
-                r = real_values_or_none(max_ind_filter, raw_data)
+                    from scipy.signal import argrelextrema
+                    # determine the indices of the local maxima
+                    maxInd = argrelextrema(absolute, np.greater)[0]
+                    # get the actual values using these indices
+                    r = absolute[maxInd]
+                    r = real_values_or_none(maxInd, raw_data)
+                    minInd = argrelextrema(deriv1, np.less)[0]
+                    r_min = real_values_or_none(minInd, raw_data)
+                    plt.plot(data_object_frame.index.values, r_min, "o", color="orange",label="values min with deriv1")
+                    plt.plot(data_object_frame.index.values, raw_data, "b-",label="raw_data 299", linewidth=0.2)
+                    plt.plot(data_object_frame.index.values, r, "ro",label="values with absolute")
+                    plt.gca().legend()
+                elif i == 42:
+                    deriv1 = savgol_filter(raw_data, window_length=299, polyorder=3, deriv=1)
+                    deriv2 = savgol_filter(deriv1, window_length=299, polyorder=3, deriv=1)
+                    from scipy.signal import argrelextrema
+                    maxInd = argrelextrema(deriv2, np.greater)[0]
+                    lent = len(data_object_frame.index)
+                    std = deriv2.std()
+                    median = np.median(deriv2)
+                    limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                    max_ind_filter = filter_changes_list(changes=maxInd, values=deriv2,
+                                                         top_limit=None,
+                                                         bottom_limit=limit)
+                    r = real_values_or_none(max_ind_filter, raw_data)
 
-                minInd = argrelextrema(deriv2, np.less)[0]
-                r_min = real_values_or_none(minInd, raw_data)
-                plt.plot(data_object_frame.index.values, r_min, "o", color="orange",label="values min with deriv2 filtered")
+                    minInd = argrelextrema(deriv2, np.less)[0]
+                    r_min = real_values_or_none(minInd, raw_data)
+                    plt.plot(data_object_frame.index.values, r_min, "o", color="orange",label="values min with deriv2 filtered")
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 299", linewidth=0.2)
-                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2 filtered")
-                plt.gca().legend()
-            elif i == 43:
-                deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
-                deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
-                deriv3 = savgol_filter(deriv2, window_length=199, polyorder=3, deriv=1)
-                from scipy.signal import argrelextrema
-                maxInd = argrelextrema(deriv3, np.greater)[0]
-                r = real_values_or_none(maxInd, raw_data)
+                    plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 299", linewidth=0.2)
+                    plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv2 filtered")
+                    plt.gca().legend()
+                elif i == 43:
+                    deriv1 = savgol_filter(raw_data, window_length=199, polyorder=3, deriv=1)
+                    deriv2 = savgol_filter(deriv1, window_length=199, polyorder=3, deriv=1)
+                    deriv3 = savgol_filter(deriv2, window_length=199, polyorder=3, deriv=1)
+                    from scipy.signal import argrelextrema
+                    maxInd = argrelextrema(deriv3, np.greater)[0]
+                    r = real_values_or_none(maxInd, raw_data)
 
-                minInd = argrelextrema(deriv3, np.less)[0]
-                r_min = real_values_or_none(minInd, raw_data)
-                plt.plot(data_object_frame.index.values, r_min, "o", color="orange",label="values min with deriv3")
-                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199", linewidth=0.2)
-                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv3")
-                plt.gca().legend()
-            elif i == 44:
-                deriv1 = savgol_filter(raw_data, window_length=149, polyorder=3, deriv=1)
-                deriv2 = savgol_filter(deriv1, window_length=149, polyorder=3, deriv=1)
-                deriv3 = savgol_filter(deriv2, window_length=149, polyorder=3, deriv=1)
-                from scipy.signal import argrelextrema
-                maxInd = argrelextrema(deriv3, np.greater)[0]
-                minInd = argrelextrema(deriv3, np.less)[0]
-                lent = len(data_object_frame.index)
-                std = deriv3.std()
-                median = np.median(deriv3)
-                limit = np.full(shape=lent, fill_value=median + (sigma * std))
-                max_ind_filter = filter_changes_list(changes=maxInd, values=deriv3,
-                                                     top_limit=None,
-                                                     bottom_limit=limit)
+                    minInd = argrelextrema(deriv3, np.less)[0]
+                    r_min = real_values_or_none(minInd, raw_data)
+                    plt.plot(data_object_frame.index.values, r_min, "o", color="orange",label="values min with deriv3")
+                    plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199", linewidth=0.2)
+                    plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv3")
+                    plt.gca().legend()
+                elif i == 44:
+                    deriv1 = savgol_filter(raw_data, window_length=149, polyorder=3, deriv=1)
+                    deriv2 = savgol_filter(deriv1, window_length=149, polyorder=3, deriv=1)
+                    deriv3 = savgol_filter(deriv2, window_length=149, polyorder=3, deriv=1)
+                    from scipy.signal import argrelextrema
+                    maxInd = argrelextrema(deriv3, np.greater)[0]
+                    minInd = argrelextrema(deriv3, np.less)[0]
+                    lent = len(data_object_frame.index)
+                    std = deriv3.std()
+                    median = np.median(deriv3)
+                    limit = np.full(shape=lent, fill_value=median + (sigma * std))
+                    max_ind_filter = filter_changes_list(changes=maxInd, values=deriv3,
+                                                         top_limit=None,
+                                                         bottom_limit=limit)
 
-                r = real_values_or_none(max_ind_filter, raw_data)
-                r_min = real_values_or_none(minInd, raw_data)
+                    r = real_values_or_none(max_ind_filter, raw_data)
+                    r_min = real_values_or_none(minInd, raw_data)
 
-                plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199", linewidth=0.2)
-                plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv3 filtered")
-                plt.plot(data_object_frame.index.values, r_min, "o", color="orange", label="values min with deriv3 filtered")
-                plt.gca().legend()
-            elif i == 45:
-                # TODO (@gabvaztor) From Absolute (if this is the best way to find relevant events), filtering
-                # positions where information is not relevant and, after that, save relevant values as deltas and
-                # percents (...)
-                pt("5")
-            else:
-                fig, ax = plt.subplots()
-                fig.patch.set_visible(False)
-                ax.axis('off')
-                fig.set_size_inches(8.3, 11.7)
-                plt.text(4.25 / 8.5, 0.5 / 11., str(i + 1), ha='center', fontsize=8)
-                if i == 3:
-                    txt = "Correlations"
-                    plt.text(0.5, 0.9, txt, horizontalalignment='center', verticalalignment='center',
-                             transform=fig.transFigure, size=16, color='blue', style='italic')
-                    string_correlation = str(data_object_frame.corr())
-                    plt.text(0.5, 0.55, string_correlation, horizontalalignment='center', verticalalignment='center',
-                             transform=fig.transFigure, size=16)
-                    #plt.table()
-                elif i == 4:
+                    plt.plot(data_object_frame.index.values, raw_data, "b-", label="raw_data 199", linewidth=0.2)
+                    plt.plot(data_object_frame.index.values, r, "ro", label="values with deriv3 filtered")
+                    plt.plot(data_object_frame.index.values, r_min, "o", color="orange", label="values min with deriv3 filtered")
+                    plt.gca().legend()
+                elif i == 45:
+                    # TODO (@gabvaztor) From Absolute (if this is the best way to find relevant events), filtering
+                    # positions where information is not relevant and, after that, save relevant values as deltas and
+                    # percents (...)
+                    pt("5")
+                else:
+                    fig, ax = plt.subplots()
                     fig.patch.set_visible(False)
-                    txt = "Summary"
-                    plt.text(0.5, 0.9, txt, horizontalalignment='center', verticalalignment='center',
-                             transform=fig.transFigure, size=16, color='blue', style='italic')
-                    string_summary = str(data_object_frame.describe())
-                    plt.text(0.5, 0.5, string_summary, horizontalalignment='center', verticalalignment='center',
-                             transform=fig.transFigure, size=13)
-                elif i == 5:
-                    import statsmodels.api as sm
-                    # pip3 install statsmodels
-                    # pip3 install patsy
-                    fig.patch.set_visible(False)
-                    seconds = data_object.seconds_array()
-                    mod = sm.OLS(seconds, data_object_frame[datatype])
-                    res = mod.fit()
-                    txt = "Stats Model Summary"
-                    plt.text(0.5, 0.9, txt, horizontalalignment='center', verticalalignment='center',
-                             transform=fig.transFigure, size=16, color='blue', style='italic')
-                    string_summary = str(res.summary())
-                    plt.text(0.5, 0.6, string_summary, horizontalalignment='center', verticalalignment='center',
-                             transform=fig.transFigure, size=13)
+                    ax.axis('off')
+                    fig.set_size_inches(8.3, 11.7)
+                    plt.text(4.25 / 8.5, 0.5 / 11., str(i + 1), ha='center', fontsize=8)
+                    if i == 3:
+                        txt = "Correlations"
+                        plt.text(0.5, 0.9, txt, horizontalalignment='center', verticalalignment='center',
+                                 transform=fig.transFigure, size=16, color='blue', style='italic')
+                        string_correlation = str(data_object_frame.corr())
+                        plt.text(0.5, 0.55, string_correlation, horizontalalignment='center', verticalalignment='center',
+                                 transform=fig.transFigure, size=16)
+                        #plt.table()
+                    elif i == 4:
+                        fig.patch.set_visible(False)
+                        txt = "Summary"
+                        plt.text(0.5, 0.9, txt, horizontalalignment='center', verticalalignment='center',
+                                 transform=fig.transFigure, size=16, color='blue', style='italic')
+                        string_summary = str(data_object_frame.describe())
+                        plt.text(0.5, 0.5, string_summary, horizontalalignment='center', verticalalignment='center',
+                                 transform=fig.transFigure, size=13)
+                    elif i == 5:
+                        import statsmodels.api as sm
+                        # pip3 install statsmodels
+                        # pip3 install patsy
+                        fig.patch.set_visible(False)
+                        seconds = data_object.seconds_array()
+                        mod = sm.OLS(seconds, data_object_frame[datatype])
+                        res = mod.fit()
+                        txt = "Stats Model Summary"
+                        plt.text(0.5, 0.9, txt, horizontalalignment='center', verticalalignment='center',
+                                 transform=fig.transFigure, size=16, color='blue', style='italic')
+                        string_summary = str(res.summary())
+                        plt.text(0.5, 0.6, string_summary, horizontalalignment='center', verticalalignment='center',
+                                 transform=fig.transFigure, size=13)
 
-            #fig.autofmt_xdate()
-            pdf.savefig(fig, transparent=True)
-        # formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
-        pt("PDF of data_object [" + unique_doid + "] saved")
-        fig.clear()
-        plt.close("all")
-        pdf.close()
-        gc.collect()
+                #fig.autofmt_xdate()
+                pdf.savefig(fig, transparent=True)
+            # formatter = mdates.DateFormatter("%m/%d %H:%M:%S")
+            pt("PDF of data_object [" + unique_doid + "] saved")
+            fig.clear()
+            plt.close("all")
+            pdf.close()
+            gc.collect()
         """
         save_data_object_graph(path=output_path, data_object=data_object, actual_time=actual_time,
                                fig=data_object_frame.plot()[0][0])
@@ -1485,7 +1504,7 @@ if __name__ == '__main__':
     # ######### #
     matplotlib = True
     plotlylib = False
-    read_data = True
+    read_data = False
     load_data = True
     save_data = True
     load_dates = False
@@ -1495,8 +1514,8 @@ if __name__ == '__main__':
 
     dates_to_load = dates_process(load_dates=load_dates)
 
-    cores_ids = [1,2,3,4,5,6]
-    data_ids = [2]
+    cores_ids = [1]
+    data_ids = [4]
 
     # ############ #
     # MAIN PROCESS #

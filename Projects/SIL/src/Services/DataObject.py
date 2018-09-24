@@ -7,7 +7,18 @@ import datetime
 class Sensor():
     """
     Represent Sensors information.
+                    if data_id == 1:
+                    measure = Measures.PRESENCE
+
+                elif data_id == 2:
+                    measure = Measures.TEMPERATURE
+                elif data_id == 3:
+                    measure = Measures.HUMIDITY
+                elif data_id == 4:
+                    Luminosity
     """
+
+
     type_0 = [20]
     type_1 = [1,2,3,4,5,6]
 

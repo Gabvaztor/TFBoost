@@ -39,6 +39,9 @@ import tensorflow as tf
 """Json"""
 import json
 
+"""Collection"""
+import collections
+
 import traceback
 def pt(title=None, text=None):
     """
@@ -584,3 +587,18 @@ def transform_to_list(array):
     if not isinstance(array, list):
         array = list(array)
     return array
+
+def check_is_list(object):
+    if isinstance(object, list):
+        return True
+    return False
+
+def check_is_numpy_array(object):
+    if isinstance(object, np.ndarray):
+        return True
+    return False
+
+def check_is_iterable(object):
+    if isinstance(object, collections.Iterable):
+        return True
+    return False

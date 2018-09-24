@@ -11,7 +11,7 @@ class FtpConnection():
     password = None
     attempts = 0
     actual_dir = ""
-
+    compressed_files = []
 
     def connect(self, ip, port, user, password):
         """
@@ -39,7 +39,7 @@ class FtpConnection():
         except Exception:
             print("Can not connect because...")
             traceback.print_exc()
-    def folder_to_download(self, ftp_folder, local_folder):
+    def folder_to_download(self, ftp_folder, local_folder, unzip=False):
         """
         Connect to a folder and download all files
         Args:
@@ -58,11 +58,13 @@ class FtpConnection():
             local_filename = os.path.join(local_folder, filename)
             file = open(local_filename, 'wb')
             self.server.retrbinary('RETR ' + filename, file.write)
+            if local_filename[-2:] == "gz":
+                self.compressed_files.append(local_filename)
             file.close()
         #self.server.quit()
 
 
-    def delete_files_from_folder(self, ftp_folder):
+    def delete_files_from_ftp_folder(self, ftp_folder):
         """
         Delete files from FTP folder
         Args:
@@ -116,19 +118,40 @@ class FtpConnection():
             self.server.close()
             print("Connection closed")
 
+    def unzip_files(self):
+        if self.compressed_files:
+            try:
+                import gzip
+                import shutil
+                import os
+                for compressed_f in self.compressed_files.copy():
+                    with gzip.open(compressed_f, 'rb') as f_in:
+                        with open(compressed_f[:-3], 'wb') as f_out:
+                            shutil.copyfileobj(f_in, f_out)
+                    os.remove(compressed_f)
+            except Exception:
+                print("Files could not be unzipped")
+                print("Files has not been deleted from server and local for prevention")
+                traceback.print_exc()
+                return False
+        return True
+
 def main(ip, port, user, password, ftp_folder, local_folder):
 
     ftp_connection = FtpConnection()
     ftp_connection.connect(ip, port, user, password)
     ftp_connection.folder_to_download(ftp_folder=ftp_folder,
                                       local_folder=local_folder)
-    ftp_connection.delete_files_from_folder(ftp_folder=ftp_folder)
+    if ftp_connection.unzip_files():
+        ftp_connection.delete_files_from_ftp_folder(ftp_folder=ftp_folder)
     if ftp_connection.server:
         ftp_connection.close_connection()
 
 if __name__ == "__main__":
     prism_connection_data = ["prism.nacse.org", None, "anonymous", "email@email.com", "monthly/ppt/1895/", "Downloads\\"]
     localhost_connection = ["localhost", 9898, "", "", "", "Downloads\\"]
+
+    "GZIp --> Unzip: 1: All files will be downloaded, unzipped and, after that, that will be deleted"
 
     # To change when change connection
     current_data = localhost_connection
