@@ -1,0 +1,8 @@
+{
+    "ftp_name": "localhost",
+    "port_number": 9898,
+    "user_name": "",
+    "password": "",
+    "ftp_folder_name": "",
+    "local_folder": "Downloads\\"
+}

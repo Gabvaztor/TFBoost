@@ -1,0 +1,8 @@
+{
+    "ftp_name": "ftp_name",
+    "port_number": null,
+    "user_name": "user_name",
+    "password": "password",
+    "ftp_folder_name": "ftp_folder_name/",
+    "local_folder": "local_folder/"
+}

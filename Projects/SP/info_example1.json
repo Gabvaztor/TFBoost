@@ -1,0 +1,8 @@
+{
+    "ftp_name": "prism.nacse.org",
+    "port_number": null,
+    "user_name": "anonymous",
+    "password": "email@email.com",
+    "ftp_folder_name": "monthly/ppt/1895/",
+    "local_folder": "Downloads\\"
+}
