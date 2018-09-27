@@ -3,7 +3,7 @@ To manage Errors
 """
 
 import logging
-
+from UsefulTools.UtilsFunctions import create_file_from_fullpath
 def logger():
     """
     Creates a logging object and returns it
@@ -11,6 +11,7 @@ def logger():
     logger = logging.getLogger("example_logger")
     logger.setLevel(logging.INFO)
 
+    file = r"..//..//"
     # create the logging file handler
     fh = logging.FileHandler(r"/path/to/test.log")
 

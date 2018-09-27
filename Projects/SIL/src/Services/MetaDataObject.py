@@ -1,4 +1,4 @@
-class MetadataObject():
+class MetaDataObject():
     """
     Represents metadata object
     """
