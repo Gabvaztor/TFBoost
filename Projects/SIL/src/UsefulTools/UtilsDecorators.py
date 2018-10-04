@@ -3,17 +3,24 @@ To manage Errors
 """
 
 import logging
+from datetime import datetime
 from UsefulTools.UtilsFunctions import create_file_from_fullpath
+
+
 def logger():
     """
     Creates a logging object and returns it
     """
-    logger = logging.getLogger("example_logger")
+    logger = logging.getLogger("info_logger")
     logger.setLevel(logging.INFO)
 
+    actual_datetime = datetime.now().strftime("%Y-%m-%d")
     file = r"..//..//"
+    file_name = actual_datetime + "_info_logger.log"
+    full_file = file + file_name
+    create_file_from_fullpath(full_file)
     # create the logging file handler
-    fh = logging.FileHandler(r"/path/to/test.log")
+    fh = logging.FileHandler(full_file)
 
     fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     formatter = logging.Formatter(fmt)

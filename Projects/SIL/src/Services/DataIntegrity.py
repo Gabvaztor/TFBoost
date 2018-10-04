@@ -15,5 +15,5 @@ def data_integrity(data, *args, **kwargs):
             * Other cases
         - True: If the data is healthy
     """
-    # TODO (@gabvaztor) Finish
+
     pass
