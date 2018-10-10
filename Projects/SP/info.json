@@ -1,8 +1,8 @@
 {
-    "ftp_name": "ftp_name",
+    "ftp_name": "185.192.232.133",
     "port_number": null,
-    "user_name": "user_name",
-    "password": "password",
-    "ftp_folder_name": "ftp_folder_name/",
-    "local_folder": "local_folder/"
+    "user_name": "stratence",
+    "password": "NjExNTU1NDcz",
+    "ftp_folder_name": "IN/",
+    "local_folder": "E:\\Stratence\\Download\\"
 }

@@ -33,6 +33,7 @@ class FtpConnection():
     compressed_files = []
     ftp_folder_name = ""
     local_folder = ""
+    not_to_delete_ftp = []  # Files on FTP folder that will not be deleted
 
     def connect(self, ip, port, user, password):
         """
@@ -79,14 +80,16 @@ class FtpConnection():
         Returns:
 
         """
+
         if not self.ftp_folder_name:
             self.ftp_folder_name = ftp_folder
         if not self.local_folder:
             self.local_folder = local_folder
         self.server.cwd(self.ftp_folder_name)
         self.actual_dir = self.ftp_folder_name
-        filenames = self.server.nlst()  # get filenames within the directory
+        filenames = [x for x in self.server.nlst() if self.is_file(x)]  # get filenames within the directory
         print(filenames)
+
         for filename in filenames:
             print("Downloading: " + filename + " ...")
             local_filename = os.path.join(self.local_folder, filename)
@@ -94,8 +97,21 @@ class FtpConnection():
             self.server.retrbinary('RETR ' + filename, file.write)
             if local_filename[-2:] == "gz":
                 self.compressed_files.append(local_filename)
+            elif local_filename[-2:] == "ok":
+                self.not_to_delete_ftp.append(filename)
             file.close()
+
         #self.server.quit()
+
+    def is_file(self, filename):
+        is_file = True
+        try:
+            filesize = self.server.size(filename)
+            if type(filesize) == type(None):
+                is_file = False
+        except:
+            is_file = False
+        return is_file
 
     def delete_files_from_ftp_folder(self, ftp_folder):
         """
@@ -110,7 +126,8 @@ class FtpConnection():
             filenames = self.server.nlst()  # get filenames within the directory
             print("Deleting files from FTP folder if any...")
             for filename in filenames:
-                self.server.delete(filename)
+                if filename not in self.not_to_delete_ftp:
+                    self.server.delete(filename)
             print("Actual folder status after delete")
             filenames = self.server.nlst()  # get filenames within the directory
             print(filenames)
@@ -172,7 +189,7 @@ class FtpConnection():
     def load_json(self):
         # Change with your setting file if necessary
         import json
-        with open("C:\\info.json") as json_data:
+        with open("info.json") as json_data:
             settings = json.load(json_data)
             self.ip=settings["ftp_name"]
             self.port=settings["port_number"]
@@ -183,7 +200,7 @@ class FtpConnection():
             return settings
 
 def main_manual(ip=None, port=None, user=None, password=None,
-         ftp_folder=None, local_folder=None, avoid_set=False):
+         ftp_folder=None, local_folder=None, avoid_set=False, delete_ftp_files=False):
 
     if avoid_set:
         prism_connection_data = ["prism.nacse.org", None, "anonymous", "email@email.com",
@@ -215,12 +232,12 @@ def main_manual(ip=None, port=None, user=None, password=None,
         ftp_connection.connect(ip, port, user, password)
         ftp_connection.folder_to_download(ftp_folder=ftp_folder,
                                           local_folder=local_folder)
-        if ftp_connection.unzip_files():
+        if ftp_connection.unzip_files() and delete_ftp_files:
             ftp_connection.delete_files_from_ftp_folder(ftp_folder=ftp_folder)
         if ftp_connection.server:
             ftp_connection.close_connection()
 
-def main_json():
+def main_json(delete_ftp_files=False):
     ftp_connection = FtpConnection()
     dicts = ftp_connection.load_json()
     print("dicts", str(dicts))
@@ -233,7 +250,7 @@ def main_json():
     local_folder = dicts["local_folder"]
 
     main_manual(ip=ip, port=port, user=user, password=password,
-         ftp_folder=ftp_folder, local_folder=local_folder)
+         ftp_folder=ftp_folder, local_folder=local_folder, delete_ftp_files=delete_ftp_files)
 
 if __name__ == "__main__":
     """
