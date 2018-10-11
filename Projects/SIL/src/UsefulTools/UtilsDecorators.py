@@ -5,7 +5,7 @@ To manage Errors
 import logging
 from datetime import datetime
 from UsefulTools.UtilsFunctions import create_file_from_fullpath
-
+import traceback as tb
 
 def logger():
     """
@@ -22,7 +22,9 @@ def logger():
     # create the logging file handler
     fh = logging.FileHandler(full_file)
 
-    fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    new_error = "\n\n      #################################\n      ##########  NEW ERROR  ##########\n" \
+                "      #################################\n\n"
+    fmt = new_error + '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     formatter = logging.Formatter(fmt)
     fh.setFormatter(formatter)
 
@@ -43,11 +45,13 @@ def exception(logger):
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except:
+            except Exception as e:
                 # log the exception
                 err = "There was an exception in  "
                 err += func.__name__
                 logger.exception(err)
+                print(err + "\n" + str(e))
+                tb.print_exc()
                 necessary_to_raise = False
                 # TODO (@gabvaztor) Send flag to check if it is necessary to raise
                 if necessary_to_raise:
