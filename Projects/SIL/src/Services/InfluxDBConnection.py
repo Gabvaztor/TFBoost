@@ -24,7 +24,7 @@ class InfluxDB():
         dbname = 'miranda'
         dbuser = 'smly'
         dbuser_password = 'my_secret_password'
-        query = 'select value from mysensors where device=1 and sensor=4'
+        query = 'select top 100 value from mysensors where device=1 and sensor=4'
         api_key = "eyJrIjoiT2R5ZkJ5V0tpMEVYMHF5SWJCTWZyaHNDVldLajB5eW8iLCJuIjoic21hcnRpb3RsYWJzIiwiaWQiOjF9"
         http_header = 'curl -H "Authorization: Bearer ' \
                       'eyJrIjoiT2R5ZkJ5V0tpMEVYMHF5SWJCTWZyaHNDVldLajB5eW8iLCJuIjoic21hcnRpb3RsYWJzIiwiaWQiOjF9" ' \
