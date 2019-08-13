@@ -1571,13 +1571,13 @@ if __name__ == '__main__':
     # ##### #
     # PATHS #
     # ##### #
-    miranda_path = "\\\\192.168.1.220\\miranda\\"
-    #miranda_path = "..\\..\\data\\temp\\"
-    #miranda_path = "F:\\Data_Science\\Projects\\Smartiotlabs\\Data\\"
-    #miranda_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Backup_10-September-2018\\"
+    miranda_path = ""
+    #miranda_path = ""
+    #miranda_path = ""
+    #miranda_path = ""
     # Save image path
-    save_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\"
-    checkpoint_path = "E:\\SmartIotLabs\\AI_Department\\Data\\Sensors\\Checkpoints\\"
+    save_path = ""
+    checkpoint_path = ""
     checkpoint_path = "..\\..\\data\\intermediate\\"
     output_path = "..\\..\\results\\output\\PDFs\\"
 
