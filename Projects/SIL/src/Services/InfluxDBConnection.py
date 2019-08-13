@@ -14,21 +14,19 @@ class InfluxDB():
         """Instantiate a connection to the InfluxDB."""
         # admin
         # admin@localhost
-        host = "192.168.1.220"
+        host = "192.168.1.2"
         port = 8086
-        user = 'gabriel'
-        user = 'gabriel.vazquez@smartiotlabs.com'
+        user = 'x'
         user = ''
-        password = 'fq1MvWvJFyREZI1wq1xyXMClrPhf7W'
+        user = ''
         password = ''
-        dbname = 'miranda'
-        dbuser = 'smly'
+        password = ''
+        dbname = ''
+        dbuser = ''
         dbuser_password = 'my_secret_password'
         query = 'select top 100 value from mysensors where device=1 and sensor=4'
         api_key = "eyJrIjoiT2R5ZkJ5V0tpMEVYMHF5SWJCTWZyaHNDVldLajB5eW8iLCJuIjoic21hcnRpb3RsYWJzIiwiaWQiOjF9"
-        http_header = 'curl -H "Authorization: Bearer ' \
-                      'eyJrIjoiT2R5ZkJ5V0tpMEVYMHF5SWJCTWZyaHNDVldLajB5eW8iLCJuIjoic21hcnRpb3RsYWJzIiwiaWQiOjF9" ' \
-                      'http://192.168.1.220:3000/api/dashboards/home'
+        http_header = 'curl -H "Authorization: Bearer '
 
 
         json_body = [
