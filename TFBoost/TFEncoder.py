@@ -162,6 +162,7 @@ class Errors(object):
     error = "Error, see description"
     # Setting Object model path bad config
     model_path_bad_configuration = "Can't save model because model path is bad configured"
+
 class Constant(object):
     """
     Constant Class

@@ -43,7 +43,10 @@ import json
 import collections
 
 import traceback
-def pt(title=None, text=None):
+
+import sys
+
+def pt(title=None, text=None, same_line=False):
     """
     Use the print function to print a title and an object coverted to string
     :param title:
@@ -53,8 +56,11 @@ def pt(title=None, text=None):
         text = title
         title = Dictionary.string_separator
     else:
-        title += ':'
-    print(str(title) + " \n " + str(text))
+        title += ': '
+    if same_line:
+        print(str(title) + str(text), end="\r")
+    else:
+        print(str(title) + " \n " + str(text))
 
 
 def timed(method):
@@ -272,6 +278,7 @@ def save_numpy_arrays_generic(folder_to_save, numpy_files, names=None):
         else:
             name_file = Dictionary.filename_numpy_default
             np.save(folder_to_save + name_file + str(index + 1), numpy_files[index])
+    print("Files has been saved in numpy format")
 
 
 def load_numpy_arrays_generic(path_to_load, names):

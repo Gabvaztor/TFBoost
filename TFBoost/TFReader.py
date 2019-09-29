@@ -188,6 +188,7 @@ class Reader(object):
             names = ["x_train", "y_train", "x_test", "y_test", "x_validation", "y_validation"]
             save_numpy_arrays_generic(folder_to_save=path_to_save, names=names,numpy_files=np_arrays)
 
+
     def calculate_percentages(self, percentages_sets):
         """
         
@@ -387,18 +388,26 @@ class Searcher(Reader):
                 # Read CSV Labels
                 # TODO (@gabvaztor) Do generic import if more than one problem use it
                 import pandas as pd
-                dataframe_labels = pd.read_csv(filepath_or_buffer=labels_path)
+                print("labels_path: ", labels_path)
+                try:
+                    dataframe_labels = pd.read_csv(filepath_or_buffer=labels_path)
+                except Exception as e:
+                    print(e)
+                    labels_path = labels_path.replace("\\\\", "\\")
+                    dataframe_labels = pd.read_csv(filepath_or_buffer=labels_path)
+
 
         start_time = time.time()
         for path in self.path_to_read:
+            pt("Reading", path)
             for root, dirs, files in os.walk(path):
                 for count_number, file_name in enumerate(files):
 
-                    pt("Files Size", len(files))
-                    pt("Count number", count_number)
+                    pt("Files Size", len(files), same_line=True)
+                    pt("Count number", count_number, same_line=True)
                     progress = float(((count_number*100)/len(files)))
                     progress = "{0:.3f}".format(progress)
-                    pt("Progress percent",  progress + "%")
+                    pt("Progress percent",  progress + "%", same_line=True)
 
                     if problem == Dictionary.string_option_retinopathy_k_problem:
                         if (file_name.endswith(Dictionary.string_extension_jpeg)):

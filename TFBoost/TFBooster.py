@@ -42,6 +42,11 @@ to code expressively, clearly and efficiently.
 Here you can download the library: https://pypi.python.org/pypi/easygui#downloads
 It had been used the version: 0.98.1
 '''
+import sys, os
+
+sys.path.append(os.path.dirname(__file__))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append('../../')
 
 import TFBoost.TFReader as tfr
 import TFBoost.TFDataMining as tfd
@@ -150,7 +155,8 @@ else:
     """
     Creating Reader Features
     """
-    reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images, number_of_classes = number_of_classes,
+    reader_features = tfr.ReaderFeatures(set_data_files = path_train_and_test_images,
+                                         number_of_classes = number_of_classes,
                                           labels_set = labels_set,
                                           is_unique_csv = is_an_unique_csv, known_data_type = known_data_type,
                                           percentages_sets = percentages_sets)
@@ -171,14 +177,14 @@ pt("x_train", x_train.shape)
 pt("y_train", y_train.shape)
 pt("x_test", x_test.shape)
 pt("y_test", y_test.shape)
-
-models = models.TFModels(setting_object=setting_object, option_problem=options,
-                         input_data=x_train,test=x_test,
-                         input_labels=y_train,test_labels=y_test,
-                         number_of_classes=number_of_classes, type=None,
-                         validation=None, validation_labels=None)
-#with tf.device('/cpu:0'):  # CPU
 with tf.device('/gpu:0'):  # GPU
+    models = models.TFModels(setting_object=setting_object, option_problem=options,
+                             input_data=x_train,test=x_test,
+                             input_labels=y_train,test_labels=y_test,
+                             number_of_classes=number_of_classes, type=None,
+                             validation=None, validation_labels=None)
+    #with tf.device('/cpu:0'):  # CPU
+
     models.convolution_model_image()
 """
 if __name__ == '__main__':

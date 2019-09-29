@@ -68,7 +68,7 @@ import tflearn
 
 '''"Best image library"
 pip3 install opencv-python
-Imported by petition (variable flag) beacuse of problem on raspberry. Used PILLOW instead'''
+Imported by petition (variable flag) because of problem on raspberry. Used PILLOW instead'''
 # import cv2
 
 """Python libraries"""
@@ -127,7 +127,7 @@ class TFModels():
         self._processes = []
         # CONFIGURATION VARIABLES
         self._debug_level = 0 # TODO (@gabvaztor) Explain debug levels
-        self._restore_model = True # Labels and logits info. Load only to continue training.
+        self._restore_model = False # Labels and logits info. Load only to continue training.
         self._restore_model_configuration = self.restore_model  # By defect, use restore_model value. This, load variables from configuration file.
         self._restore_to_predict = predict_flag  # Load pretrained model to do a prediction. Restrictive
         self._save_model_information = True  # If must to save model or not
@@ -150,8 +150,8 @@ class TFModels():
         # TRAIN MODEL VARIABLES
         self._input_rows_numbers = option_problem[2] # For example, in german problem, number of row pixels
         self._input_columns_numbers = option_problem[3]  # For example, in german problem, number of column pixels
-        self._epoch_numbers = 50  # Epochs number
-        self._batch_size = 9  # Batch size
+        self._epoch_numbers = 5  # Epochs number
+        self._batch_size = 10  # Batch size
         if self.input is not None and not self.restore_to_predict:  # Change if necessary
             self._input_size = self.input.shape[0]  # Change if necessary
             self._trains = int(self.input_size / self.batch_size) + 1  # Total number of trains for epoch
@@ -177,7 +177,7 @@ class TFModels():
         self._learning_rate = 1e-4  # Learning rate
         self._number_epoch_to_change_learning_rate = 60  #You can choose a number to change the learning rate. Number
         # represent the number of epochs before be changed.
-        self._print_information = 2  # How many trains are needed to print information
+        self._print_information = 1  # How many trains are needed to print information
         # INFORMATION VARIABLES
         self._index_buffer_data = 0  # The index for mini_batches during training. Start at zero.
         self._num_trains_count = 1  # Start at one
@@ -765,7 +765,8 @@ class TFModels():
                 # TODO (@gabvaztor) When problem requires cross validation with train and test, do it during training.
                 # Besides this, when test/validation set requires check its accuracy but its size is very long to save
                 # in memory, it has to update all files during training to get the exact precision.
-                self.train_model(args=None, kwargs=locals())
+                with tf.device('/gpu:0'):  # GPU
+                    self.train_model(args=None, kwargs=locals())
             else:
                 self.prediction(x_input=x_input, y_prediction=y_prediction, keep_probably=keep_probably, sess=sess)
 
@@ -1141,7 +1142,7 @@ class TFModels():
         :return: Inputs, labels and others placeholders
         """
         # Placeholders
-        #x = tf.placeholder(tf.float32, shape=[None, self.input_columns_after_reshape])  # All images will be 24*24 = 574
+        #x = tf.compat.v1.placeholder(tf.float32, shape=[None, self.input_columns_after_reshape])  # All images will be 24*24 = 574
         x = tf.placeholder(tf.float32, shape=[None, self.input_rows_numbers, self.input_columns_numbers, 3])  # All images will be 24*24 = 574
         y_ = tf.placeholder(tf.float32, shape=[None, self.number_of_classes])  # Number of labels
         keep_probably = tf.placeholder(tf.float32)  # Value of dropout. With this you can set a value for each data set
@@ -1387,7 +1388,7 @@ class TFModels():
             self.num_actual_trains = 0
         elif self.num_actual_trains == 0: # 1188
             self.num_actual_trains = int(self.num_trains_count % self.trains)  # This case only can happen when
-        # you restore a model and num_actual_trains fails to load. Otherwise, num_actual_trains contains rigth value.
+        # you restore a model and num_actual_trains2 fails to load. Otherwise, num_actual_trains contains rigth value.
         is_new_epoch_flag = False  # Represent if training come into a new epoch. With this, a graph will be saved each
         # new epoch
         # START  TRAINING
@@ -1697,7 +1698,8 @@ def process_test_set(test, test_labels, options, create_dataset_flag=False):
     for i in range(len(test)):
         # TODO (@gabvaztor) Number parametrizable
         if i % 350 == 0:
-            x, y = process_input_unity_generic(test[i], test_labels[i], options, is_test=True, to_save=create_dataset_flag)
+            x, y = process_input_unity_generic(test[i], test_labels[i], options, is_test=True,
+                                               to_save=create_dataset_flag)
             if not create_dataset_flag:
                 x_test.append(x)
                 y_test.append(y)
