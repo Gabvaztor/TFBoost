@@ -1,11 +1,20 @@
 # TensorFlow Boost
-**TensorFlow Boost's Repository (Moving to TF2.0)**
+
+This project is being moved to a new github repository. Also, the main project is being used in the url: 
+
+[http://aiconscience.ddns.net/ai-models/](http://aiconscience.ddns.net/ai-models/)
+
+**TensorFlow Boost's Repository**
 
 | **`Windows CPU`** | **`Windows GPU`** |
 |-------------------|-------------------|
 |<img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png" height="20" width="90"> | <img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/Build_Passing.png" height="20" width="90">
 
 Through project, we are creating a framework thanks to which you can read any kind of tag labeled data (like Kaggle problems, CSV and images); create train, validation and test set from them; choose the best machine learning algorithm for your data, and, besides, change the algorithm features.
+
+Updating to Version 1.1:
+
+  - Using Tensorflow 2.0.0
 
 Update Version 0.1:
 
@@ -38,10 +47,7 @@ https://google.github.io/styleguide/pyguide.html
 
 **TensorFlow Boost Web example (NEW):**
 
-[http://tfboost.ddns.net](http://tfboost.ddns.net)
-OR
-[http://tfboostframework.ddns.net](http://tfboostframework.ddns.net)
-
+[http://aiconscience.ddns.net/ai-models/](http://aiconscience.ddns.net/ai-models/)
 
 <div align="center">
 <img src="https://github.com/Gabvaztor/TFBoost/blob/master/Documentation/Images/tfboost-framework-web-example.png"><br>
