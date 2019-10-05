@@ -1,5 +1,5 @@
 # TensorFlow Boost
-**TensorFlow Boost's Repository**
+**TensorFlow Boost's Repository (Moving to TF2.0)**
 
 | **`Windows CPU`** | **`Windows GPU`** |
 |-------------------|-------------------|

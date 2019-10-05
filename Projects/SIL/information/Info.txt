@@ -1,2 +1,0 @@
-Project structure for Machine Learning with Python: https://github.com/ThomasRobertFr/ml-project-structure
-
