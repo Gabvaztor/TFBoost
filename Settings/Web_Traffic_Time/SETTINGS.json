@@ -1,0 +1,12 @@
+{
+  "TRAIN_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Trains\\",
+  "MODEL_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Models\\model",
+  "TEST_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\key_1_sin_Francisco.csv",
+  "SUBMISSION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Predictions\\submision.csv",
+  "CONFIGURATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Models\\configuration_model.json",
+  "INFORMATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Models\\information_model.json",
+  "ACCURACIES_LOSSES_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Models\\History_Information\\Accuracies_Losses\\",
+  "HISTORY_INFORMATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Models\\History_Information\\Information\\",
+  "HISTORY_CONFIGURATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Web_Traffic_Time\\Models\\History_Information\\Configuration\\",
+  "LABELS_PATH": "E:\\Data_Science\\Data\\Retinopathy\\labels\\labels.csv"
+}

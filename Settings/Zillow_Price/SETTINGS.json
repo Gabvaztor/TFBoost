@@ -1,0 +1,12 @@
+{
+  "TRAIN_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\properties_2016_without_all_blanks.csv",
+  "MODEL_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\Models\\model",
+  "TEST_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\test.csv",
+  "SUBMISSION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\predictions\\",
+  "CONFIGURATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\Models\\configuration_model.json",
+  "INFORMATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\Models\\information_model.json",
+  "ACCURACIES_LOSSES_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\Models\\History_Information\\Accuracies_Losses\\",
+  "HISTORY_INFORMATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\Models\\History_Information\\Information\\",
+  "HISTORY_CONFIGURATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Zillow_Price\\Models\\History_Information\\Configuration\\",
+  "LABELS_PATH": "E:\\Data_Science\\Data\\Retinopathy\\labels\\labels.csv"
+}

@@ -1,0 +1,53 @@
+"""
+Tareas para la versión estable del Framework 'TFBoost'
+"""
+
+Tasks:
+
+Un usuario que utilice TFBoost tiene la posibilidad de:
+
+**Cuando una tarea tenga:"(estableciendo su ruta en SETTINGS.json)" es la ejecución de añadir en un archivo
+SETTINGS.json la ruta de uno o más archivos. Si son más de un archivo se deberá establecer la ruta que contiene a
+ dichos archivos**
+
+- Leer de un archivo CSV (estableciendo su ruta en SETTINGS.json) cualquier cantidad de datos eligiendo cual/cuales son
+ el/los objetivo/s a predecir.
+A partir del archivo podrá elegir qué porcentajes estarán repartidos para crear el conjunto de entrenamiento,
+de validación y de test y devolver tres conjuntos de datos a partir de él.
+
+- Leer de dos o tres archivos CSV (estableciendo su ruta en SETTINGS.json) pudiendo elegir cuál de ellos está dirigido
+ para el conjunto de test y cual de ellos es del que se obtendrá el conjunto de entrenamiento y el de validación
+ (este último opcional) retornando entre dos y tres conjuntos de datos.
+ Si son dos archivos podrá obtenerse entre 2 y 3 conjuntos de datos y si son tres archivos se
+devolverán tres conjuntos de datos (ya que se supone que uno de ellos es el de validación). En cualquiera de los casos
+se podrá elegir cuál o cuáles columnas son el/los objetivo/s
+
+- Leer de una carpeta (estableciendo su ruta en SETTINGS.json) un conjunto de imágenes estableciendo el tipo de
+formato de las imágenes a recorrer (ejemplo: '.jpg', '.png', ...)
+
+- Pasar al constructor de la clase TFModels el flag 'load_model_configuration=True' para Guardar y cargar una
+configuración pasando por parámetro al constructor de la clase TFModels.
+ Esto hará que antes de que se genere o se guarde cualquier modelo, se cargará una configuración del archivo
+ configuration.json (estableciendo su ruta en SETTINGS.json)
+
+- Pasar al constructor de la clase TFModels todos los conjuntos que se van a usar: conjunto de entrenamiento, de
+validación y de test y conjuntos de labels de todos los conjuntos (def __init__(self,input, test, input_labels,
+ test_labels,validation=None, validation_labels=None)
+
+- Pasar al constructor de la clase TFModels el objeto "setting_object" que contiene la información del json
+SETTINGS.json
+
+- Pasar al constructor de la clase TFModels el "número de clases" que representan al número total de labels que tiene la
+predicción. Por ejemplo, si lo que tienes que predecir es si una imagen representa un tumor maligno o benigno, entonces
+este número será dos ("benigno", "maligno" o 1 y 0, number_of_classes=2)
+
+- Pasar al constructor de la clase TFModels la "opción" del problema en cuestión. Esto es, el identificador único con el
+que vas a diferencia el problema que estés resolviendo de otro. Con esta bandera podrás tener diferentes resoluciones
+para un mismo problema o para varios distintos. (option="Problema3")
+
+
+
+
+
+
+
