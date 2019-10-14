@@ -1,0 +1,8 @@
+{
+  "TRAIN_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Sberbank_Russian_Housing_Market\\train.csv",
+  "MODEL_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Sberbank_Russian_Housing_Market\\Models\\model",
+  "TEST_DATA_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Sberbank_Russian_Housing_Market\\test.csv",
+  "SUBMISSION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Sberbank_Russian_Housing_Market\\predictions\\",
+  "CONFIGURATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Sberbank_Russian_Housing_Market\\Models\\configuration_model.json",
+  "INFORMATION_PATH": "D:\\Machine_Learning\\Competitions\\Kaggle_Data\\Sberbank_Russian_Housing_Market\\Models\\information_model.json"
+}
